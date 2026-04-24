@@ -1,0 +1,10 @@
+*.pptx !text !filter !merge !diff
+*.psb !text !filter !merge !diff
+*.psd !text !filter !merge !diff
+*.aep !text !filter !merge !diff
+*.mov !text !filter !merge !diff
+*.mp4 !text !filter !merge !diff
+*.gif !text !filter !merge !diff
+**/Playbook_R5_31032026.pptx filter=lfs diff=lfs merge=lfs -text
+**/FOOTAGE/V_Foto_pack1000[[:space:]]Layers/V_Foto_pack1000.psb filter=lfs diff=lfs merge=lfs -text
+assets/hp-brand/One_HP_Retail_Etail_Guidelines/*.pptx filter=lfs diff=lfs merge=lfs -text
