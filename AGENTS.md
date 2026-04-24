@@ -6,6 +6,8 @@
 
 HackUPC hackathon project.
 
+**Read [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md) first** — it holds the full challenge context (vision, three stages, constraints, team, open questions). Keep it updated as new information comes in.
+
 ## Conventions
 
 - Keep changes minimal and focused.
