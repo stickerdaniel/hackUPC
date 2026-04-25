@@ -20,12 +20,12 @@ import numpy as np
 
 from ..domain.enums import OperationalStatus
 
-# Status thresholds. `>= 0.75 / >= 0.45 / >= 0.20 / < 0.20` per the plan.
-# We keep them as module constants so the test suite can import the same
-# numbers (no magic literals duplicated in tests).
+# Status thresholds. `>= 0.75 / >= 0.40 / >= 0.15 / < 0.15` per docs/research/04
+# and the README. We keep them as module constants so the test suite can
+# import the same numbers (no magic literals duplicated in tests).
 HEALTH_FUNCTIONAL = 0.75
-HEALTH_DEGRADED = 0.45
-HEALTH_CRITICAL = 0.20
+HEALTH_DEGRADED = 0.40
+HEALTH_CRITICAL = 0.15
 
 # Weeks per simulated tick. The plan locked dt = 1 simulated week.
 WEEKS_PER_TICK = 1.0
