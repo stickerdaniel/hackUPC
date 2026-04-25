@@ -21,7 +21,7 @@ import {
  * answer must cite a runId/tick/componentId from a tool result.
  */
 export const aiChatAgent = new Agent(components.agent, {
-	name: 'Assistant',
+	name: 'Co-Pilot',
 
 	languageModel: openrouter('google/gemma-4-31b-it', {
 		reasoning: { enabled: true, effort: 'medium' }
