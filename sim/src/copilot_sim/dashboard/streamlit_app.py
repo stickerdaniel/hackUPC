@@ -1,11 +1,14 @@
 """Streamlit dashboard for the digital twin demo.
 
-Four technical panels for the selected run, in narrative order:
+Panels rendered for the selected run:
 
-1. Driver-coupled component decay — drivers + status heatmap + selected-tick rule.
-2. Cascade attribution — for each CRITICAL/FAILED component, top-3 coupling factors.
-3. True vs observed — per-component sensor-trust verdict (the §3.4 story).
-4. Maintenance event timeline — per-component glyphs by OperatorEventKind.
+1. Component health over time (line chart with environmental-event rules).
+2. Cascade attribution (top-3 coupling factors at each CRITICAL/FAILED tick).
+3. Maintenance load by component (stacked bars by OperatorEventKind).
+4. Driver streams (4 brief inputs as sparklines).
+5. Status timeline (per-component Gantt of status periods).
+6. Recommendation cards (Phase 3 heuristic preview).
+7. Proactive alerts feed (Phase 3 autonomy preview).
 
 Launch:
     cd sim
@@ -57,17 +60,7 @@ EVENT_COLOURS: dict[str, str] = {
     "TROUBLESHOOT": "#9E9E9E",
 }
 
-SENSOR_NOTE_COLOURS: dict[str, str] = {
-    "ok": "#E8E8E8",
-    "noisy": "#9E9E9E",
-    "drift": "#1846F5",
-    "stuck": "#FF8A3D",
-    "absent": "#C42B2B",
-    "degraded": "#5683FF",
-}
-
-ACCENT_BLUE = "#1846F5"  # primary brand blue — REPLACE markers, trust chip when not TRUSTED.
-OBSERVED_BLUE = "#0F2C7A"  # observed-health line in panel 3 only (deepest of the family).
+ACCENT_BLUE = "#1846F5"  # primary brand blue — REPLACE markers, recommendation pills.
 RULE_GREY = "#5A5A5A"  # subtle dark grey for environmental-event rules.
 
 # Chain text is rendered only when the queried top-3 contains the keys.
@@ -140,17 +133,6 @@ def _load_component_state(conn, run_id: str) -> pd.DataFrame:
         """
         SELECT tick, component_id, health_index, status
         FROM component_state WHERE run_id = ? ORDER BY tick, component_id
-        """,
-        conn,
-        params=[run_id],
-    )
-
-
-def _load_observed_state(conn, run_id: str) -> pd.DataFrame:
-    return pd.read_sql_query(
-        """
-        SELECT tick, component_id, observed_health_index, observed_status, sensor_note
-        FROM observed_component_state WHERE run_id = ? ORDER BY tick, component_id
         """,
         conn,
         params=[run_id],
@@ -295,30 +277,6 @@ def _status_segments(component_df: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
-
-
-def _trust_verdict(observed: pd.DataFrame) -> str:
-    """Apply the priority rules in strict order. First match wins."""
-    if observed.empty:
-        return "ABSENT"
-    n = len(observed)
-    null_frac = observed["observed_health_index"].isna().mean()
-    if null_frac >= 0.10:
-        return "ABSENT"
-    note_counts = observed["sensor_note"].value_counts(dropna=False)
-    if note_counts.get("stuck", 0) / n >= 0.05:
-        return "STUCK"
-    if note_counts.get("drift", 0) / n >= 0.05:
-        return "DRIFTING"
-    if "true_health" in observed.columns:
-        valid = observed.dropna(subset=["observed_health_index", "true_health"])
-        if not valid.empty:
-            divergence = (valid["true_health"] - valid["observed_health_index"]).abs().mean()
-            if divergence >= 0.10:
-                return "SUSPECT"
-    if note_counts.get("noisy", 0) / n >= 0.20:
-        return "NOISY"
-    return "TRUSTED"
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -547,127 +505,6 @@ def _render_panel2(cards: list[dict[str, Any]], overflow: list[dict[str, Any]]) 
             for card in overflow:
                 _render_cascade_card(card)
                 st.markdown("")
-
-
-# ──────────────────────────────────────────────────────────────────────────
-# Render — Panel 3: True vs observed.
-# ──────────────────────────────────────────────────────────────────────────
-
-
-def _render_panel3(
-    component_df: pd.DataFrame,
-    observed_df: pd.DataFrame,
-    selected_component: str,
-) -> None:
-    true_sub = component_df[component_df["component_id"] == selected_component][
-        ["tick", "health_index"]
-    ].rename(columns={"health_index": "true_health"})
-    obs_sub = observed_df[observed_df["component_id"] == selected_component][
-        ["tick", "observed_health_index", "sensor_note"]
-    ].rename(columns={"observed_health_index": "observed_health"})
-    merged = true_sub.merge(obs_sub, on="tick", how="left")
-
-    all_observed_null = merged["observed_health"].isna().all()
-    verdict = (
-        "ABSENT"
-        if all_observed_null
-        else _trust_verdict(
-            merged.rename(columns={"observed_health": "observed_health_index"}).assign(
-                true_health=merged["true_health"]
-            )
-        )
-    )
-    chip_bg = "#E8E8E8" if verdict == "TRUSTED" else ACCENT_BLUE
-    chip_fg = "#111111" if verdict == "TRUSTED" else "#FFFFFF"
-    st.markdown(
-        f"<div style='font-size:12px;font-weight:600;color:#111;margin-bottom:6px'>"
-        f"{selected_component.upper()}  "
-        f"<span style='background:{chip_bg};color:{chip_fg};padding:2px 8px;"
-        f"border-radius:2px;margin-left:6px;font-size:11px'>"
-        f"SENSOR TRUST: {verdict}</span></div>",
-        unsafe_allow_html=True,
-    )
-
-    if all_observed_null:
-        st.caption("No observed data for this component — sensor absent or fully suppressed.")
-        true_only = (
-            alt.Chart(true_sub)
-            .mark_line(color="#111111", strokeWidth=1.4)
-            .encode(
-                x=alt.X("tick:Q"),
-                y=alt.Y("true_health:Q", scale=alt.Scale(domain=[0, 1]), title="health"),
-                tooltip=["tick", alt.Tooltip("true_health:Q", format=".3f")],
-            )
-            .properties(height=200)
-        )
-        st.altair_chart(
-            true_only.configure_view(stroke=None).configure_axis(grid=False), width="stretch"
-        )
-        return
-
-    long = pd.concat(
-        [
-            merged[["tick", "true_health"]]
-            .rename(columns={"true_health": "value"})
-            .assign(series="true"),
-            merged[["tick", "observed_health"]]
-            .rename(columns={"observed_health": "value"})
-            .assign(series="observed"),
-        ]
-    )
-    line_chart = (
-        alt.Chart(long.dropna(subset=["value"]))
-        .mark_line(strokeWidth=1.4)
-        .encode(
-            x=alt.X("tick:Q", title=None),
-            y=alt.Y("value:Q", scale=alt.Scale(domain=[0, 1]), title="health"),
-            color=alt.Color(
-                "series:N",
-                scale=alt.Scale(domain=["true", "observed"], range=["#111111", OBSERVED_BLUE]),
-                legend=alt.Legend(orient="top", title=None, labelFontSize=10),
-            ),
-            tooltip=["series", "tick", alt.Tooltip("value:Q", format=".3f")],
-        )
-        .properties(height=180)
-    )
-
-    note_df = merged[["tick", "sensor_note"]].dropna(subset=["sensor_note"]).copy()
-    if note_df.empty:
-        st.altair_chart(
-            line_chart.configure_view(stroke=None).configure_axis(grid=False),
-            width="stretch",
-        )
-    else:
-        notes_present = sorted(note_df["sensor_note"].unique())
-        note_strip = (
-            alt.Chart(note_df)
-            .mark_rect()
-            .encode(
-                x=alt.X("tick:Q", title="tick"),
-                y=alt.value(8),
-                color=alt.Color(
-                    "sensor_note:N",
-                    scale=alt.Scale(
-                        domain=notes_present,
-                        range=[SENSOR_NOTE_COLOURS.get(n, "#9E9E9E") for n in notes_present],
-                    ),
-                    legend=alt.Legend(orient="bottom", title="sensor_note", labelFontSize=10),
-                ),
-                tooltip=["tick", "sensor_note"],
-            )
-            .properties(height=22)
-        )
-        composed = alt.vconcat(line_chart, note_strip, spacing=4).resolve_scale(x="shared")
-        st.altair_chart(
-            composed.configure_view(stroke=None).configure_axis(grid=False),
-            width="stretch",
-        )
-
-    notes = merged["sensor_note"].dropna().value_counts().to_dict()
-    st.caption(
-        f"Note distribution: {notes}. If the gap looks small, switch the run "
-        f"to a `chaos-stress-test-…` to expose the §3.4 sensor-fault story."
-    )
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -1114,10 +951,6 @@ def main() -> None:
         return
     run_id = st.sidebar.selectbox("run_id", run_ids, index=0)
 
-    component_choice = st.sidebar.selectbox(
-        "component (panel 3)", list(COMPONENT_IDS), index=list(COMPONENT_IDS).index("heater")
-    )
-
     run_meta = reader.fetch_run(conn, run_id)
     if run_meta is None:
         st.error(f"run_id not found: {run_id}")
@@ -1125,7 +958,6 @@ def main() -> None:
     outcomes = _outcome_kpis(conn, run_id)
     drivers_df = _load_drivers(conn, run_id)
     component_df = _load_component_state(conn, run_id)
-    observed_df = _load_observed_state(conn, run_id)
     events_df = _load_events(conn, run_id)
     env_events_df = _load_environmental_events(conn, run_id)
 
@@ -1137,15 +969,10 @@ def main() -> None:
     _render_panel1(component_df, env_events_df)
     st.markdown("---")
 
-    # Middle row — Panels 2 & 3 side by side.
-    col_left, col_right = st.columns(2, gap="large")
-    with col_left:
-        _section_header("Phase 2 / failure explanation", "Cascade attribution")
-        cards, overflow = _failure_cards(conn, run_id, component_df)
-        _render_panel2(cards, overflow)
-    with col_right:
-        _section_header("§3.4 / sensor trust", "True vs observed health")
-        _render_panel3(component_df, observed_df, component_choice)
+    # Panel 2 — Cascade attribution (full width now that panel 3 is gone).
+    _section_header("Phase 1 / failure explanation", "Cascade attribution")
+    cards, overflow = _failure_cards(conn, run_id, component_df)
+    _render_panel2(cards, overflow)
     st.markdown("---")
 
     # Panel 4 — Maintenance load by component.
