@@ -42,6 +42,9 @@ copilot-sim = "copilot_sim.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"copilot_sim.historian" = ["schema.sql"]
+
 [dependency-groups]
 dev = [
     "pre-commit>=4.0",
