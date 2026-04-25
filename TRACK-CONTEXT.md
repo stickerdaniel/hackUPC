@@ -39,6 +39,18 @@ Three subsystems are in scope. We **must** model at least one component from eac
 | **Printhead Array** | **Nozzle Plate** | Clogging + Thermal Fatigue (accelerated when Temp Stress is out of bounds) | Thermal Firing Resistors, Cleaning Interface |
 | **Thermal Control** | **Heating Elements** | Electrical Degradation (aging → more energy per °C) | Temperature Sensors, Insulation Panels (degraded insulation creates feedback loop) |
 
+**Chosen Phase 1 component scope**
+
+We will model two components per subsystem, chosen specifically because each pair creates an explainable feedback loop:
+
+| Subsystem | Components to model | Coupling logic |
+| :--- | :--- | :--- |
+| **Recoating System** | **Recoater Blade**, **Linear Guide / Rail** | Alignment and rail wear affect blade contact quality; blade wear and misalignment degrade powder spreading quality, increasing downstream contamination risk. |
+| **Printhead Array** | **Nozzle Plate**, **Cleaning Interface** | Nozzle clogging and cleaning efficiency form a mutual loop: clogged nozzles demand more cleaning, while a degraded cleaning interface leaves more residual clogging. |
+| **Thermal Control** | **Heating Elements**, **Temperature Sensors** | Sensor readings influence heating control, while heating drift and sensor degradation create a feedback loop that changes effective temperature stress for every subsystem. |
+
+This makes Phase 1 a coupled discrete-time model rather than independent component curves: every component update at `t` can depend on its own state at `t-1`, relevant component states at `t-1`, the current drivers, and the time delta.
+
 ---
 
 ## 3. The Data Contract (every phase respects this)
