@@ -1,0 +1,1 @@
+Report created: 	27/02/25	18:08:01 GMT-3Project name: HP_LOGO_Motion-C.aepSource files collected to: 	/Users/pati.lima/Desktop/HP_LOGO_Motion-C Source files collected: NoneCollected comps:  	comp_LOGO_F	Pre-comp 4	HP_LOGO_Main-Version	Number of collected files:  0Size of collected files:  0 KBRendering plug-ins:	Advanced 3D	Classic 3D
