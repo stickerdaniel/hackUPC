@@ -19,3 +19,6 @@
 [submodule "references/json-render"]
 	path = references/json-render
 	url = https://github.com/vercel-labs/json-render.git
+[submodule "references/shadcn-svelte"]
+	path = references/shadcn-svelte
+	url = https://github.com/huntabyte/shadcn-svelte.git
