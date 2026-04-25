@@ -248,14 +248,14 @@ A team can win on any one pillar.
 
 ## 8. Our Team & Strategic Bet
 
-- **Daniel** — full-stack, ships Phase 3 polish (chatbot, dashboard, voice).
-- **Chris** — data engineer / CS, owns Phases 1–2 (math, sim loop, historian).
+- **Daniel** — full-stack, owns Phase 1+2 bonuses (cascade, AI surrogate, weather, chaos, dashboard).
+- **Chris** — data engineer / CS, owns Phase 1+2 core (math, sim loop, historian).
 - **Mentor:** Nathan.
-- **Stated interest:** data-heavy tracks; we lean into the AI-grounded chatbot and the autonomous agent angles.
+- **Stated interest:** data-heavy tracks; we lean into rigorous physics + AI-driven simulation bonuses.
 
-**Strategic bet:** Phase 1 + 2 just need to be *correct, defensible, and produce interesting time-series*. The win is in **Phase 3** — a Contextual RAG / Agentic Diagnosis chatbot with proactive alerts and ideally voice. That hits all four Phase 3 pillars and the "AI Maintenance Agent" Phase 2 bonus.
+**Strategic bet (revised 2026-04-25):** the win is in **Phase 1 + Phase 2 done exceptionally well**. Stack as many sim-side bonus pillars as we can — **Cascading Failures · Stochastic Realism · Maintenance as Input · AI-Powered Degradation · Live Environmental Data · What-If Scenarios · Chaos Engineering · AI Maintenance Agent**. **Phase 3 (chatbot, voice, frontend) is deferred** for this iteration; research is preserved in `docs/research/10-13.md` for future work.
 
-Surprise factor we want: a digital twin that **diagnoses its own future failures and tells the operator how to prevent them**, with every claim backed by a row in the historian.
+Surprise factor we want: a digital twin that produces **time-series stories you can defend with citations** — Barcelona vs Phoenix under live weather, three-policy maintenance A/B on the same seed, a learned heater model indistinguishable from the analytic, and a worn blade that visibly cascades into a clogged nozzle.
 
 ---
 
@@ -285,14 +285,13 @@ input drivers ─▶│  Degradation Model   │──▶ component health (t)
                             │
                             ▼
                 ┌──────────────────────┐
-                │  UX Layer            │
-                │  - Time-series board │
-                │  - Grounded chatbot  │  ──▶  user (text + voice)
-                │    (RAG / agentic)   │
-                │  - Proactive alerts  │
+                │  Streamlit Dashboard │  ──▶  judges + operators
+                │  - Time-series viz   │
+                │  - Scenario picker   │
+                │  - A/B policy chart  │
                 └──────────────────────┘
-                            │
-                            └─▶ every answer cites historian rows
+
+      Phase 3 (chatbot · voice · grounded RAG) is researched but DEFERRED.
 ```
 
 ---
@@ -302,3 +301,4 @@ input drivers ─▶│  Degradation Model   │──▶ component health (t)
 - **2026-04-25** — Initial draft from verbal briefing transcript.
 - **2026-04-25** — Rewritten from authoritative briefing pack (4 markdowns + 21-page deck): added HP Metal Jet S100 specifics, mandatory components per subsystem, the four-driver contract, output schema with status enum, Phase 1/2/3 patterns and minimum bars, Phase 3 grounding protocol + four evaluation pillars, submission package, pre-demo checklist, strategic bet on Phase 3.
 - **2026-04-25** — Added §3.4 Observability after organiser clarification: sensors are optional and per-component, sensors themselves decay and can mislead, print halt / quality drop are first-class observable signals, and the operator's notice→stop→diagnose→fix→resume loop is what the Co-Pilot supports. Introduces the true-state vs observed-state split, sensor models, and `print_outcome` / operator-event fields in the historian.
+- **2026-04-25** — Strategic bet revised: focus on Phase 1 + Phase 2 (digital twin simulation) only. Phase 3 deferred. Architecture sketch updated to remove the chatbot/voice layer; replaced with a Streamlit-based time-series dashboard that satisfies the Phase 2 deliverable.
