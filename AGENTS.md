@@ -84,6 +84,13 @@ Generated with <model name and version>
 
 The same `## Synthetic prompt` block (last commit's, or a combined one for the whole PR) is appended to the PR description.
 
+## Package Manager
+
+- **Always use `uv` for all Python actions** — running scripts, installing packages, launching tools.
+  - Why: The project's `sim/` package is managed with `uv` (`pyproject.toml` + `uv.lock`). Using the system Python or pip bypasses the lockfile and gets the wrong environment.
+  - How to apply: Prefix every Python command with `uv run` (e.g. `uv run streamlit run ...`, `uv run pytest`). Add dependencies with `uv add <pkg>`. Never call `python`, `pip`, or `streamlit` directly.
+  - Binary is installed at `C:\Users\leoni\.local\bin\uv.exe` — use the full path if `uv` is not on PATH in the current shell.
+
 ## Commands
 
 To be filled in once the stack is chosen (dev server, tests, lint).
