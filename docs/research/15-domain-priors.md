@@ -1,0 +1,44 @@
+# Domain Priors: HP Metal Jet S100 + Wear/Clog/Drift References + C-MAPSS Visual Prior
+
+## TL;DR
+
+The HP Metal Jet S100 is a binder-jet metal 3D printer that lays down nanogram drops of liquid binder onto a stainless-steel powder bed via thermal inkjet printheads, then a recoater spreads the next powder layer and a heater cures the binder. Three subsystems therefore have a real, citable degradation story: **recoater blades wear** from repeated part contact (streaking, surface defects), **thermal inkjet nozzles clog** from drying ink, fouling, and size-exclusion blockage, and **resistive heating elements drift** as oxidation thins their cross-section and raises resistance. We use **NASA C-MAPSS** and **PHM Society** datasets purely as a *visual prior* for the shape of degradation curves (gentle drift, then a knee, then steep failure) — we synthesize our own MJ S100 data and never train on aero-engine signals.
+
+## HP Metal Jet S100 (key facts for the deck)
+
+The S100 is HP's first production metal 3D printer, **announced in 2018 and officially launched at IMTS in September 2022** with shipments starting to early customers in the US, Western Europe, and China and broader availability in H1 2023. It uses a **binder jetting** process: **6 thermal inkjet printheads with 63,360 nozzles** deposit "up to 630 million nanogram-sized drops of liquid binder per second" onto a stainless-steel powder bed; the green part is then cured and sintered. Headline specs: **build platform 430 x 309 x 200 mm**, **effective build volume 430 x 309 x 140 mm** (subsequently extended to 170 mm), **layer thickness 35–140 µm**, **print resolution 1,200 dpi**, and a **build speed of 1,990 cc/hr**. Supported materials at launch: **stainless steel 316L** (corrosion / high-temp) and **17-4 PH** (high strength, heat-treatable); later additions via partners include **Sandvik Osprey 316L** and **Indo-MIM M2 tool steel**. Target verticals are **automotive, industrial, medical, and consumer**, with HP naming **Volkswagen, GKN, Parmatech, Cobra Golf, Schneider Electric, Legor, Domin, and Lumenium** as launch partners or early adopters.
+
+## Recoater blade wear (one ref)
+
+Streaking and lack-of-fusion porosity in powder-bed parts trace back to **repetitive, local contact between the build geometry and the recoating blade**: protrusions from unsupported overhangs, thermal distortion, or curl strike the blade edge on each pass and gradually grind grooves or nicks into it. As the blade lip degrades, those defects telegraph into every subsequent layer as **stripes / witness marks in the powder bed**, which become **lack-of-fusion porosity, dimensional drift, and surface-finish loss** in the finished part. Soft polymer lips wear fastest, HSS blades last longer but fail more abruptly when they do; this is exactly the sort of slow-then-cliff curve our predictive model needs to learn. Reference: *Inside Metal Additive Manufacturing*, "How to avoid recoater interrupts, crashes, and costly build failures in powder bed fusion" (Jan 2024) — discusses the contact-wear mechanism and resulting streaking/porosity defects in plain language.
+
+## Nozzle clogging (one ref)
+
+Thermal-inkjet nozzles (HP's chosen technology on the S100) fire by passing current through a **thin-film heater inside each nozzle channel**, nucleating a vapor bubble whose collapse ejects a picolitre droplet. Waasdorp et al. (2018) catalogue the realistic clog/failure modes for these ~75 µm nozzles: **size-exclusion clogging** when an aggregate is bigger than the orifice, **fouling** as material deposits gradually narrow the channel, **solvent drying** at the meniscus when nozzles sit idle, and **hydrodynamic bridging** when multiple small particles reach the exit simultaneously and arch across it. All four mechanisms are amplified in a metal binder-jet context (high solids loading, surfactants, intermittent firing patterns), making "% nozzles healthy" a natural KPI for the co-pilot. Reference: Waasdorp et al., *RSC Advances*, 8, 2018, "Accessing individual 75-micron diameter nozzles of a desktop inkjet printer to dispense picoliter droplets on demand."
+
+## Heating element drift (one ref)
+
+Resistive heaters used to cure the binder layer-by-layer **drift up in resistance as they age** because the wire's surface oxidises and the load-bearing cross-section shrinks; thermal cycling additionally **elongates the element**, adding more resistance through geometry. Per Ohm's law at constant supply voltage, higher resistance means lower delivered power and longer ramp times — i.e. the heater takes longer to hit setpoint, and per-cycle energy delivered to the binder drops. Degradation accelerates with **higher watt density, higher operating temperature, reducing atmospheres, and frequent on/off cycling**, all of which apply to a binder-cure stage; periodic resistance measurement is the standard early-warning signal. Reference: Superb Heater Technology, "Why do heating elements lose power over time? Key factors and solutions explained" — captures the oxidation + elongation + Ohm's-law power-loss chain in industrial-heater terms.
+
+## C-MAPSS as visual shape prior
+
+NASA's **C-MAPSS** (Commercial Modular Aero-Propulsion System Simulation) dataset, released through the NASA PCoE repository, simulates a fleet of turbofan engines run to failure under different operating conditions and fault modes. It ships in four variants (FD001–FD004) of increasing complexity — FD001 has 100 train and 100 test engines, single op-condition, single fault mode (HPC degradation); FD004 has 248 train and 249 test engines, six op-conditions, two fault modes — and gives 21 sensor channels plus 3 op-settings per cycle. Visually, each engine's health indicator stays roughly **flat-with-noise for most of life, then bends through a clear "knee," and finally drops steeply** into the failure boundary; under multi-mode operation the curves also show **regime-switching jumps** that have to be normalised away. We use this curve shape — flat → knee → cliff, plus regime jumps — as the **visual prior for what realistic degradation should look like** in our synthetic Metal Jet logs. **We do not train on C-MAPSS**; aero-engine physics are unrelated to binder-jetting, and using it would be a category error. It is a sanity check on shape only.
+
+## PHM Society datasets (one line)
+
+The **PHM Society Data Repository** (`data.phmsociety.org`) hosts the annual PHM Data Challenge corpora — bearings, gearboxes, batteries, milling, and similar run-to-failure benchmarks — used here in the same role as C-MAPSS: a **library of realistic degradation-curve shapes** to sanity-check our synthetic MJ S100 traces, never as training data.
+
+## References (URLs)
+
+- HP Metal Jet S100 official product page — https://www.hp.com/us-en/printers/3d-printers/products/metal-jet.html
+- HP Metal Jet S100 technical whitepaper (HP, 4AA7-3333ENW) — https://h20195.www2.hp.com/v2/GetDocument.aspx?docname=4AA7-3333ENW
+- 3D Printing Industry, "HP launches new Metal Jet S100 3D printer at IMTS: technical specifications and pricing" (2022) — https://3dprintingindustry.com/news/hp-launches-new-metal-jet-s100-3d-printer-at-imts-technical-specifications-and-pricing-214678/
+- TCT Magazine, "HP increases build height of S100 Metal Jet platform" — https://www.tctmagazine.com/additive-manufacturing-3d-printing-news/hp-build-height-s100-metal-jet-software-materials/
+- Inside Metal Additive Manufacturing, "How to avoid recoater interrupts, crashes, and costly build failures in powder bed fusion" (Jan 2024) — https://insidemetaladditivemanufacturing.com/2024/01/19/how-to-avoid-recoater-interrupts-crashes-and-costly-build-failures-in-powder-bed-fusion/
+- Recoater blade material study (ScienceDirect / Manufacturing Letters, 2022) — https://www.sciencedirect.com/science/article/pii/S221384632200102X
+- Waasdorp et al., "Accessing individual 75-micron diameter nozzles of a desktop inkjet printer to dispense picoliter droplets on demand," *RSC Advances*, 2018 — https://pubs.rsc.org/en/content/articlehtml/2018/ra/c8ra00756j
+- Superb Heater Technology, "Why do heating elements lose power over time?" — https://www.superbheater.com/info/why-do-heating-elements-lose-power-over-time-102955274.html
+- NASA C-MAPSS Jet Engine Simulated Data (NASA Open Data Portal) — https://data.nasa.gov/dataset/cmapss-jet-engine-simulated-data
+- NASA Prognostics Center of Excellence Data Set Repository — https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/
+- PHM Society Data Repository — https://data.phmsociety.org/
+- Mauthe, Steinmann, Zeiler, "Overview of publicly available degradation data sets for tasks within prognostics and health management" (arXiv:2403.13694, 2025) — https://arxiv.org/html/2403.13694v2

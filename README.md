@@ -2,74 +2,71 @@
 
 Digital Co-Pilot for the **HP Metal Jet S100**. Models component degradation, simulates the printer forward in time, and exposes a grounded natural-language interface over the resulting telemetry.
 
-Full briefing: [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md). Source docs: [`docs/briefing/`](./docs/briefing/).
+Full briefing: [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md). Source docs: [`docs/briefing/`](./docs/briefing/). Decision docs: [`docs/research/`](./docs/research/).
+
+---
+
+## Status
+
+**Research complete — ready to build.** All 16 pre-build decisions are locked. See [`docs/research/`](./docs/research/) for the full set; each links its sources.
 
 ---
 
 ## Pre-build research checklist
 
-We are research-blocked, not implementation-blocked. Tick these off **before** writing the simulator. Each item is targeted at a specific decision we have to make.
+Each item links to a decision document under [`docs/research/`](./docs/research/). All locked on 2026-04-25.
 
 ### A. Phase 1 — picking the right failure math
 
-We need ≥2 distinct mathematical failure models across our 3 mandatory components. Decide which formula maps to which component, with a one-line justification per choice.
-
-- [ ] **Recoater Blade — Abrasive Wear:** read up on **Archard's wear law** (`V = k · F · s / H`). Decide our state metric (blade thickness in mm) and how Humidity/Contamination scales `k`.
-- [ ] **Nozzle Plate — Clogging + Thermal Fatigue:** review **Coffin-Manson** (low-cycle thermal fatigue) for the fatigue side and a Poisson / hazard-rate model for the clog side. Decide whether clog probability per tick rises with `|temp_stress - optimal|`.
-- [ ] **Heating Elements — Electrical Degradation:** review the **Arrhenius equation** (`rate ∝ exp(-Ea/kT)`) for thermally-accelerated aging, plus a simple resistance-drift model. Decide our state metric (resistance Ω vs. baseline).
-- [ ] **Universal aging baselines:** confirm we understand **Exponential Decay** (`H(t) = e^-λt`) and the **Weibull reliability function** (`R(t) = exp(-(t/η)^β)`); pick whichever fits each component as the "background aging" term layered under the driver-specific stressor.
-- [ ] **Health-index normalisation:** decide the policy for converting a raw metric (mm, Ω, %) to `[0,1]` health and to the four-state enum `FUNCTIONAL / DEGRADED / CRITICAL / FAILED`. Pick thresholds (e.g. `>0.75` functional, `>0.4` degraded, `>0.1` critical, else failed) and document why.
-- [ ] **Cross-component coupling (bonus):** identify *one* cascading link we can defend (e.g. blade health < 0.3 → contamination driver +X% → nozzle clog rate ↑). One link is enough; don't over-engineer.
-- [ ] **AI-degradation option (bonus):** decide whether one component's `f(...)` is a tiny learned regressor (sklearn / scikit-learn / a small NN) trained on synthetic data we generate from the analytic formula — gives us "AI inside the model" with zero data-collection overhead.
+- [x] **Recoater Blade — Abrasive Wear** → [`01-recoater-blade-archard.md`](./docs/research/01-recoater-blade-archard.md). Linear `Δh = k_eff · P · s_eff · dt / H_eff`; `k0 = 5e-5`, contamination scales `k` by `(1 + 1.5·C)`; FAILED at ≥50 % thickness loss (~6 months nominal).
+- [x] **Nozzle Plate — Clogging + Thermal Fatigue** → [`02-nozzle-plate-coffin-manson.md`](./docs/research/02-nozzle-plate-coffin-manson.md). Coffin-Manson with Palmgren-Miner accumulation + Poisson clog hazard `λ(t) = λ_0·(1+α|ΔT|)·(1+β·C)/M`; composite `H = (1−clog%/100)·(1−D)`.
+- [x] **Heating Elements — Electrical Degradation** → [`03-heating-elements-arrhenius.md`](./docs/research/03-heating-elements-arrhenius.md). Arrhenius acceleration-factor form, `E_a = 0.7 eV`; resistance drift compounded per tick; FAILED at +10 % drift.
+- [x] **Universal aging baselines** → [`04-aging-baselines-and-normalization.md`](./docs/research/04-aging-baselines-and-normalization.md). All Weibull (β=2.5/η=180d blade, β=2.0/η=150d nozzle, β=1.0/η=240d heater); multiplicative composition `H = H_base · H_driver`.
+- [x] **Health-index normalisation** → same doc 04. Thresholds revised to `>0.75` FUNCTIONAL, `>0.40` DEGRADED, `>0.15` CRITICAL, else FAILED (raised the critical floor from 0.10 to give the alert agent a useful warning window).
+- [x] **Cross-component coupling (bonus)** → [`05-cascading-and-ai-degradation.md`](./docs/research/05-cascading-and-ai-degradation.md). One-way Blade → Nozzle: `C_nozzle_eff = clamp(C_input + 0.5 · blade.loss_frac, 0, 1)`. Heater → multi-component cascade kept as alternative.
+- [x] **AI-degradation option (bonus)** → same doc 05. Replace the heater formula with sklearn `MLPRegressor` `(32,32,32)` trained on 20k Latin-Hypercube samples; acceptance gate MAE ≤ 2 %.
 
 ### B. Phase 2 — driver generation, time, and persistence
 
-- [ ] **Driver-profile generators:** look at standard patterns for synthetic time-series drivers — sinusoidal day/night cycles for temperature, Ornstein–Uhlenbeck for humidity drift, Poisson spikes for contamination events. Pick the simplest per driver.
-- [ ] **Live weather API as bonus driver:** evaluate **Open-Meteo** (free, no auth) vs. **OpenWeather** (free tier). Decide whether we wire one in for the demo's "Barcelona vs. Phoenix" what-if.
-- [ ] **Time step + horizon:** pick `dt` (1 sim-minute? 1 sim-hour?) and total simulated horizon (weeks? months?) so the time-series chart shows visible failures within a 60-second demo run. Run a back-of-envelope: at `dt=1h` over 6 months that's ~4400 ticks — fine.
-- [ ] **Historian schema:** decide on **SQLite** (queryable, demoable) vs. Parquet/CSV (simpler). Lock the schema: `(run_id, ts, component, health, status, metric_name, metric_value, driver_temp, driver_humidity, driver_load, driver_maint)`.
-- [ ] **Run/scenario identity:** pick a `run_id` strategy so we can demo "same printer, different climates" side-by-side from one DB.
-- [ ] **Stochastic mode (bonus):** read up on simple chaos injection (random spike events, noise on drivers) — this is a Phase 2 bonus and cheap if we plan it now.
-- [ ] **AI Maintenance Agent (bonus):** sketch the simplest possible policy agent — observation = current health vector, action = `{do_nothing, run_maintenance}`, reward = uptime. Decide between hand-coded heuristic, LLM-as-policy, or a tiny RL loop with `gymnasium`. Heuristic is probably the right call given hackathon time.
+- [x] **Driver-profile generators** → [`06-driver-profiles-and-time.md`](./docs/research/06-driver-profiles-and-time.md). Sinusoidal day+season for Temp; Ornstein-Uhlenbeck (Euler-Maruyama) for Humidity; monotonic + duty-cycle for Load; step function for Maintenance.
+- [x] **Live weather API** → [`07-weather-api.md`](./docs/research/07-weather-api.md). **Open-Meteo Archive API** (no auth, 10k calls/day, single GET returns 6 months hourly). OpenWeather rejected (1 timestamp per call). Cache JSON in repo for demo.
+- [x] **Time step + horizon** → doc 06. `dt = 1 h`, **4380 ticks** for 6 sim-months; configurable to `dt = 6 h` fast-forward demo mode.
+- [x] **Historian schema** → [`08-historian-schema.md`](./docs/research/08-historian-schema.md). SQLite WAL; long-form normalised tables: `runs`, `drivers`, `component_state`, `metrics`, `events`. All time-series tables `WITHOUT ROWID`.
+- [x] **Run/scenario identity** → same doc 08. Format `{scenario}-{profile}-{YYYYMMDD}-{seq}`, e.g. `barcelona-baseline-20260425-1`.
+- [x] **Stochastic mode (bonus)** → doc 06. Poisson temp spikes (λ=2/month, ΔT~N(8,2)), contamination bursts (λ=3/month), Bernoulli skipped maintenance (p=0.1). All seeded from one config field.
+- [x] **AI Maintenance Agent (bonus)** → [`09-maintenance-agent.md`](./docs/research/09-maintenance-agent.md). Primary = heuristic (`min(H) < 0.4` triggers); stretch = LLM-as-policy with stored rationale. Full Gymnasium env spec on standby.
 
 ### C. Phase 3 — the grounded chatbot (where we win)
 
-This is our differentiator. Spend the most research budget here.
-
-- [ ] **Pattern choice:** confirm we're targeting **C: Agentic Diagnosis** with a fallback to **B: Contextual RAG**. A is a baseline we get for free.
-- [ ] **Tool design:** draft the tool schema the LLM will call against the historian. Likely:
-  - `query_health(component, time_range, run_id?)` → rows
-  - `get_failure_events(run_id?, severity?)` → events with timestamps
-  - `compare_runs(run_a, run_b, component?)` → delta summary
-  - `current_status(component?)` → latest snapshot
-  - `recommend_action(component)` → policy lookup
-- [ ] **AI SDK / Gateway:** evaluate **Vercel AI SDK v6 + AI Gateway** for tool-calling + provider routing vs. direct Anthropic SDK. Gateway gives us multi-provider fallback for free.
-- [ ] **Citation enforcement:** research how teams force citations in tool-calling agents (structured output schemas, post-processing validators, system-prompt contracts that reject uncited claims). Pick one approach.
-- [ ] **Severity tagging:** decide if `INFO/WARNING/CRITICAL` is computed in the tool layer (deterministic from health thresholds) or asked of the LLM (riskier). Tool layer is safer.
-- [ ] **Proactive alerting (bonus pillar — Autonomy):** research the simplest pattern — a poller that watches the historian and pushes WebSocket / SSE alerts when any component crosses `CRITICAL`. Decide stack (Next.js route handler + SSE? Vercel Cron? local interval?).
-- [ ] **Voice interface (bonus pillar — Versatility):** evaluate **OpenAI Realtime** vs. **ElevenLabs Conversational** vs. browser **Web Speech API + TTS**. Web Speech is free and fastest to demo; Realtime is the "wow" path. Pick one target, one fallback.
-- [ ] **Persistent memory (bonus pillar — Autonomy):** decide whether we layer per-session conversation memory or skip it. Probably skip unless time allows.
+- [x] **Pattern choice** → [`10-chatbot-architecture.md`](./docs/research/10-chatbot-architecture.md). Pattern C (Agentic ReAct) is the target; B and A emerge from the same tool set as graceful fallbacks.
+- [x] **Tool design** → same doc 10. Five read-only tools — `query_health`, `get_failure_events`, `compare_runs`, `current_status`, `recommend_action`. Each returns rows shaped as evidence with severity baked in.
+- [x] **AI SDK / Gateway** → [`11-vercel-ai-sdk.md`](./docs/research/11-vercel-ai-sdk.md). Vercel AI SDK v6 + AI Gateway. Primary `anthropic/claude-sonnet-4.6`, demo bump `claude-opus-4.6`, fallback chain via `providerOptions.gateway.order`.
+- [x] **Citation enforcement** → doc 10. Defense in depth: Zod-constrained final output (every assertion needs `≥1` evidence row) + transcript-hash validator that rejects any cited tuple not in the tool transcript. 2-retry budget.
+- [x] **Severity tagging** → doc 10. **Tool-layer deterministic** mapping reused from doc 04 thresholds. LLM never invents severity.
+- [x] **Proactive alerting (bonus)** → [`12-proactive-alerts.md`](./docs/research/12-proactive-alerts.md). Sim writes to `events` table at threshold crossings; client polls `/api/alerts?since=<ts>` every 2 s; Sonner toast + sticky banner.
+- [x] **Voice interface (bonus)** → [`13-voice-interface.md`](./docs/research/13-voice-interface.md). **Web Speech API** primary (free, ~25 lines, demo-ready), **OpenAI `gpt-realtime`** WebRTC stretch.
+- [x] **Persistent memory (bonus)** → punted (see open questions in doc 10). Skipping unless time allows; alert acknowledgements are the cheapest path to a "Collaborative Memory" pillar point if we get there.
 
 ### D. Stack & repo skeleton decisions
 
-- [ ] **Sim core language:** Python (numpy/pandas/simpy ergonomics, easy ML hooks) vs. TypeScript (one-language repo). **Lean Python.**
-- [ ] **UI / chatbot stack:** Next.js App Router on Vercel, AI SDK v6, Recharts or visx for time-series, shadcn/ui for components.
-- [ ] **Topology:** monorepo with `sim/` (Python) writing to `data/historian.sqlite`, `web/` (Next.js) reading via a thin Python FastAPI shim *or* a TS-side `better-sqlite3` reader. Decide which avoids cross-language friction.
-- [ ] **Deploy target:** Vercel for the web app; sim runs locally or on a Vercel Sandbox / Function. Decide if we need any of that for the demo or if local-only is fine.
-- [ ] **Repo skeleton:** lock folder structure (`sim/`, `web/`, `docs/`, `scripts/`) and one-command bootstrap (`make dev` or `bun run dev`).
+- [x] **Sim core language** → [`14-stack-and-topology.md`](./docs/research/14-stack-and-topology.md). **Python 3.12 + uv**; numpy/pandas/simpy/sklearn/pydantic.
+- [x] **UI / chatbot stack** → same doc 14. Next.js 15 App Router on Vercel + bun + shadcn/ui + Tailwind v4 + Recharts + Vercel AI SDK v6.
+- [x] **Topology** → same doc 14. Single `data/historian.sqlite` in WAL mode. Python writes, Next.js reads via `better-sqlite3` opened readonly. **No FastAPI shim.**
+- [x] **Deploy target** → same doc 14. Web on Vercel; sim local during demo; commit a seeded `historian.sqlite` so a fresh clone is never empty. Pin Node 22 (better-sqlite3 fails on Node 24).
+- [x] **Repo skeleton** → same doc 14. Top-level `Makefile` with `make dev` (parallel sim + web) and `make seed`.
 
-### E. Domain priors (read once, reference often)
+### E. Domain priors
 
-- [ ] Skim the **HP Metal Jet S100** product page and binder-jetting overview so the slide deck and chatbot answers don't sound naive.
-- [ ] Look up one or two real **recoater blade wear** / **inkjet nozzle clogging** / **heating element resistance drift** references — even one paragraph each — so our parameter choices have a citation trail.
-- [ ] Check **NASA C-MAPSS** and **PHM Society challenge** datasets *only as shape priors* for what realistic degradation curves look like. We don't train on them; we just want to mimic the visual feel.
+- [x] **HP Metal Jet S100** → [`15-domain-priors.md`](./docs/research/15-domain-priors.md). 6 thermal inkjet printheads · 63,360 nozzles · 1,200 dpi · 316L/17-4 PH · customers Volkswagen, GKN, Cobra Golf, Schneider Electric.
+- [x] **Wear / clog / drift references** → same doc 15. Recoater (Inside Metal AM 2024), nozzle (Waasdorp et al. RSC 2018, real ~75 µm thermal-inkjet mechanisms), heater drift (oxidation + thermal-cycle elongation).
+- [x] **NASA C-MAPSS / PHM Society** → same doc 15. Visual shape prior only — flat → knee → cliff curve, multi-mode regime jumps. Not training data.
 
-### F. Submission-side prep (do early, not last)
+### F. Submission-side prep
 
-- [ ] Confirm submission deadline, format, and judging slot from the Slack channel; add to TRACK-CONTEXT.md.
-- [ ] Outline the architecture slide deck headings now (3 phases × 2 slides + a closing "what we'd do next").
-- [ ] Outline the technical report headings now (mirror the deck).
-- [ ] Decide who demos what (Daniel: UX/chatbot/voice. Chris: model + sim + historian).
+- [x] **Submission deadline / format** → [`16-submission-prep.md`](./docs/research/16-submission-prep.md). Placeholder Sun 2026-04-26 ~09:00 CEST freeze; **action: verify in Slack `C0AV9TTJT25` first hour of day 2**.
+- [x] **Slide deck outline** → same doc 16. 9 slides (Title + Mission + 3 phases × 2 slides + Closing).
+- [x] **Technical report outline** → same doc 16. 8 sections mirroring the deck, cross-linked to research notes 01–12.
+- [x] **Demo split** → same doc 16. 5-min slot: Daniel ~3 min (chatbot + voice + alert), Chris ~2 min (math walk + sim chart + agent A/B). 6 contingencies pre-listed.
 
 ---
 
@@ -78,16 +75,27 @@ This is our differentiator. Spend the most research budget here.
 ```
 .
 ├── sim/              # Phase 1 + Phase 2 — Python, owns the historian
+│   ├── pyproject.toml
+│   ├── engine/      # Phase 1 — pure formulas
+│   ├── loop/        # Phase 2 — clock + writer
+│   ├── scenarios/   # YAML driver profiles
+│   └── tests/
 ├── web/              # Phase 3 — Next.js, dashboard + grounded chatbot
-├── data/             # historian.sqlite, scenario configs
+├── data/             # historian.sqlite (committed seed), scenario configs
 ├── docs/
 │   ├── briefing/     # HP-provided source material
+│   ├── research/     # locked pre-build decisions (16 docs)
 │   └── report/       # our technical report + slide deck source
-└── scripts/          # one-shot CLI for runs, exports, fixtures
+├── scripts/          # one-shot CLI for runs, exports, fixtures
+└── Makefile          # `make dev`, `make seed`
 ```
 
 ---
 
-## Status
+## Next steps
 
-Pre-build. Briefing is ingested ([`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md)). No code yet.
+1. Scaffold `sim/` with uv + the historian schema from [doc 08](./docs/research/08-historian-schema.md).
+2. Implement Phase 1 components in this order: blade ([01](./docs/research/01-recoater-blade-archard.md)) → heater ([03](./docs/research/03-heating-elements-arrhenius.md)) → nozzle ([02](./docs/research/02-nozzle-plate-coffin-manson.md)) — easiest first.
+3. Wrap in Phase 2 loop ([06](./docs/research/06-driver-profiles-and-time.md)), commit a seed `historian.sqlite`.
+4. Scaffold `web/` and wire the five tools ([10](./docs/research/10-chatbot-architecture.md)) over the historian.
+5. Layer in proactive alerts ([12](./docs/research/12-proactive-alerts.md)) and voice ([13](./docs/research/13-voice-interface.md)) on Sunday once the core works.
