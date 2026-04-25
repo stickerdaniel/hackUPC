@@ -1,14 +1,17 @@
-"""`Engine.step` — the coupled discrete-time orchestrator.
+"""`Engine.step` + `Engine.apply_maintenance` — the coupled engine API.
 
-Pure function of `(prev, drivers, env, dt)` plus the `scenario_seed` baked
-in at construction. Every per-tick stochastic choice flows through
-`derive_component_rng` so the result is bit-identical across processes
-(`PYTHONHASHSEED` cannot perturb component iteration order). All six
-component step functions read from the same immutable previous state +
-the same `CouplingContext`, so reordering them cannot change the result.
+`step` is a pure function of `(prev, drivers, env, dt)` plus the
+`scenario_seed` baked in at construction. Every per-tick stochastic
+choice flows through `derive_component_rng` so the result is bit-identical
+across processes (`PYTHONHASHSEED` cannot perturb component iteration
+order). All six component step functions read from the same immutable
+previous state + the same `CouplingContext`, so reordering them cannot
+change the result.
 
-`Engine.apply_maintenance` is intentionally NOT implemented in this
-commit; it lands in A12 once the per-component reset rules are wired up.
+`apply_maintenance` is intentionally out-of-band — the simulation loop
+calls it BETWEEN `step()` calls, never inside one (doc 20 §maintenance
+ordering). It dispatches to the per-component reset rules in
+`components/<x>.py` and produces an `OperatorEvent` row for the historian.
 """
 
 from __future__ import annotations
@@ -16,7 +19,8 @@ from __future__ import annotations
 from ..components import registry
 from ..domain.coupling import CouplingContext
 from ..domain.drivers import Drivers
-from ..domain.enums import PrintOutcome
+from ..domain.enums import OperatorEventKind, PrintOutcome
+from ..domain.events import MaintenanceAction, OperatorEvent
 from ..domain.state import ObservedPrinterState, PrinterState
 from ..drivers_src.environment import Environment
 from .aging import derive_component_rng
@@ -54,6 +58,46 @@ class Engine:
         )
         observed = build_observed_state(next_state)
         return next_state, observed, coupling
+
+    def apply_maintenance(
+        self,
+        state: PrinterState,
+        action: MaintenanceAction,
+    ) -> tuple[PrinterState, OperatorEvent]:
+        """Dispatch `action` to the targeted component's reset rule and
+        assemble a new `PrinterState`. `TROUBLESHOOT` is a no-op on state —
+        it only writes an event row (sets `last_inspected_tick` semantics
+        on the loop side via the returned event).
+        """
+        if action.component_id not in state.components:
+            raise KeyError(f"Unknown component_id in MaintenanceAction: {action.component_id!r}")
+
+        new_components = dict(state.components)
+        if action.kind is not OperatorEventKind.TROUBLESHOOT:
+            spec = registry.REGISTRY[action.component_id]
+            prev_component = state.components[action.component_id]
+            new_components[action.component_id] = spec.reset(
+                prev_component, action.kind, action.payload
+            )
+
+        # Print outcome may shift if the targeted component was the one
+        # holding everything in QUALITY_DEGRADED / HALTED.
+        print_outcome = derive_print_outcome(new_components)
+
+        new_state = PrinterState(
+            tick=state.tick,
+            sim_time_s=state.sim_time_s,
+            components=PrinterState.freeze_components(new_components),
+            print_outcome=print_outcome,
+        )
+        event = OperatorEvent(
+            tick=state.tick,
+            sim_time_s=state.sim_time_s,
+            kind=action.kind,
+            component_id=action.component_id,
+            payload=OperatorEvent.freeze_payload(dict(action.payload)),
+        )
+        return new_state, event
 
 
 def initial_state() -> PrinterState:
