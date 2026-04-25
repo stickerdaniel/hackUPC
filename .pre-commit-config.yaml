@@ -4,7 +4,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^web/src/(env\.d\.ts|lib/convex/convex-env\.d\.ts)$
       - id: end-of-file-fixer
+        exclude: ^web/src/(env\.d\.ts|lib/convex/convex-env\.d\.ts)$
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
