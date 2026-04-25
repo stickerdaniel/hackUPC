@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-For Phase 2 we drive the Phase 1 engine on a **fixed `dt = 1` simulated hour** for **~6 sim-months (4380 ticks)**. Each of the four drivers gets the simplest viable generator: **sinusoidal day+season** for Temperature, an **Ornstein–Uhlenbeck** mean-reverter for Humidity/Contamination, a **monotonic cumulative + duty-cycle** signal for Operational Load, and a **step function** for Maintenance Level. A **stochastic chaos layer** (Poisson-timed temperature spikes, contamination bursts, missed maintenance) sits on top, gated by a `chaos: bool` config flag. Every random draw goes through a single `numpy.random.default_rng(seed)` so runs are bit-exact reproducible.
+For Phase 2 we drive the Phase 1 engine on a **fixed `dt = 1` simulated week** for **multi-year horizons** (default 5 years → 260 ticks). Each of the four drivers gets the simplest viable generator at weekly granularity: **seasonal-only sinusoid** for Temperature (day/night collapsed into the weekly average), an **Ornstein–Uhlenbeck** mean-reverter for Humidity/Contamination, a **monotonic cumulative + weekly duty-cycle** signal for Operational Load, and a **step function** for Maintenance Level. A **stochastic chaos layer** (Poisson-timed thermal events, contamination batches, missed maintenance weeks) sits on top, gated by a `chaos: bool` config flag. Every random draw goes through a single `numpy.random.default_rng(seed)` so runs are bit-exact reproducible.
 
 > **Driver schema is locked at 4** — `Drivers(temperature_stress, humidity_contamination, operational_load, maintenance_level)`, exactly as the brief specifies and as already implemented in `sim/src/copilot_sim/domain/drivers.py`. We do **not** split `humidity_contamination` into separate humidity vs powder_contamination drivers; powder contamination cascades in via the coupling matrix (doc 05) by adjusting `humidity_contamination_effective`, not by adding a 5th driver.
 
@@ -25,8 +25,12 @@ Phase 2 wraps the deterministic Phase 1 logic engine in a time-advancing loop an
 
 ### Time step and horizon
 
-- **`dt = 1` sim-hour**, **horizon = 4380 hr (~6 months) → 4380 ticks**.
-- Justification: the slowest binder-jet failure modes (heater electrical aging, blade abrasive wear) evolve over hundreds-to-thousands of hours, so 6 months captures multiple Health-Index transitions (`FUNCTIONAL → DEGRADED → CRITICAL`) without us tuning unrealistically aggressive decay constants. 4380 SQLite inserts in a single demo run is trivial (<1 s with `executemany`). A finer `dt` (e.g. 1 min) gives nothing the failure formulas can resolve and would 60× the historian. We keep `dt` configurable so a "fast-forward" demo mode can drop to `dt = 6 hr` (~730 ticks) for a 5-second full lifecycle.
+- **`dt = 1` simulated week (= 168 sim-hours = 604,800 s).**
+- **Horizon = multiple years** (default working assumption: 5 years → 260 ticks; revise once we settle the exact horizon with the team).
+- Justification: real component MTBFs sit in the months-to-years band, so year-scale horizons let us tell the wear story honestly without compressing the failure curves. Generating hourly drivers over multi-year horizons is impractical (43,800+ values per driver per year); weekly granularity is hand-authorable or trivially derivable from monthly climatology. The chart still has 260+ dots over 5 years — smooth enough for the dashboard.
+- **What we lose vs hourly**: day/night thermal cycling and sub-week chaos events (a 3-hour temperature spike). We accept this — chaos events at this scale are reframed as "a contaminated powder batch arrives this week" or "HVAC was out for 2 days" (a fraction of a tick).
+- **What we keep**: month-scale dynamics (maintenance every ~4 weeks → 4 ticks between resets, enough to show rising-degradation slopes), seasonal weather (52 ticks/year), multi-year cumulative wear.
+- **`dt` stays configurable** in case we want a "fast-forward" demo mode (`dt = 4 weeks` → ~65 ticks for 5 years) or a "fine-grain Phase-1 unit-test" mode (`dt = 1 day`).
 
 ### Chaos / stochastic layer (Phase 2 bonus pattern C)
 
