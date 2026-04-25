@@ -42,19 +42,33 @@ class SimulationLoop:
         state = initial_state
         start = self.start_time or datetime.now(UTC)
         for tick_index in range(self.horizon_ticks):
-            drivers, env = self.profile.sample(tick_index)
-            new_state, observed, coupling = self.engine.step(state, drivers, env, dt=1.0)
+            step = self.profile.sample(tick_index)
+            new_state, observed, coupling = self.engine.step(state, step.drivers, step.env, dt=1.0)
 
             ts = start + timedelta(seconds=self.dt_seconds * (tick_index + 1))
             ts_iso = ts.isoformat()
             self.writer.write_tick(
                 true_state=new_state,
                 observed=observed,
-                drivers=drivers,
-                env=env,
+                drivers=step.drivers,
+                env=step.env,
                 coupling=coupling,
                 ts_iso=ts_iso,
             )
+            # Environmental events come from the world — recorded BEFORE
+            # the operator reacts via the maintenance policy.
+            for fired in step.fired_events:
+                self.writer.write_environmental_event(
+                    name=fired.name,
+                    tick=new_state.tick,
+                    sim_time_s=new_state.sim_time_s,
+                    payload={
+                        "driver_overrides": dict(fired.driver_overrides),
+                        "env_overrides": dict(fired.env_overrides),
+                        "duration_remaining": (fired.output_tick + fired.duration - new_state.tick),
+                    },
+                    ts_iso=ts_iso,
+                )
 
             state = new_state
 

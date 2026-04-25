@@ -123,3 +123,48 @@ def fetch_health_timeseries(
         (run_id, component_id),
     )
     return [(int(t), float(h)) for t, h in cur.fetchall()]
+
+
+def fetch_environmental_events(conn: sqlite3.Connection, run_id: str) -> list[dict[str, Any]]:
+    """All `environmental_events` rows for the run, in tick order."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT tick, ts_iso, sim_time_s, name, payload_json
+        FROM environmental_events WHERE run_id = ? ORDER BY tick, event_seq
+        """,
+        (run_id,),
+    )
+    keys = ("tick", "ts_iso", "sim_time_s", "name", "payload_json")
+    rows = [dict(zip(keys, row, strict=True)) for row in cur.fetchall()]
+    for row in rows:
+        try:
+            row["payload"] = json.loads(row.pop("payload_json") or "{}")
+        except json.JSONDecodeError:
+            row["payload"] = {}
+    return rows
+
+
+def fetch_environmental_event_count(conn: sqlite3.Connection, run_id: str) -> int:
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM environmental_events WHERE run_id = ?", (run_id,))
+    return int(cur.fetchone()[0])
+
+
+def fetch_environment_at(conn: sqlite3.Connection, run_id: str, tick: int) -> dict[str, Any]:
+    """Per-tick Environment snapshot from the `environment_json` column.
+
+    Returns an empty dict when the row is missing or the JSON is bad.
+    """
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT environment_json FROM drivers WHERE run_id = ? AND tick = ?",
+        (run_id, tick),
+    )
+    row = cur.fetchone()
+    if row is None or row[0] is None:
+        return {}
+    try:
+        return dict(json.loads(row[0]))
+    except json.JSONDecodeError:
+        return {}

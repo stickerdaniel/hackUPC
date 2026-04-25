@@ -36,7 +36,7 @@ def _profile(*, chaos_enabled: bool, seed: int = 42, horizon: int = 260) -> Driv
 def test_drivers_in_unit_interval_over_horizon() -> None:
     profile = _profile(chaos_enabled=False)
     for tick in range(0, 260):
-        drivers, _ = profile.sample(tick)
+        drivers = profile.sample(tick).drivers
         assert 0.0 <= drivers.temperature_stress <= 1.0
         assert 0.0 <= drivers.humidity_contamination <= 1.0
         assert 0.0 <= drivers.operational_load <= 1.0
@@ -46,8 +46,8 @@ def test_drivers_in_unit_interval_over_horizon() -> None:
 def test_same_seed_same_driver_stream() -> None:
     a = _profile(chaos_enabled=True, seed=42)
     b = _profile(chaos_enabled=True, seed=42)
-    a_stream = [a.sample(t)[0] for t in range(50)]
-    b_stream = [b.sample(t)[0] for t in range(50)]
+    a_stream = [a.sample(t).drivers for t in range(50)]
+    b_stream = [b.sample(t).drivers for t in range(50)]
     assert a_stream == b_stream
 
 
@@ -62,8 +62,8 @@ def test_chaos_temp_spikes_only_increase_temperature() -> None:
     yes_chaos = _profile(chaos_enabled=True)
     any_higher = False
     for tick in range(260):
-        a, _ = no_chaos.sample(tick)
-        b, _ = yes_chaos.sample(tick)
+        a = no_chaos.sample(tick).drivers
+        b = yes_chaos.sample(tick).drivers
         if b.temperature_stress > a.temperature_stress + 1e-9:
             any_higher = True
         # Chaos never reduces temp below baseline (we only add positive spikes).

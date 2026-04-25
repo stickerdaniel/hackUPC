@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from dataclasses import asdict
 from datetime import UTC, datetime
 
 from ..domain.coupling import CouplingContext
@@ -23,8 +24,8 @@ INSERT OR REPLACE INTO drivers (
     run_id, tick, ts_iso, sim_time_s,
     temperature_stress, humidity_contamination, operational_load, maintenance_level,
     base_ambient_C, weekly_runtime_hours,
-    print_outcome, coupling_factors_json
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    print_outcome, coupling_factors_json, environment_json
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _COMPONENT_STATE_SQL = """
@@ -56,6 +57,11 @@ INSERT INTO events (run_id, tick, ts_iso, sim_time_s, kind, component_id, payloa
 VALUES (?, ?, ?, ?, ?, ?, ?)
 """
 
+_ENV_EVENT_SQL = """
+INSERT INTO environmental_events (run_id, tick, ts_iso, sim_time_s, name, payload_json)
+VALUES (?, ?, ?, ?, ?, ?)
+"""
+
 
 class HistorianWriter:
     def __init__(
@@ -73,6 +79,7 @@ class HistorianWriter:
         self._obs_state_rows: list[tuple] = []
         self._obs_metric_rows: list[tuple] = []
         self._event_rows: list[tuple] = []
+        self._env_event_rows: list[tuple] = []
         self._tick_buffer = 0
 
     # --- public API ------------------------------------------------------
@@ -127,6 +134,7 @@ class HistorianWriter:
                 env.weekly_runtime_hours,
                 true_state.print_outcome.value,
                 json.dumps(dict(coupling.factors)),
+                json.dumps(asdict(env)),
             )
         )
 
@@ -185,6 +193,29 @@ class HistorianWriter:
             )
         )
 
+    def write_environmental_event(
+        self,
+        name: str,
+        tick: int,
+        sim_time_s: float,
+        payload: Mapping[str, object],
+        ts_iso: str,
+    ) -> None:
+        """Persist one named environmental event row. Multi-tick events
+        call this once per active tick (the loop owns that loop) so
+        per-tick queries always hit a row in the active window.
+        """
+        self._env_event_rows.append(
+            (
+                self.run_id,
+                int(tick),
+                ts_iso,
+                float(sim_time_s),
+                name,
+                json.dumps(dict(payload)),
+            )
+        )
+
     def flush(self) -> None:
         cur = self.conn.cursor()
         if self._driver_rows:
@@ -199,6 +230,8 @@ class HistorianWriter:
             cur.executemany(_OBS_METRICS_SQL, self._obs_metric_rows)
         if self._event_rows:
             cur.executemany(_EVENT_SQL, self._event_rows)
+        if self._env_event_rows:
+            cur.executemany(_ENV_EVENT_SQL, self._env_event_rows)
         self.conn.commit()
         self._driver_rows.clear()
         self._component_state_rows.clear()
@@ -206,6 +239,7 @@ class HistorianWriter:
         self._obs_state_rows.clear()
         self._obs_metric_rows.clear()
         self._event_rows.clear()
+        self._env_event_rows.clear()
         self._tick_buffer = 0
 
     def close(self) -> None:

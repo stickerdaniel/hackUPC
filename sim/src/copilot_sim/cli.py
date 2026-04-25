@@ -87,6 +87,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
     final_rows = reader.fetch_final_component_states(conn, run_id)
     outcomes = reader.fetch_print_outcome_distribution(conn, run_id)
     event_count = reader.fetch_event_count(conn, run_id)
+    env_event_count = reader.fetch_environmental_event_count(conn, run_id)
     final_tick = final_rows[0]["tick"] if final_rows else config.run.horizon_ticks
     conn.close()
 
@@ -99,6 +100,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
         f"HALTED={outcomes.get('HALTED', 0)}"
     )
     print(f"events: {event_count}")
+    if env_event_count:
+        print(f"environmental events: {env_event_count}")
     return 0
 
 
@@ -189,6 +192,9 @@ def _cmd_inspect(args: argparse.Namespace) -> int:
             print(f"  {kind:<18}  {count}")
         print()
         print(f"events: {reader.fetch_event_count(conn, run_id)}")
+        env_event_count = reader.fetch_environmental_event_count(conn, run_id)
+        if env_event_count:
+            print(f"environmental events: {env_event_count}")
         if args.failure_analysis:
             print()
             _print_failure_analysis(conn, run_id)

@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS drivers (
     weekly_runtime_hours REAL,
     print_outcome TEXT,
     coupling_factors_json TEXT,
+    -- Full per-tick Environment snapshot. Keeps event-driven env
+    -- overrides (vibration_level, amplitude_C) queryable per row.
+    environment_json TEXT,
     PRIMARY KEY (run_id, tick)
 ) WITHOUT ROWID;
 
@@ -81,3 +84,18 @@ CREATE TABLE IF NOT EXISTS events (
     payload_json TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_events_run_tick ON events (run_id, tick);
+
+-- Named environmental events (earthquake, HVAC failure, holiday, ...).
+-- Distinct from `events` (operator/policy timeline). Multi-tick events
+-- write one row per active tick so a per-tick query at any tick in the
+-- window sees the override.
+CREATE TABLE IF NOT EXISTS environmental_events (
+    event_seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL,
+    tick INTEGER NOT NULL,
+    ts_iso TEXT NOT NULL,
+    sim_time_s REAL NOT NULL,
+    name TEXT NOT NULL,
+    payload_json TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_env_events_run_tick ON environmental_events (run_id, tick);

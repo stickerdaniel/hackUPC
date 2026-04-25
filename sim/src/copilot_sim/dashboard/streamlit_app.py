@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -84,6 +85,27 @@ def _load_events(conn, run_id: str) -> pd.DataFrame:
     )
 
 
+def _load_environmental_events(conn, run_id: str) -> pd.DataFrame:
+    """Distinct from operator events — narrative one-offs from the YAML.
+
+    Multi-tick events have one row per active tick; we deduplicate by
+    name for display so an "earthquake duration: 3" shows up as one
+    rule, not three.
+    """
+    df = pd.read_sql_query(
+        """
+        SELECT tick, name, payload_json FROM environmental_events
+        WHERE run_id = ? ORDER BY tick
+        """,
+        conn,
+        params=[run_id],
+    )
+    if df.empty:
+        return df
+    # Show one mark per (name, first-tick) — the start of each event window.
+    return df.groupby("name", as_index=False).first()
+
+
 def _factors_dataframe(drivers_df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for _, row in drivers_df.iterrows():
@@ -123,13 +145,42 @@ def main() -> None:
     component_df = _load_component_health(conn, run_id)
     observed_df = _load_observed_health(conn, run_id)
     events_df = _load_events(conn, run_id)
+    env_events_df = _load_environmental_events(conn, run_id)
     factors_df = _factors_dataframe(drivers_df)
 
-    # Chart 1: per-component health
+    # Chart 1: per-component health (Altair so we can overlay event rules)
     st.subheader("1. Component health over time")
     if not component_df.empty:
-        pivot = component_df.pivot(index="tick", columns="component_id", values="health_index")
-        st.line_chart(pivot)
+        health_chart = (
+            alt.Chart(component_df)
+            .mark_line()
+            .encode(
+                x=alt.X("tick:Q", title="tick"),
+                y=alt.Y("health_index:Q", scale=alt.Scale(domain=[0.0, 1.0])),
+                color=alt.Color("component_id:N", legend=alt.Legend(title="component")),
+                tooltip=["component_id", "tick", "health_index", "status"],
+            )
+        )
+        if not env_events_df.empty:
+            rule = (
+                alt.Chart(env_events_df)
+                .mark_rule(color="firebrick", strokeDash=[4, 4])
+                .encode(x="tick:Q", tooltip=["name", "tick"])
+            )
+            label = (
+                alt.Chart(env_events_df)
+                .mark_text(align="left", baseline="top", dx=4, dy=2, color="firebrick", fontSize=11)
+                .encode(x="tick:Q", y=alt.value(0), text="name:N")
+            )
+            health_chart = health_chart + rule + label
+        st.altair_chart(health_chart.properties(height=320), use_container_width=True)
+        if not env_events_df.empty:
+            st.caption("Red dashed lines mark environmental events.")
+            st.dataframe(
+                env_events_df[["tick", "name", "payload_json"]].rename(
+                    columns={"payload_json": "payload"}
+                )
+            )
 
     # Chart 2: driver streams
     st.subheader("2. Driver streams")

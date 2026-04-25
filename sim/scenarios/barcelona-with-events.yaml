@@ -1,0 +1,64 @@
+run:
+  scenario: barcelona
+  profile: events
+  seed: 42
+  horizon_ticks: 260
+  dt_seconds: 604800
+
+environment:
+  base_ambient_C: 22.0
+  amplitude_C: 8.0
+  weekly_runtime_hours: 60
+  vibration_level: 0.10
+
+drivers:
+  temperature_stress:
+    kind: sinusoidal_seasonal
+    base: 0.30
+    amplitude: 0.10
+    period_weeks: 52
+  humidity_contamination:
+    kind: ornstein_uhlenbeck
+    mean: 0.35
+    theta: 0.05
+    sigma: 0.04
+  operational_load:
+    kind: monotonic_duty_cycle
+    base: 0.55
+    monotonic_drift_per_year: 0.02
+    duty_cycle_amplitude: 0.10
+  maintenance_level:
+    kind: step
+    schedule:
+      - tick: 0
+        value: 0.7
+
+chaos:
+  enabled: false
+
+# Three narrative events on top of the barcelona-baseline backbone:
+events:
+  - tick: 27
+    name: earthquake
+    duration: 1
+    driver_overrides:
+      humidity_contamination: 1.0
+      maintenance_level: 0.0
+    env_overrides:
+      vibration_level: 0.85
+  - tick: 89
+    name: hvac-failure
+    duration: 3
+    driver_overrides:
+      temperature_stress: 0.95
+  - tick: 145
+    name: operator-holiday
+    duration: 1
+    driver_overrides:
+      maintenance_level: 0.0
+
+policy:
+  kind: heuristic
+
+historian:
+  path: data/historian.sqlite
