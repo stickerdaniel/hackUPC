@@ -1,0 +1,18 @@
+services:
+  sim:
+    build:
+      context: ./sim
+      dockerfile: Dockerfile
+    image: copilot-sim:dev
+    container_name: copilot-sim
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    env_file:
+      - .env.sim
+    environment:
+      # Override the default scenario YAML's historian path so SQLite
+      # lands in the mounted volume, not inside the container layer.
+      COPILOT_SIM_HISTORIAN_PATH: /data/historian.sqlite
+    restart: unless-stopped
