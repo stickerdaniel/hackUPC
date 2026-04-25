@@ -6,9 +6,9 @@
 	let { class: className }: IconProps = $props();
 </script>
 
-<span
-	class={cn(
-		'inline-block bg-[var(--logo-color,currentColor)] [mask-image:url(/logo.svg)] [mask-size:contain] [mask-position:center] [mask-repeat:no-repeat]',
-		className
-	)}
-></span>
+<img
+	src="/logo.svg"
+	alt=""
+	aria-hidden="true"
+	class={cn('inline-block object-contain', className)}
+/>
