@@ -56,7 +56,8 @@ class Engine:
             components=PrinterState.freeze_components(next_components),
             print_outcome=print_outcome,
         )
-        observed = build_observed_state(next_state)
+        sensors_rng = derive_component_rng(self.scenario_seed, next_tick, "_sensors")
+        observed = build_observed_state(next_state, sensors_rng)
         return next_state, observed, coupling
 
     def apply_maintenance(
