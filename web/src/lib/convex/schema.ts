@@ -2,6 +2,14 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { vEmailEvent } from '@convex-dev/resend';
 import { supportThreadFields } from './support/supportThreadFields';
+import {
+	simRuns,
+	simTicks,
+	simComponents,
+	simObservedComponents,
+	simEvents,
+	simEnvEvents
+} from './sim/tables';
 
 export default defineSchema({
 	// Note: Better Auth component manages its own tables (users, sessions, accounts, verifications)
@@ -179,7 +187,16 @@ export default defineSchema({
 	})
 		.index('by_user', ['userId'])
 		.index('by_thread', ['threadId'])
-		.index('by_user_warm', ['userId', 'isWarm'])
+		.index('by_user_warm', ['userId', 'isWarm']),
+
+	// Printer-simulation historian (HP Metal Jet S100 digital twin).
+	// Tables defined in ./sim/tables.ts; see that file for field docs.
+	simRuns,
+	simTicks,
+	simComponents,
+	simObservedComponents,
+	simEvents,
+	simEnvEvents
 
 	// Note: The agent component automatically creates the following tables:
 	// - agent:threads - Conversation threads for customer support
