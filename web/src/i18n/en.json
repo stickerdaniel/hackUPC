@@ -1,5 +1,8 @@
 {
 	"a11y": {
+		"copilot_health_chart": "Component health over time",
+		"copilot_send": "Send",
+		"copilot_voice": "Voice",
 		"skip_to_content": "Skip to content"
 	},
 	"admin": {

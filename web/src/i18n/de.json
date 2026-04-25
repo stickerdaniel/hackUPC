@@ -1,5 +1,8 @@
 {
 	"a11y": {
+		"copilot_health_chart": "Komponenten-Gesundheit im Zeitverlauf",
+		"copilot_send": "Senden",
+		"copilot_voice": "Sprachsteuerung",
 		"skip_to_content": "Zum Inhalt springen"
 	},
 	"admin": {
