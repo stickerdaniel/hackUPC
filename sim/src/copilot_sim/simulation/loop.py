@@ -18,14 +18,43 @@ scenario YAML = byte-identical historian.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from ..domain.state import PrinterState
+from ..domain.coupling import CouplingContext
+from ..domain.drivers import Drivers
+from ..domain.events import OperatorEvent
+from ..domain.state import ObservedPrinterState, PrinterState
 from ..drivers_src.assembly import DriverProfile
+from ..drivers_src.environment import Environment
+from ..drivers_src.events import ScheduledEvent
 from ..engine.engine import Engine
 from ..historian.writer import HistorianWriter
 from ..policy.heuristic import HeuristicPolicy
+
+
+@dataclass(frozen=True, slots=True)
+class TickPayload:
+    """Snapshot mirroring exactly what the historian persisted for one tick.
+
+    `components_*` reflect the *pre-maintenance* engine output (the values
+    `HistorianWriter.write_tick` saved). Maintenance reset only takes effect on
+    the next tick, identical to the historian's behaviour. The
+    `operator_events` list captures any maintenance applied at the boundary
+    between this tick and the next.
+    """
+
+    tick: int
+    sim_time_s: float
+    ts_iso: str
+    drivers: Drivers
+    env: Environment
+    coupling: CouplingContext
+    true_state: PrinterState
+    observed: ObservedPrinterState
+    env_events: tuple[ScheduledEvent, ...]
+    operator_events: tuple[OperatorEvent, ...]
 
 
 @dataclass(slots=True)
@@ -37,6 +66,11 @@ class SimulationLoop:
     horizon_ticks: int
     dt_seconds: int = 604800
     start_time: datetime | None = None
+    # Optional end-of-tick hook. Fires once per tick AFTER the maintenance
+    # loop completes, so all events for the tick are collected. Component
+    # snapshots in the payload are pre-maintenance — they mirror the rows
+    # `write_tick` already persisted. CLI path leaves this None.
+    on_tick_persisted: Callable[[TickPayload], None] | None = None
 
     def run(self, initial_state: PrinterState) -> PrinterState:
         state = initial_state
@@ -76,11 +110,29 @@ class SimulationLoop:
 
             state = new_state
 
+            applied_events: list[OperatorEvent] = []
             if self.policy is not None and human_maintenance_enabled:
                 actions = self.policy.decide(observed, tick=new_state.tick)
                 for action in actions:
                     state, event = self.engine.apply_maintenance(state, action)
                     self.writer.write_event(event, ts_iso=ts_iso)
+                    applied_events.append(event)
+
+            if self.on_tick_persisted is not None:
+                self.on_tick_persisted(
+                    TickPayload(
+                        tick=new_state.tick,
+                        sim_time_s=new_state.sim_time_s,
+                        ts_iso=ts_iso,
+                        drivers=step.drivers,
+                        env=step.env,
+                        coupling=coupling,
+                        true_state=new_state,
+                        observed=observed,
+                        env_events=tuple(step.fired_events),
+                        operator_events=tuple(applied_events),
+                    )
+                )
 
         self.writer.close()
         return state
