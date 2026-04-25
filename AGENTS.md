@@ -8,6 +8,11 @@ HackUPC hackathon project.
 
 **Read [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md) first** — it holds the full challenge context (vision, three stages, constraints, team, open questions). Keep it updated as new information comes in.
 
+## Subprojects
+
+- **`web/`** — SvelteKit + Convex web app derived from the saas-starter template. **You MUST read [`web/AGENTS.md`](./web/AGENTS.md) before editing anything in `web/`.** It covers the framework-specific stack (Svelte 5 runes, Convex, Better Auth, Tolgee, Tailwind v4), dev commands, env-var schemas, testing, and conventions that do not apply outside `web/`.
+- **`sim/`** — Python simulation engine.
+
 ## Conventions
 
 - Keep changes minimal and focused.
