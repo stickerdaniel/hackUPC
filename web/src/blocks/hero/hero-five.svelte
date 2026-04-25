@@ -1,29 +1,19 @@
 <script>
 	import { T } from '@tolgee/svelte';
 	import { localizedHref } from '$lib/utils/i18n';
-	import Marquee from '../magic/Marquee.svelte';
-	import ProgressiveBlur from '../magic/ProgressiveBlur.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import RiveBackground from '$lib/components/RiveBackground.svelte';
-	import nvidiaLogo from './logos/nvidia.svg';
-	import columnLogo from './logos/column.svg';
-	import githubLogo from './logos/github.svg';
-	import nikeLogo from './logos/nike.svg';
-	import lemonsqueezyLogo from './logos/lemonsqueezy.svg';
-	import laravelLogo from './logos/laravel.svg';
-	import lillyLogo from './logos/lilly.svg';
-	import openaiLogo from './logos/openai.svg';
+	import printerImg from '../marketing/printer-white.png?url';
 </script>
 
 <div class="overflow-hidden">
 	<section class="relative flex items-center justify-center">
-		<RiveBackground
-			src="/animations/spring-demo.riv"
-			stateMachine="Motion"
-			defer
-			desktopOnly
-			class="absolute -bottom-1/5 h-[550px] w-[550px] lg:-bottom-1/6 lg:left-[45%] lg:h-[700px] lg:w-[700px] xl:left-[52%]"
+		<img
+			src={printerImg}
+			alt=""
+			aria-hidden="true"
+			loading="lazy"
+			class="pointer-events-none absolute -bottom-1/5 hidden h-[550px] w-[550px] object-contain lg:-bottom-1/6 lg:left-[45%] lg:block lg:h-[700px] lg:w-[700px] xl:left-[52%]"
 		/>
 
 		<div class="pointer-events-none w-full pt-20 pb-56 lg:pt-40 lg:pb-36">
@@ -55,108 +45,6 @@
 							<span class="text-nowrap"><T keyName="hero.cta_demo" /></span>
 						</Button>
 					</div>
-				</div>
-			</div>
-			<!-- <div
-        class="aspect-2/3 absolute inset-1 -z-10 overflow-hidden rounded-3xl border border-black/10 lg:aspect-video lg:rounded-[3rem] dark:border-white/5"
-      >
-        <video
-          autoPlay
-          loop
-          class="size-full -scale-x-100 object-cover opacity-50 invert dark:opacity-35 dark:invert-0 dark:lg:opacity-75"
-          src="https://res.cloudinary.com/dg4jhba5c/video/upload/v1741605033/dna_ttplyu.mp4"
-        ></video>
-      </div> -->
-		</div>
-	</section>
-	<section>
-		<div class="group relative m-auto max-w-6xl px-6">
-			<div class="flex flex-col items-center md:flex-row">
-				<div class="md:max-w-44 md:border-r md:pr-6">
-					<p class="text-end text-sm"><T keyName="hero.companies_text" /></p>
-				</div>
-				<!-- Checkout Logo Cloud Three  -->
-				<!-- I have provided progressive blur snippet code & Marquee code -->
-				<div class="relative py-6 md:w-[calc(100%-11rem)]">
-					<Marquee>
-						<div class="flex">
-							<img
-								class="mx-auto h-5 w-fit dark:invert"
-								src={nvidiaLogo}
-								alt="Nvidia Logo"
-								height="20"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-4 w-fit dark:invert"
-								src={columnLogo}
-								alt="Column Logo"
-								height="16"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-4 w-fit dark:invert"
-								src={githubLogo}
-								alt="GitHub Logo"
-								height="16"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-5 w-fit dark:invert"
-								src={nikeLogo}
-								alt="Nike Logo"
-								height="20"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-5 w-fit dark:invert"
-								src={lemonsqueezyLogo}
-								alt="Lemon Squeezy Logo"
-								height="20"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-4 w-fit dark:invert"
-								src={laravelLogo}
-								alt="Laravel Logo"
-								height="16"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-7 w-fit dark:invert"
-								src={lillyLogo}
-								alt="Lilly Logo"
-								height="28"
-							/>
-						</div>
-						<div class="flex">
-							<img
-								class="mx-auto h-6 w-fit dark:invert"
-								src={openaiLogo}
-								alt="OpenAI Logo"
-								height="24"
-							/>
-						</div>
-					</Marquee>
-
-					<div class="absolute inset-y-0 left-0 w-20 bg-linear-to-r from-background"></div>
-					<div class="absolute inset-y-0 right-0 w-20 bg-linear-to-l from-background"></div>
-					<ProgressiveBlur
-						class="pointer-events-none absolute top-0 left-0 z-10 h-full w-20"
-						direction="left"
-						blurIntensity={1}
-					/>
-					<ProgressiveBlur
-						class="pointer-events-none absolute top-0 right-0 z-10 h-full w-20"
-						direction="right"
-						blurIntensity={1}
-					/>
 				</div>
 			</div>
 		</div>
