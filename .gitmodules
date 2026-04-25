@@ -10,3 +10,6 @@
 [submodule "references/pydantic"]
 	path = references/pydantic
 	url = https://github.com/pydantic/pydantic.git
+[submodule "references/openai-python"]
+	path = references/openai-python
+	url = https://github.com/openai/openai-python.git

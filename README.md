@@ -186,7 +186,7 @@ Reset rules are per-component, per-action ([doc 09](./docs/research/09-maintenan
 | Deck charts | **matplotlib** | High-DPI PNG export for the slides |
 | Lint / format / type | Ruff + ty | uv-managed; ruff `E F I B UP SIM`; quote-style double; pre-commit configured |
 | Test | pytest + pytest-cov + pytest-xdist | uv-managed |
-| LLM (maintenance-agent stretch) | optional `anthropic` extra | 1 call/sim-hour writing a rationale string |
+| LLM (maintenance-agent stretch) | OpenRouter via `httpx` (no extra SDK); model swap via `LLM_MODEL` env var (default `google/gemma-4-31b-it`, A/B with `anthropic/claude-sonnet-4.6`) | 1 call/sim-hour writing a rationale string |
 
 **Critical SQLite hygiene** (from [`14`](./docs/research/14-stack-and-topology.md)): writer-side pragmas `journal_mode=WAL`, `synchronous=NORMAL`, `busy_timeout=5000`. Streamlit reader opens the same file read-only.
 

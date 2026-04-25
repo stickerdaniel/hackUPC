@@ -58,9 +58,10 @@ Three rules in priority order: (1) **`TROUBLESHOOT` first when the sensor says `
 ### Stretch — LLM-as-policy
 
 - Same signature: `decide(observed: ObservedPrinterState, hours_since_maint) -> {action: Action | None, rationale: str}`.
-- Prompt: system message with the four drivers, the six **observed** component states (health + status + sensor_note), hours-since-maint per component, the cost model, and the action vocabulary (`TROUBLESHOOT / FIX / REPLACE / null`). Ask for JSON `{action_kind, component_id, reason}`.
+- **Provider: OpenRouter** via the OpenAI-compatible `/chat/completions` endpoint. Hit it directly with `httpx` (already a dep) — no extra SDK. Model selection is one env var (`LLM_MODEL`), so the demo can A/B `google/gemma-4-31b-it`, `anthropic/claude-sonnet-4.6`, `openai/gpt-5`, etc. with no code changes. Default model: `google/gemma-4-31b-it` (cheap, native function calling, strong instruction-following).
+- Prompt: system message with the four drivers, the six **observed** component states (health + status + sensor_note), hours-since-maint per component, the cost model, and the action vocabulary (`TROUBLESHOOT / FIX / REPLACE / null`). Ask for JSON `{action_kind, component_id, reason}` via `response_format: {"type": "json_object"}`.
 - The LLM gets the §3.4 advantage: it can see `sensor_note: "drift"` on the heater and the temperature_sensor, conclude the fault is in the sensor not the heater, and emit `TROUBLESHOOT(sensor)` followed next tick by `REPLACE(sensor)` with the rationale stored to events.
-- **Rate-limit:** call once per simulated *hour*, cache between. ~4380 calls per run, ~$0.50 on Claude Sonnet — fine.
+- **Rate-limit:** call once per simulated *hour*, cache between. ~4380 calls per run, well under $1 on Gemma 4 31B; A/B against Sonnet 4.6 still under a few dollars.
 - The `rationale` field is gold for the demo: every event in the historian carries a one-sentence justification queryable as a stored attribution.
 
 ### Gymnasium env spec (locked, even if we don't train)

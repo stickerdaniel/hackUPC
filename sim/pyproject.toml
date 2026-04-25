@@ -36,9 +36,6 @@ dependencies = [
     "httpx>=0.27",
 ]
 
-[project.optional-dependencies]
-llm = ["anthropic>=0.40"]
-
 [project.scripts]
 copilot-sim = "copilot_sim.cli:main"
 
