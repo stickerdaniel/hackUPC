@@ -69,7 +69,13 @@
 	}
 </script>
 
-<ModeWatcher />
+<ModeWatcher
+	defaultMode="light"
+	disableTransitions
+	track={false}
+	darkClassNames={[]}
+	modeStorageKey="copilot-mode-light-v1"
+/>
 <SEOHead />
 <AppPostHogBootstrap />
 

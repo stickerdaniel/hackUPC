@@ -3,7 +3,7 @@
 	import { localizedHref } from '$lib/utils/i18n';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import printerImg from '../marketing/printer-white.png?url';
+	import printerImg from '../marketing/printer-white.jpg?url';
 </script>
 
 <div class="overflow-hidden">
