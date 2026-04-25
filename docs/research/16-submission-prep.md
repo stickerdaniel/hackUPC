@@ -2,14 +2,17 @@
 
 ## TL;DR
 
-HackUPC closes Sunday 2026-04-26; **lock submission by Sun 09:00 CEST** (placeholder — confirm in Slack `C0AV9TTJT25`). Six deliverables: GitHub repo, slide deck, technical report, walkthrough video, live demo, optional Phase 3 bonus demo. Build artefacts now: a 9-slide deck mirrored by an 8-section report, a 5-minute demo split (Daniel ~3 min app/chatbot/voice, Chris ~2 min math/sim/agent), and 5 contingencies (canned historian, typed fallback, AI Gateway secondary, screen-recorded video, pre-rendered chart PNGs).
+HackUPC 2026 closes **Sunday 2026-04-26 17:00 CEST** with the Devpost submission deadline at **09:15 CEST** the same morning (verified against [hackupc-2026.devpost.com](https://hackupc-2026.devpost.com/) and [hackupc.com](https://hackupc.com/)). Internal lock at 08:00 CEST gives us a 75-minute buffer. Six deliverables: GitHub repo, slide deck, technical report, walkthrough video, live demo, plus the sim's Streamlit dashboard. Build artefacts now: a 9-slide deck mirrored by an 8-section report, a 5-minute demo split with the team (Daniel + Chris + Jana + Leonie + criisshg), and 6 contingencies (canned historian, typed fallback, manual driver nudge to force CRITICAL, pre-rendered chart PNGs, Saturday-evening Loom backup, local dev server).
 
 ## Submission deadline & format
 
-- **Deliverables (TRACK-CONTEXT.md §6):** working demo (P1+P2 min, P3 bonus), architecture slide deck, technical report, P3 bonus demo if shipped, GitHub repo with README, walkthrough video or live demo.
-- **Deadline:** *placeholder* — Sun 2026-04-26, ~09:00 CEST hard freeze, judging windows 10:00–13:00. Confirm in Slack workspace `T0APCMG2G1Z`, channel `C0AV9TTJT25`.
-- **Format expected:** GitHub URL + uploaded PDF deck + uploaded report (md or PDF) + video link (YouTube unlisted or Drive). Live demo at judging table.
-- **Action item:** within first hour of build day 2, confirm exact deadline timestamp, judging slot start, and submission portal URL from Slack; pin reply to team.
+- **Deliverables (TRACK-CONTEXT.md §6):** working demo (P1+P2 min), architecture slide deck, technical report, GitHub repo with README, walkthrough video or live demo.
+- **Deadline (confirmed 2026-04-25 from Devpost):** **Sun 2026-04-26 09:15 CEST** — hard freeze on the Devpost submission. Source: <https://hackupc-2026.devpost.com/>. The hackathon runs 36 hours from the Friday-evening kickoff (April 24) through Sunday morning.
+- **Buffer:** treat **08:00 CEST Sunday** as our internal lock. Tag the commit `demo-frozen` at that point; anything after is for live-demo polish only.
+- **Format expected:** Devpost form takes the GitHub URL + uploaded PDF deck + uploaded report (md or PDF) + video link (YouTube unlisted or Drive). Live demo at the HP judging table during the morning expo / judging window.
+- **Action items still open:**
+  - Confirm exact judging start time, table assignment, and HP-track expo room from Slack `C0AV9TTJT25` Sunday morning (devpost lists "Apr 26 at 3:15am EDT" = 09:15 CEST as the deadline; expo / judging window is on the schedule but not on the public devpost summary).
+  - Pre-record a 3-minute walkthrough video Saturday evening as a fallback if live demo gets squeezed.
 
 > **Scope reminder (2026-04-25):** sim-only build. Phase 3 (chatbot/voice/frontend) deferred — slides 7–8 from the original outline are dropped and replaced with a sensor-fault-vs-component-fault story made possible by §3.4. Demo is sim + Streamlit dashboard.
 

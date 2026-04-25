@@ -25,10 +25,11 @@ Source briefs: [`../briefing/`](../briefing/). Canonical context: [`../../TRACK-
 
 | # | Topic | Decision |
 | :- | :--- | :--- |
-| 06 | [Driver profiles + time + chaos](./06-driver-profiles-and-time.md) | Sin / OU / monotonic / step; `dt = 1 h`, 4380 ticks; Poisson chaos overlay |
+| 06 | [Driver profiles + time + chaos](./06-driver-profiles-and-time.md) | Sin / OU / monotonic / step; `dt = 1 h`, 4380 ticks; Poisson chaos overlay; `Drivers` schema locked at 4 |
 | 07 | [Live weather API](./07-weather-api.md) | Open-Meteo Archive API (no auth); cached JSON for demo robustness |
-| 08 | [Historian schema](./08-historian-schema.md) | SQLite WAL; long-form normalised tables (`runs`, `drivers`, `component_state`, `metrics`, `events`) |
-| 09 | [AI Maintenance Agent (bonus)](./09-maintenance-agent.md) | Heuristic primary; LLM-as-policy stretch; full Gymnasium env spec on standby |
+| 08 | [Historian schema](./08-historian-schema.md) | SQLite WAL; seven tables incl. observed_* mirror tables for §3.4 + `print_outcome` + `coupling_factors_json` |
+| 09 | [AI Maintenance Agent (bonus)](./09-maintenance-agent.md) | TROUBLESHOOT/FIX/REPLACE vocabulary; reads `ObservedPrinterState`; full Gymnasium env spec on standby |
+| 20 | [Engine architecture (write-up)](./20-engine-architecture.md) | Documents the implemented `Engine.step()` orchestration + the five domain types + determinism contract |
 
 ### Phase 3 — the voice (grounded chatbot) — DEFERRED
 

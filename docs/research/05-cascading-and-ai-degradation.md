@@ -107,9 +107,20 @@ factors = {
     "heater_thermal_stress_bonus": 0.3 * h.drift_frac,
 
     # Sensor → control (subsystem C inner loop)
+    # Two separate factors by design — they hold the same value in v1 but
+    # have different *roles* and are read by different consumers:
+    #   - sensor_bias_c       = the sensor component's emitted bias (RAW signal,
+    #                           reported in the dashboard's true-vs-observed view)
+    #   - control_temp_error_c = the input the heater controller actually sees;
+    #                            future hook for ADC quantization, bus latency,
+    #                            PID lag, or any other controller-side error
+    #                            source we add later. Heater step() reads ONLY
+    #                            control_temp_error_c, never sensor_bias_c
+    #                            directly. Keeping them separate now means the
+    #                            extension point is free.
     "sensor_bias_c":              s.bias_c,
     "sensor_noise_sigma_c":       s.noise_sigma_c,
-    "control_temp_error_c":       s.bias_c,                      # heater "sees" this
+    "control_temp_error_c":       s.bias_c,  # v1: identical to sensor_bias_c
 
     # Jetting maintenance pipeline
     "cleaning_efficiency":        c.cleaning_efficiency,
