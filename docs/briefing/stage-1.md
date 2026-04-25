@@ -36,17 +36,17 @@ The **HP Metal Jet S100** uses **Binder Jetting** technology to 3D print metal p
 
 ##### Step-by-Step
 
-1. **Powder Bed Preparation**  
+1. **Powder Bed Preparation**
    A thin layer of metal powder (e.g., stainless steel or other alloys) is spread evenly across the build platform by the re-coating carriage.
-2. **Binder Jetting**  
+2. **Binder Jetting**
    A printhead (similar to an inkjet) selectively jets a liquid **binding agent** onto the powder, following the cross-section of each layer. The binder glues the metal particles together.
-3. **Layer Repetition**  
+3. **Layer Repetition**
    The platform lowers slightly, a new powder layer is spread, and the process repeats — layer by layer — until the full 3D "green part" is built.
-4. **Curing**  
+4. **Curing**
    The build box is heated to cure and strengthen the binder, consolidating the green part before extraction.
-5. **Sintering**  
+5. **Sintering**
    The green part is placed in a furnace. The binder burns off and the metal particles fuse together under heat, producing a dense, solid metal component.
-6. **Extraction & Post-Processing**  
+6. **Extraction & Post-Processing**
    Loose powder is removed (and recycled). The finished metal part is extracted and can be further processed (e.g., machining, surface finishing).
 
 ---

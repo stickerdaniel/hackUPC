@@ -1,7 +1,7 @@
 # 🏆 Hackathon Brief: When AI meets reality
 ## 1. The Vision
 
-The future of manufacturing is not just about more powerful machines; it is about **smarter collaboration between humans and machines.** 
+The future of manufacturing is not just about more powerful machines; it is about **smarter collaboration between humans and machines.**
 
 As industrial hardware like the **HP Metal Jet S100** reaches unprecedented levels of complexity, the gap between machine capability and human intuition grows wider. An operator can no longer rely on manual monitoring or reactive maintenance to manage a machine of this sophistication. They need more than a dashboard; they need a **partner.**
 
