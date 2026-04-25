@@ -57,8 +57,7 @@
 	const isAtTop = $derived(scrollY < 10);
 
 	// $derived menu items (href must update on lang switch)
-	let menuItems = $derived([
-		{ translationKey: 'nav.home', href: localizedHref('/') }
+	let menuItems = $derived<{ translationKey: string; href: string }[]>([
 		// { translationKey: 'nav.about', href: localizedHref('/about') }
 	]);
 
