@@ -81,9 +81,19 @@ def step(
     # multiplicative amplifiers so the formula stays auditable.
     cm_temp_factor = 1.0 + 1.0 * temp_eff + heater_stress_bonus
     cm_load_factor = 1.0 + 0.5 * load_eff
+    # Binder moisture from humid air slightly amplifies the per-cycle
+    # plastic strain — small contribution but it puts humidity on the
+    # CM path so the audit-table coverage holds for both clog AND fatigue.
+    cm_humid_factor = 1.0 + 0.20 * humid_eff
     cycles_scale = max(env.weekly_runtime_hours / 60.0, 0.0)
     fatigue_increment = (
-        BASE_FATIGUE_INCR * cm_temp_factor * cm_load_factor * cycles_scale * damp * dt
+        BASE_FATIGUE_INCR
+        * cm_temp_factor
+        * cm_load_factor
+        * cm_humid_factor
+        * cycles_scale
+        * damp
+        * dt
     )
 
     # Poisson clog hazard.

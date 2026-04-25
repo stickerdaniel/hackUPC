@@ -86,7 +86,13 @@ def step(
     temp_stress_bonus = 1.0 + 0.3 * temp_eff
     corrosion_amp = 1.0 + 0.5 * humid_eff
 
-    bias_increment = BASE_BIAS_INCR * af * temp_stress_bonus * corrosion_amp * damp * dt
+    # Load tilts the sensor slightly hotter (more heater duty), so bias
+    # accumulates faster too — small contribution, but it closes the
+    # driver-coverage audit on bias_offset.
+    load_bias_amp = 1.0 + 0.10 * load_eff
+    bias_increment = (
+        BASE_BIAS_INCR * af * temp_stress_bonus * corrosion_amp * load_bias_amp * damp * dt
+    )
     noise_increment = BASE_NOISE_INCR * (1.0 + 0.4 * load_eff) * damp * dt
 
     prev_bias = float(prev_self.metrics.get("bias_offset", 0.0))
