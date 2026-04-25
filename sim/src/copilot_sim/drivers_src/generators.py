@@ -58,16 +58,13 @@ class SinusoidalSeasonalTemp:
         # Add a subtle, non-perfect weekly pattern so the series does not
         # look like a mathematically perfect wave.
         weekly_wobble = self.weekly_wobble_amplitude * (
-            math.sin(2.0 * math.pi * tick / 7.0)
-            + 0.5 * math.sin(2.0 * math.pi * tick / 3.5 + 1.7)
+            math.sin(2.0 * math.pi * tick / 7.0) + 0.5 * math.sin(2.0 * math.pi * tick / 3.5 + 1.7)
         )
 
         # Mean-reverting noise creates realistic weather variability while
         # staying deterministic for a fixed seed and scenario.
         innovation = float(rng.normal(0.0, self.noise_sigma))
-        self._noise_state = self._noise_state + self.noise_theta * (
-            innovation - self._noise_state
-        )
+        self._noise_state = self._noise_state + self.noise_theta * (innovation - self._noise_state)
 
         value = seasonal + weekly_wobble + self._noise_state
         return float(np.clip(value, 0.0, 1.0))
@@ -113,6 +110,7 @@ class MonotonicDutyLoad:
         wobble = self.duty_cycle_amplitude * math.sin(2.0 * math.pi * tick / 3.0)
         value = self.base + self.monotonic_drift_per_year * years + wobble
         return float(np.clip(value, 0.0, 1.0))
+
 
 @dataclass(slots=True)
 class SmoothSyntheticOperationalLoad:

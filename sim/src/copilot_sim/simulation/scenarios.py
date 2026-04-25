@@ -22,9 +22,9 @@ from ..drivers_src.events import EventOverlay, ScheduledEvent
 from ..drivers_src.generators import (
     DriverGenerator,
     MonotonicDutyLoad,
-    SmoothSyntheticOperationalLoad,
     OUHumidity,
     SinusoidalSeasonalTemp,
+    SmoothSyntheticOperationalLoad,
     StepMaintenance,
 )
 
