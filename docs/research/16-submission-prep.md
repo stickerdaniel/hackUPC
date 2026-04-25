@@ -11,39 +11,43 @@ HackUPC closes Sunday 2026-04-26; **lock submission by Sun 09:00 CEST** (placeho
 - **Format expected:** GitHub URL + uploaded PDF deck + uploaded report (md or PDF) + video link (YouTube unlisted or Drive). Live demo at judging table.
 - **Action item:** within first hour of build day 2, confirm exact deadline timestamp, judging slot start, and submission portal URL from Slack; pin reply to team.
 
-## Slide deck outline
+> **Scope reminder (2026-04-25):** sim-only build. Phase 3 (chatbot/voice/frontend) deferred — slides 7–8 from the original outline are dropped and replaced with a sensor-fault-vs-component-fault story made possible by §3.4. Demo is sim + Streamlit dashboard.
 
-1. **Title — "When AI Meets Reality: a Digital Co-Pilot for the HP Metal Jet S100"** — team names (Daniel + Chris), mentor (Nathan), one-liner: "A digital twin that diagnoses its own future failures."
-2. **The mission** — 3-line problem statement (printer fails unpredictably, operators have no grounded AI partner, training-knowledge LLMs hallucinate); the 3-phase architecture diagram (Brain → Clock → Voice).
-3. **Phase 1 — The brain** — per-component math: Archard wear (recoater blade), Coffin-Manson + clog accumulation (nozzle plate), Arrhenius drift (heater); deterministic state function `f(state, drivers, dt)`.
-4. **Phase 1 — Cascading + AI surrogate (bonus)** — degraded blade → contaminated powder → faster nozzle clog; one component swapped for a learned regressor trained on synthetic data; live weather driver via Open-Meteo.
-5. **Phase 2 — The clock + the historian** — tick loop, SQLite schema (runs, ticks, drivers, components), time-series chart of health index with a `FAILED` event annotated; deterministic + stochastic modes.
-6. **Phase 2 — AI Maintenance Agent (bonus)** — A/B chart: no-maintenance vs agent-driven maintenance; uptime delta and cost trade-off; policy described in plain English.
-7. **Phase 3 — Grounded agentic chatbot** — ReAct tool-calling loop, tools (`query_historian`, `get_component_state`, `compare_runs`); every answer cites timestamp + run + component and surfaces a severity badge.
-8. **Phase 3 — Proactive alerts + voice (bonus pillars)** — background monitor fires `WARNING`/`CRITICAL` toasts before the operator asks; voice mode for hands-free factory-floor demo; covers all four P3 pillars (Reliability, Intelligence, Autonomy, Versatility).
-9. **Closing — what we'd do next** — digital twin sync from real telemetry, RL maintenance policy across thousands of episodes, multi-machine fleet view, persistent collaborator memory, mobile alerting.
+## Slide deck outline (sim-only, 9 slides)
 
-## Technical report outline
+1. **Title — "When AI Meets Reality: a Digital Twin for the HP Metal Jet S100"** — team (Daniel + Chris + Jana + Leonie + criisshg), mentor (Nathan), one-liner: "A coupled digital twin where every failure tells a story."
+2. **The mission** — 3-line problem (printer fails unpredictably, sensors lie too, operators run blind); the sim-only architecture diagram (Logic Engine → Coupled Loop + Historian → Streamlit dashboard).
+3. **Phase 1 — The brain (six components)** — three subsystems × two components, each with its own textbook law: Archard (blade) + Weibull (rail), Coffin-Manson + Poisson clog (nozzle) + power-law-per-cycle wiper wear (cleaning), Arrhenius drift (heater) + Arrhenius bias drift (sensor). Multiplicative composition under shared Weibull baseline. Status thresholds 0.75 / 0.40 / 0.15.
+4. **Phase 1 — Coupled engine + cascading failures + AI surrogate** — `Engine.step()` reads immutable `t-1` `PrinterState`, builds one `CouplingContext` (4 effective drivers + named `factors` dict), updates all 6 components from same snapshot. Three two-way loops (rail↔blade, cleaning↔nozzle, sensor↔heater) + two cross-subsystem cascades (powder→jetting, thermal→everything). Heater also runs as MLPRegressor surrogate trained on the analytic formula — "two lines that overlap perfectly".
+5. **Phase 2 — The clock + the historian** — tick loop, SQLite WAL schema (runs · drivers · component_state · metrics · observed_component_state · observed_metrics · events), live weather driver (Open-Meteo Barcelona vs Phoenix), stochastic chaos overlay, time-series chart with at least one component reaching FAILED.
+6. **Phase 2 — Sensors lie too (§3.4 observability split)** — true vs observed state; sensor `bias_C` accumulates Arrhenius-fast and propagates to the heater controller, which over-corrects, accelerating heater drift, accelerating sensor drift — a closed thermal loop. The dashboard shows true-vs-observed health side by side; the LLM-as-policy maintenance agent reads only observed and chooses TROUBLESHOOT vs FIX vs REPLACE accordingly.
+7. **Phase 2 — AI Maintenance Agent A/B** — same seed, three policies (no-agent / heuristic / LLM-as-policy), `min(component_health)` over 180 days, maintenance triangles + FAILED ✗ markers. KPIs: uptime %, # events, # failures.
+8. **What-if scenarios** — Barcelona vs Phoenix on the same printer; chaos on/off on the same seed; cascade on/off. Different physics dominate per climate (Phoenix → heater first; Barcelona → blade + nozzle first).
+9. **Closing — what we'd do next** — Phase 3 grounded chatbot (research preserved in docs/research/10-13), digital twin sync from real telemetry, RL maintenance policy across thousands of episodes, multi-machine fleet view.
 
-1. **Executive summary** — one paragraph: what we built, why it's grounded, what's novel (cascading + agentic chatbot).
-2. **Problem & approach** — restate the brief in our words; map our work to the four P3 pillars.
-3. **Phase 1 — modeling approach** — per-component formulas with citations to research notes 01–05; driver normalisation (note 04); cascading rules (note 05).
-4. **Phase 2 — simulation design** — loop + dt choice, historian schema (note 08), driver profiles (note 06), weather driver (note 07), stochastic mode + seeding.
-5. **Phase 3 — AI implementation** — agent architecture (note 10), tool surface, grounding/citation contract, severity classification, proactive alert engine (note 12), voice modality, maintenance agent (note 09).
-6. **Challenges & solutions** — preventing hallucinations, balancing realism vs runtime, cascading numerical stability, voice latency.
-7. **Evaluation against the brief's pillars** — checklist from TRACK-CONTEXT §7 with evidence links to commits / charts.
-8. **Future work** — same as deck slide 9, plus open research questions (RL reward shaping, twin sync convergence).
+## Technical report outline (sim-only, 8 sections)
 
-## Demo split (5-minute slot)
+1. **Executive summary** — one paragraph: what we built (six-component coupled discrete-time twin with §3.4 observability split, AI-surrogate heater, AI-driven maintenance agent), why it's defensible, what's novel.
+2. **Problem & approach** — restate the brief; map our work to Phase 1+2 evaluation pillars (Rigor · Systemic Interaction · Realism & Fidelity · Complexity & Innovation).
+3. **Phase 1 — modeling approach** — per-component formulas with citations to research notes **01 (blade) · 02 (nozzle) · 03 (heater) · 17 (rail) · 18 (cleaning) · 19 (sensor)**; baseline composition (note 04); coupling matrix (note 05).
+4. **Phase 2 — simulation design** — `Engine.step()` + `CouplingContext` + double-buffering (per AGENTS.md and `sim/src/copilot_sim/domain/`), historian schema (note 08), driver profiles (note 06), weather driver (note 07), stochastic mode + seeding (note 06 §chaos).
+5. **§3.4 Observability layer** — true-vs-observed split, per-component sensor models (reference implementation in note 19), `print_outcome` derivation, operator events vocabulary.
+6. **AI Maintenance Agent** — heuristic vs LLM-as-policy comparison (note 09), reset rules per component, A/B chart methodology.
+7. **Challenges & solutions** — preventing two-way-loop runaway (stability via clamps + sub-unity gains), keeping sim throughput high, calibrating coefficients to land hackathon-friendly failure timelines.
+8. **Evaluation + future work** — checklist from TRACK-CONTEXT §7; future = Phase 3 grounded chatbot (notes 10–13), RL policy, multi-machine fleet, twin sync.
+
+## Demo split (5-minute slot, sim-only)
 
 | Time | Owner | Segment | Beats |
-| ---: | --- | --- | --- |
-| 0:00–0:30 | Daniel | Title + framing | One-liner; "every claim cited or it doesn't ship" |
-| 0:30–1:30 | Chris | Phase 1 math | Walk slides 3–4: Archard, Coffin-Manson, Arrhenius; cascading sketch |
-| 1:30–2:15 | Chris | Phase 2 chart + agent | Time-series with `FAILED` event; A/B uptime chart from maintenance agent |
-| 2:15–4:15 | Daniel | Phase 3 live | Open dashboard; 3 chatbot Qs (status now, what happened at tick N, why is heater drifting) — middle Q in voice mode; show proactive alert toast firing |
-| 4:15–4:45 | Daniel | Citations + severity | Click a citation, jump to historian row; show severity badge promotion |
-| 4:45–5:00 | Both | Close + future work | Slide 9; thank judges; Q&A handoff |
+| ---: | :--- | :--- | :--- |
+| 0:00–0:30 | Daniel | Title + framing | One-liner; "every failure tells a story" |
+| 0:30–1:30 | Chris | Phase 1 math (slides 3–4) | Six components, three subsystems, three laws + Weibull baseline; the coupled engine sketch — `prev_state → CouplingContext → next_state` |
+| 1:30–2:15 | Chris | Coupling cascade + chart 1 | Walk the worked example: blade wears → powder dirty → nozzle clogs faster → wiper works harder; show the time-series with FAILED marker. |
+| 2:15–3:00 | Jana / Leonie | What-if (chart 3) | Barcelona vs Phoenix side by side via Open-Meteo; show different components fail first; toggle chaos on/off on same seed |
+| 3:00–3:45 | Daniel | Sensor-fault story (slide 6) | True vs observed health; show heater "drift" actually originates in sensor; LLM agent emits TROUBLESHOOT(sensor) → REPLACE(sensor) with rationale |
+| 3:45–4:30 | Daniel | Maintenance A/B (chart 2) | Same-seed three-policy chart; uptime KPIs |
+| 4:30–4:45 | Chris | AI surrogate (chart 4) | Analytic vs MLPRegressor heater curves overlaid — visually indistinguishable |
+| 4:45–5:00 | Both | Close + future | Slide 9; future Phase 3 + RL; thank judges |
 
 ## Risk list & contingencies
 

@@ -21,24 +21,47 @@ Two-person team, 36 h, Phase 3 is the strategic bet (see TRACK-CONTEXT §8). The
 
 ## Decision
 
+### Action vocabulary — three kinds, not binary
+
+Per `domain.events.OperatorEventKind`, operator actions are **not** binary. The agent picks from three:
+
+| Action | State change | Example |
+| :--- | :--- | :--- |
+| `TROUBLESHOOT` | none — only sets `last_inspected_tick` and writes an event row | sensor reads weird; operator inspects to confirm/refute fault |
+| `FIX` | partial recovery (component-specific) | clean nozzle, calibrate sensor, re-grease rail |
+| `REPLACE` | full reset (component-specific) | new blade, new wiper, new sensor element |
+
+The action also targets a **specific component** (e.g. `FIX(component="blade")`), not the whole machine — so the policy's action space is `(action_kind, component_id)` plus a "do nothing" sentinel.
+
 ### Primary — Heuristic policy
 
 ```python
-def decide(state, hours_since_maint) -> Action:
-    h = state.health  # dict component -> [0, 1]
-    if any(v < 0.40 for v in h.values()):       return MAINTAIN
-    if hours_since_maint > 30 * 24 and min(h.values()) < 0.60:  return MAINTAIN
-    return DO_NOTHING
+def decide(observed: ObservedPrinterState, hours_since_maint: dict[str, float]) -> Action | None:
+    # Reactive: any component below DEGRADED gets a FIX (or REPLACE if CRITICAL/UNKNOWN).
+    for cid, c in observed.components.items():
+        h = c.observed_health_index
+        if c.observed_status == OperationalStatus.UNKNOWN:
+            return Action(TROUBLESHOOT, cid)         # diagnose first, don't act blind
+        if h is not None and h < 0.15:
+            return Action(REPLACE, cid)
+        if h is not None and h < 0.40:
+            return Action(FIX, cid)
+    # Scheduled: monthly preventive FIX of the most-aged component.
+    worst = min(hours_since_maint, key=hours_since_maint.get)
+    if hours_since_maint[worst] > 30 * 24 and (observed.components[worst].observed_health_index or 1) < 0.60:
+        return Action(FIX, worst)
+    return None
 ```
 
-Two rules: a **reactive** trigger on any DEGRADED component (matches the 0.40 status boundary in doc 04) and a **scheduled** trigger to capture the "preventive maintenance window" story. Both thresholds are config, not magic numbers.
+Three rules in priority order: (1) **`TROUBLESHOOT` first when the sensor says `UNKNOWN`** — never act blind on an absent/stuck sensor (this is the §3.4 sensor-fault-vs-component-fault discipline encoded as policy); (2) **reactive `FIX` / `REPLACE`** based on *observed* health crossings (the policy only sees the observed view per §3.4); (3) **scheduled preventive `FIX`** on the longest-unmaintained component.
 
 ### Stretch — LLM-as-policy
 
-- Same signature: `decide(state, hours_since_maint) -> {action, rationale}`.
-- Prompt: system message with the four drivers + the three component health values + hours-since-last-maint + the cost model (`+1/tick alive, −100/FAILED, −2/maintain`). Ask for JSON `{action: "do_nothing"|"maintain", reason: str}`.
-- **Rate-limit:** call once per simulated *hour* (or every 10 ticks if `dt = 6 min`), cache the last decision in between. Otherwise a 6-month run = thousands of calls.
-- The `reason` field is gold for Phase 3: every maintenance event in the historian carries a one-sentence justification, which the chatbot can quote verbatim with full grounding.
+- Same signature: `decide(observed: ObservedPrinterState, hours_since_maint) -> {action: Action | None, rationale: str}`.
+- Prompt: system message with the four drivers, the six **observed** component states (health + status + sensor_note), hours-since-maint per component, the cost model, and the action vocabulary (`TROUBLESHOOT / FIX / REPLACE / null`). Ask for JSON `{action_kind, component_id, reason}`.
+- The LLM gets the §3.4 advantage: it can see `sensor_note: "drift"` on the heater and the temperature_sensor, conclude the fault is in the sensor not the heater, and emit `TROUBLESHOOT(sensor)` followed next tick by `REPLACE(sensor)` with the rationale stored to events.
+- **Rate-limit:** call once per simulated *hour*, cache between. ~4380 calls per run, ~$0.50 on Claude Sonnet — fine.
+- The `rationale` field is gold for the demo: every event in the historian carries a one-sentence justification queryable as a stored attribution.
 
 ### Gymnasium env spec (locked, even if we don't train)
 
@@ -72,20 +95,25 @@ Reward (kept close to the brief, with two tweaks):
 
 Episode: 180 simulated days (≈ matches Weibull η in doc 04), `dt = 1 h` ⇒ 4 320 steps. `truncated=True` at horizon.
 
-### Maintenance effect model (per-component reset rules)
+### Maintenance effect model (per-component, per-action reset rules)
 
-When `action = MAINTAIN` fires at tick `t`, mutate state as follows. This resolves doc 04's open question on reset semantics.
+When `Action(kind, component_id)` fires at tick `t`, mutate the targeted component's state as follows. **`TROUBLESHOOT` never mutates state** — only writes an event row and sets `last_inspected_tick`. **`FIX` is partial**, **`REPLACE` is full**.
 
-| Component | Driver damage `D` | Baseline age `t_eff` | Physical metric | Cost / downtime |
-| :--- | :--- | :--- | :--- | :--- |
-| **Recoater blade** | `D ← 0` (fresh blade) | `t_eff ← 0` | `thickness ← 0.95 · h0` (new blade, slight install play) | 1 maintenance unit; 2 h sim downtime |
-| **Nozzle plate** | `D ← 0.2 · D` (clean cycle, 80% recovery) | unchanged | `clog% ← 0`, fatigue accumulator `× 0.5` | 1 unit; 1 h downtime |
-| **Heating element** | `D ← 0.5 · D` | unchanged | `resistance_drift ← 0.5 · current_drift` | 1 unit; 1 h downtime (no field repair, only de-rating + recalibration) |
+| Component | `FIX` (partial) | `REPLACE` (full) | Cost / downtime |
+| :--- | :--- | :--- | :--- |
+| **Blade** | n/a — blade is not field-repairable; FIX falls through to REPLACE | `D ← 0`, `t_eff ← 0`, `thickness ← 0.95·h0` | 2 h sim |
+| **Rail** | `D_lube ← 0`, `D_corr ← 0.5·D_corr`, `D_pit` unchanged (permanent) | `D ← 0`, `t_eff ← 0`, `alignment_error ← 0` | 1 h FIX / 4 h REPLACE |
+| **Nozzle** | clean cycle: `clog% ← clog% · (1 − cleaning.efficiency)`, `D_fatigue × 0.5` | full plate swap: `clog% ← 0`, `D ← 0`, `t_eff ← 0` | 1 h FIX / 3 h REPLACE |
+| **Cleaning** | wiper-blade swap: `cumulative_cleanings ← 0`, `H_use ← 1.0`, `shelf_age ← 0` | full station: same as FIX (already a full reset of the wear path) | 0.5 h |
+| **Heater** | de-rate + recalibrate: `D ← 0.5·D`, `drift_frac ← 0.5·drift_frac` | element swap: `R ← R_0`, `D ← 0`, `t_eff ← 0` | 1 h FIX / 4 h REPLACE |
+| **Sensor** | calibrate: `bias_C ← 0`, `noise_sigma_C` unchanged (connector oxidation persists) | `bias_C ← 0`, `noise_sigma_C ← 0`, `t_eff ← 0`, redraw initial bias sign | 0.25 h FIX / 1 h REPLACE |
 
-Two policy choices baked in:
+Notes baked into these rules:
 
-1. **Blade is replaceable, heater is not.** Field-realistic. Heater "maintenance" is a calibration, not a swap, so `D` only halves.
-2. **Maintenance is atomic across all three components.** Simpler than per-component actions, keeps `action_space = Discrete(2)`. A future stretch could expand to `Discrete(4)` (none / blade / nozzle / heater) but it's not needed for the demo chart.
+1. **Blade and cleaning interface have no meaningful FIX** — they're consumables. The policy emits `REPLACE`; if it asks for `FIX` we route it to `REPLACE` and log a note.
+2. **Rail pitting is permanent.** Even `REPLACE` is rare and expensive; `FIX` only addresses the lubricant + corrosion damage.
+3. **Sensor `FIX` doesn't fix noise.** Connector oxidation/work-hardening is irreversible without replacement — calibration only zeros the bias offset.
+4. **Maintenance writes one `OperatorEvent` row** per action via `domain.events.OperatorEvent`, with `kind ∈ {TROUBLESHOOT, FIX, REPLACE}` and the magnitude / rationale in `payload`.
 
 ### The killer demo chart
 

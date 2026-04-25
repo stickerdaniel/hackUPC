@@ -49,25 +49,33 @@ CREATE TABLE runs (
   notes       TEXT
 );
 
--- Per-tick environmental + operational drivers (one row per tick, per run).
+-- Per-tick raw drivers + the system-level print outcome (one row per tick, per run).
+-- Drivers are the brief's 4-driver schema, matching `domain.drivers.Drivers`.
 CREATE TABLE drivers (
-  run_id      TEXT NOT NULL,
-  ts          TEXT NOT NULL,        -- ISO-8601
-  temp_c      REAL NOT NULL,
-  humidity    REAL NOT NULL,        -- 0..1
-  load        REAL NOT NULL,        -- normalized cycles or print-hours
-  maint_level REAL NOT NULL,        -- 0..1 maintenance coefficient
+  run_id                  TEXT NOT NULL,
+  ts                      TEXT NOT NULL,        -- ISO-8601
+  temperature_stress      REAL NOT NULL,        -- 0..1, deviation from optimal
+  humidity_contamination  REAL NOT NULL,        -- 0..1, unified per the brief (NOT split)
+  operational_load        REAL NOT NULL,        -- 0..1
+  maintenance_level       REAL NOT NULL,        -- 0..1
+  -- §3.4 system-level observable, top-level on PrinterState
+  print_outcome           TEXT NOT NULL,        -- 'OK' | 'QUALITY_DEGRADED' | 'HALTED'
+  -- Coupling factors computed once per tick by build_coupling_context, persisted
+  -- so the co-pilot can attribute degradation upstream without re-running the engine.
+  coupling_factors_json   TEXT NOT NULL,        -- {"powder_spread_quality": 0.83, "sensor_bias_c": -1.2, ...}
   PRIMARY KEY (run_id, ts),
   FOREIGN KEY (run_id) REFERENCES runs(run_id)
 ) WITHOUT ROWID;
 
--- Per-tick, per-component health + status (one row per component per tick).
+-- Per-tick, per-component TRUE health + status (engine-internal ground truth).
+-- Six components: blade, rail, nozzle, cleaning, heater, sensor.
 CREATE TABLE component_state (
   run_id     TEXT NOT NULL,
   ts         TEXT NOT NULL,
-  component  TEXT NOT NULL,         -- 'recoater_blade' | 'nozzle_plate' | 'heating_element'
-  health     REAL NOT NULL,         -- 0..1
-  status     TEXT NOT NULL,         -- FUNCTIONAL | DEGRADED | CRITICAL | FAILED
+  component  TEXT NOT NULL,         -- 'blade' | 'rail' | 'nozzle' | 'cleaning' | 'heater' | 'sensor'
+  health     REAL NOT NULL,         -- 0..1, true health
+  status     TEXT NOT NULL,         -- FUNCTIONAL | DEGRADED | CRITICAL | FAILED  (NEVER 'UNKNOWN' on true state)
+  age_ticks  INTEGER NOT NULL,
   PRIMARY KEY (run_id, ts, component),
   FOREIGN KEY (run_id, ts) REFERENCES drivers(run_id, ts)
 ) WITHOUT ROWID;
@@ -75,12 +83,12 @@ CREATE TABLE component_state (
 CREATE INDEX idx_state_component_ts
   ON component_state(run_id, component, ts);
 
--- Per-tick, per-component, per-metric physical quantities.
+-- Per-tick, per-component, per-metric TRUE physical quantities.
 CREATE TABLE metrics (
   run_id       TEXT NOT NULL,
   ts           TEXT NOT NULL,
   component    TEXT NOT NULL,
-  metric_name  TEXT NOT NULL,       -- 'clog_pct' | 'fatigue_damage' | 'thickness_mm' | 'resistance_ohm' ...
+  metric_name  TEXT NOT NULL,       -- 'clog_pct' | 'fatigue_damage' | 'thickness_mm' | 'alignment_error_um' | 'cleaning_efficiency' | 'drift_frac' | 'bias_c' | 'noise_sigma_c' | ...
   metric_value REAL NOT NULL,
   PRIMARY KEY (run_id, ts, component, metric_name),
   FOREIGN KEY (run_id, ts, component) REFERENCES component_state(run_id, ts, component)
@@ -89,18 +97,47 @@ CREATE TABLE metrics (
 CREATE INDEX idx_metrics_lookup
   ON metrics(run_id, component, metric_name, ts);
 
--- Sparse events log: maintenance actions, status transitions, chaos injections.
+-- §3.4 OBSERVED layer — what a sensor or print-quality signal actually exposes.
+-- Mirrors component_state but values can be NULL (sensor absent / dropped out)
+-- and observed_status can be 'UNKNOWN'. The maintenance policy and co-pilot
+-- consume THIS layer, not the true layer above.
+CREATE TABLE observed_component_state (
+  run_id            TEXT NOT NULL,
+  ts                TEXT NOT NULL,
+  component         TEXT NOT NULL,
+  observed_health   REAL,                 -- nullable when not derivable
+  observed_status   TEXT NOT NULL,        -- FUNCTIONAL | DEGRADED | CRITICAL | FAILED | UNKNOWN
+  sensor_note       TEXT NOT NULL,        -- 'ok' | 'noisy' | 'drift' | 'stuck' | 'absent' | mixed-tag
+  PRIMARY KEY (run_id, ts, component),
+  FOREIGN KEY (run_id, ts, component) REFERENCES component_state(run_id, ts, component)
+) WITHOUT ROWID;
+
+-- Per-metric observed values + per-metric sensor health.
+CREATE TABLE observed_metrics (
+  run_id                    TEXT NOT NULL,
+  ts                        TEXT NOT NULL,
+  component                 TEXT NOT NULL,
+  metric_name               TEXT NOT NULL,
+  observed_value            REAL,         -- NULL when sensor absent / stuck-at-None
+  sensor_health_for_metric  REAL,         -- 0..1, NULL when no sensor on this metric
+  PRIMARY KEY (run_id, ts, component, metric_name),
+  FOREIGN KEY (run_id, ts, component, metric_name) REFERENCES metrics(run_id, ts, component, metric_name)
+) WITHOUT ROWID;
+
+-- Sparse events log: operator actions (TROUBLESHOOT/FIX/REPLACE), status transitions, chaos injections.
 CREATE TABLE events (
   run_id       TEXT NOT NULL,
   ts           TEXT NOT NULL,
   component    TEXT,                -- nullable: machine-wide events allowed
-  kind         TEXT NOT NULL,       -- 'MAINTENANCE' | 'FAILURE' | 'STATUS_CHANGE' | 'CHAOS'
-  payload_json TEXT NOT NULL,       -- arbitrary structured detail
+  kind         TEXT NOT NULL,       -- OperatorEventKind ∈ {'TROUBLESHOOT', 'FIX', 'REPLACE'} | 'STATUS_CHANGE' | 'CHAOS' | 'FAILURE'
+  payload_json TEXT NOT NULL,       -- arbitrary structured detail (rationale, magnitudes, etc.)
   PRIMARY KEY (run_id, ts, kind, component)
 );
 
 CREATE INDEX idx_events_kind ON events(run_id, kind, ts);
 ```
+
+**§3.4 observability split — why two state tables, not one.** The brief (§3.4) requires a clean separation between *true state* (engine-internal ground truth) and *observed state* (what the operator/policy/co-pilot perceives via sensors and print outcomes). The maintenance policy and the future co-pilot must consume `observed_component_state` and `observed_metrics`; only the engine and the deck-side analytics may read `component_state` and `metrics`. This is the structural condition for ever distinguishing *component fault* from *sensor fault* — without it, an LLM has nothing to compare. Mirrors `domain.state.PrinterState` vs `ObservedPrinterState`.
 
 ### `run_id` format — locked
 
@@ -127,7 +164,7 @@ ASCII-only, hyphen-separated, lexicographically sortable by date, trivially grep
 - **`WITHOUT ROWID`** on the heavy time-series tables: SQLite stores rows directly in the primary-key B-tree, which is the index Phase 3 actually queries. Saves space and a level of indirection.
 - **Events table is sparse** — failures and maintenance happen rarely, so it stays small and fast to scan even with `LIKE '%'` style debugging queries.
 - **`better-sqlite3` is synchronous** — perfect for AI SDK tool calls: the tool function body is `db.prepare(sql).all(params)` with no `await`, no connection pool, no surprises in serverless edge runtimes.
-- **Volume sanity check.** 4400 ticks × 3 components × ~2 metrics ≈ 26.4k metric rows; + 13.2k state rows; + 4.4k driver rows; + ~30 event rows. Under 50k rows total per run; full DB for ~10 demo runs comfortably fits in a few MB and is checkable into git.
+- **Volume sanity check (6 components).** 4400 ticks × 6 components × ~2 metrics ≈ 53k metric rows; ×2 again for the observed mirror (~53k more); + 26k state rows (×2 for observed); + 4.4k driver rows (now also carrying `print_outcome` + `coupling_factors_json`); + ~50 event rows. ~190k rows total per run, still well under 10 MB SQLite. Full DB for ~5 demo runs comfortably fits in git.
 
 ## References
 
@@ -140,6 +177,6 @@ ASCII-only, hyphen-separated, lexicographically sortable by date, trivially grep
 ## Open questions
 
 - **Timestamp type.** Going with ISO-8601 TEXT for human-readability in `sqlite3` CLI demos; if range scans get slow we switch to INTEGER unix-seconds with no schema change other than the column type.
-- **Multiple components of the same kind.** Current schema assumes one of each (`recoater_blade`, `nozzle_plate`, `heating_element`). If we model multiple heating zones we add a `component_id` suffix (`heating_element_z1`) rather than a separate column — keeps the PK shape.
+- **Multiple components of the same kind.** Current schema assumes one of each (`blade`, `rail`, `nozzle`, `cleaning`, `heater`, `sensor`). If we model multiple heating zones we add a `component_id` suffix (`heater_z1`) rather than a separate column — keeps the PK shape.
 - **Snapshot vs. delta.** We persist absolute values every tick (snapshot). Cheaper to query, slightly more storage. Fine at this scale.
 - **Where the file lives in Phase 3 deploy.** Likely bundled into the Next.js app under `/app/data/historian.sqlite` and opened read-only at boot. Confirmed reachable from Vercel runtimes via the Node.js runtime (not Edge); revisit if we move to Edge.

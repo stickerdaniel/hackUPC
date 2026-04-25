@@ -30,8 +30,11 @@ Because Weibull collapses to exponential at β = 1, we use Weibull as the single
 | Component | β | η (days) | Failure regime | Why |
 | :--- | :--- | :--- | :--- | :--- |
 | Recoater Blade | **2.5** | **180** | Wear-out | Abrasive contact wear. β = 2.5 sits in the documented mechanical-wear band (1.5–4); η = 180 d means ≈ 63% would have failed by 6 months under nominal drivers — i.e. without the Archard accelerator the demo's "blade replacement" event lands inside the simulated window. |
+| Linear Guide / Rail | **2.0** | **220** | Wear-out (subsurface fatigue) | Rolling-contact pitting band is β ≈ 1.5–2.5 (Lundberg-Palmgren / NSK / NIST). η = 220 d puts rail's CRITICAL ~10 % later than the blade so the blade fails first under nominal drivers — the blade-fails-first cascade story holds. (doc 17) |
 | Nozzle Plate | **2.0** | **150** | Wear-out (thermal-fatigue dominated) | Thermal cycling + clog accretion is a classic β ≈ 2 wear pattern (matches bearing-fatigue analogue). Slightly shorter η than blade because nozzle clogging in binder jetting is empirically aggressive in dirty environments. |
+| Cleaning Interface | **1.5** | **8760 h** (≈ 365 d) | Use-driven (shelf-life only) | Dominant decay is power-law in cumulative cleanings (`H_use = 1 − a·n^p`); the Weibull term is a small calendar shelf-life floor for elastomer hardening when idle. β = 1.5 light wear-out. (doc 18) |
 | Heating Elements | **1.0** | **240** | Random / useful-life | Heater wire burnout and resistance drift are dominated by random over-stress events (oxidation, hot spots) inside the useful-life envelope, not gradual wear. β = 1 ⇒ R(t) = exp(−t/240) ≈ exp(−0.00417·t). MTTF = η = 240 d. (Goodson, Ohmite, AllAboutCircuits) |
+| Temperature Sensor | n/a | n/a | Arrhenius-driven bias drift | No Weibull baseline — bias accumulates as `exp(−E_a/k_B·(1/T_ref − 1/T))` (E_a = 0.7 eV, T_ref = 423 K) layered with a sub-linear noise-floor growth. Hard FAILED gate at `|bias_C| > 5 °C` regardless of HI. (doc 19) |
 
 ### Composition rule — multiplicative
 
@@ -55,9 +58,12 @@ Linear interpolation between a "new" anchor and a "failed" anchor, clipped:
 
 | Component | Metric `m` | `m_new` | `m_failed` | Health from metric |
 | :--- | :--- | :--- | :--- | :--- |
-| Recoater Blade | thickness (mm) | 0.50 | 0.00 | `(m − 0) / (0.50 − 0) = m / 0.50` |
-| Nozzle Plate | clog (%) | 0 | 100 | `1 − m/100` |
-| Heating Elements | resistance drift (% from nominal) | 0 | +20 | `1 − m/20` |
+| Recoater Blade | thickness (mm) | 1.00 | 0.50 (50 % loss) | `clip((m − 0.5) / 0.5, 0, 1)` |
+| Linear Guide / Rail | alignment_error (µm) | 0 | 50 | `clip(1 − m/50, 0, 1)` |
+| Nozzle Plate | composite `(1−clog%/100)·(1−D)` | 1.0 | 0.20 | direct (already in [0,1]); hard fail if `clog%≥95` or `D≥1` |
+| Cleaning Interface | cleaning_efficiency (already [0,1]) | 1.0 | 0.0 | direct |
+| Heating Elements | resistance drift (% from nominal) | 0 | +10 | `clip(1 − m/10, 0, 1)` |
+| Temperature Sensor | composite `0.7·(1−|bias|/5) + 0.3·(1−σ/0.5)` | 1.0 | 0.0 | direct; **hard FAILED if `|bias_C| > 5 °C`** regardless of HI |
 
 Clipped to `[0, 1]`. The simulator stores both: the physical metric (for the operator) and the derived health (for the agent and the status enum).
 

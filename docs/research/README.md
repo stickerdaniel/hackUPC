@@ -8,15 +8,18 @@ Source briefs: [`../briefing/`](../briefing/). Canonical context: [`../../TRACK-
 
 ## Index
 
-### Phase 1 — the brain (math models) — IN SCOPE
+### Phase 1 — the brain (math models, **6 components**) — IN SCOPE
 
 | # | Topic | Decision |
 | :- | :--- | :--- |
 | 01 | [Recoater Blade — Archard wear](./01-recoater-blade-archard.md) | Linear `Δh = k_eff·P·s_eff·dt/H`; thresholds at 20 / 40 / 50 % thickness loss |
+| 17 | [Linear Guide / Rail — Weibull + driver damage](./17-linear-rail.md) | Weibull β=2.0 / η=220 d; `alignment_error_um ∈ [0,50]`; raceway pitting permanent |
 | 02 | [Nozzle Plate — Coffin-Manson + clog hazard](./02-nozzle-plate-coffin-manson.md) | Composite `H = (1−clog%/100)·(1−D)`; Palmgren-Miner accumulation |
+| 18 | [Cleaning Interface — wear-per-cycle](./18-cleaning-interface.md) | Power-law `H_use = 1 − a·n^p`; rewrites doc 02's clog reset to `× (1 − cleaning_efficiency)` |
 | 03 | [Heating Elements — Arrhenius drift](./03-heating-elements-arrhenius.md) | Acceleration-factor form, `E_a = 0.7 eV`, fail at +10 % drift |
-| 04 | [Aging baselines + Health normalization](./04-aging-baselines-and-normalization.md) | Weibull per component, multiplicative composition, status thresholds 0.75 / 0.40 / 0.15 |
-| 05 | [Cascade + AI-driven degradation (bonus)](./05-cascading-and-ai-degradation.md) | Blade→Nozzle contamination cascade; sklearn `MLPRegressor` surrogate for heater |
+| 19 | [Temperature Sensor — bias drift + §3.4 ref impl](./19-temperature-sensor.md) | PT100, Arrhenius bias drift; reference impl of the §3.4 observed-state mapping; hard FAILED if `\|bias_C\| > 5 °C` |
+| 04 | [Aging baselines + Health normalization](./04-aging-baselines-and-normalization.md) | Weibull per component (now 6), multiplicative composition, status thresholds 0.75 / 0.40 / 0.15 |
+| 05 | [Coupling matrix + AI-driven degradation (rewrite)](./05-cascading-and-ai-degradation.md) | Full 6-component coupling matrix (3 two-way loops + 2 cross-subsystem cascades); CouplingContext factor names; sklearn `MLPRegressor` surrogate for heater |
 
 ### Phase 2 — the clock + the historian — IN SCOPE
 

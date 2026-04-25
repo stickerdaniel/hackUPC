@@ -4,6 +4,10 @@
 
 For Phase 2 we drive the Phase 1 engine on a **fixed `dt = 1` simulated hour** for **~6 sim-months (4380 ticks)**. Each of the four drivers gets the simplest viable generator: **sinusoidal day+season** for Temperature, an **Ornstein–Uhlenbeck** mean-reverter for Humidity/Contamination, a **monotonic cumulative + duty-cycle** signal for Operational Load, and a **step function** for Maintenance Level. A **stochastic chaos layer** (Poisson-timed temperature spikes, contamination bursts, missed maintenance) sits on top, gated by a `chaos: bool` config flag. Every random draw goes through a single `numpy.random.default_rng(seed)` so runs are bit-exact reproducible.
 
+> **Driver schema is locked at 4** — `Drivers(temperature_stress, humidity_contamination, operational_load, maintenance_level)`, exactly as the brief specifies and as already implemented in `sim/src/copilot_sim/domain/drivers.py`. We do **not** split `humidity_contamination` into separate humidity vs powder_contamination drivers; powder contamination cascades in via the coupling matrix (doc 05) by adjusting `humidity_contamination_effective`, not by adding a 5th driver.
+
+> **Loop-managed state fields** that the engine reads but the driver generator does NOT produce: `continuous_runtime_hours`, `cycles_since_start`, `hours_since_maintenance`. These are owned by the simulation loop and are derived from tick count + the operator-event stream. They live on `PrinterState` (or a sibling object) per the §3.4 implementation notes, not in `Drivers`.
+
 ## Background
 
 Phase 2 wraps the deterministic Phase 1 logic engine in a time-advancing loop and persists every `(t, drivers, state)` tuple to a SQLite historian. The loop needs to *generate* the four input drivers at each tick because we don't have a real S100 telemetry stream. The drivers must be (a) physically plausible enough to drive realistic component degradation, (b) cheap to compute (we'll run thousands of ticks live during the demo), and (c) seedable for reproducible "what-if" demos to the HP judges.
