@@ -17,16 +17,22 @@ drivers:
     base: 0.30
     amplitude: 0.10
     period_weeks: 52
+    weekly_wobble_amplitude: 0.015
+    noise_sigma: 0.008
+    noise_theta: 0.30
   humidity_contamination:
     kind: ornstein_uhlenbeck
     mean: 0.35
     theta: 0.05
     sigma: 0.04
   operational_load:
-    kind: monotonic_duty_cycle
-    base: 0.55
-    monotonic_drift_per_year: 0.02
-    duty_cycle_amplitude: 0.10
+    kind: smooth_synthetic
+    mean: 0.55
+    theta: 0.25
+    sigma: 0.12
+    annual_amplitude: 0.15
+    idle_probability: 0.05
+    overload_probability: 0.04
   maintenance_level:
     kind: step
     schedule:

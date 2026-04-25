@@ -92,3 +92,5 @@ runs/
 artefacts/
 *.joblib
 *.pkl
+sim/data/historian.sqlite-shm
+sim/data/historian.sqlite-wal

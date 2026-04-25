@@ -40,15 +40,37 @@ class SinusoidalSeasonalTemp:
     base: float
     amplitude: float
     period_weeks: float = 52.0
+    weekly_wobble_amplitude: float = 0.02
+    noise_sigma: float = 0.01
+    noise_theta: float = 0.35
+    _noise_state: float = field(default=0.0, init=False)
 
     def sample(
         self,
         tick: int,
         env: Environment,  # noqa: ARG002
-        rng: np.random.Generator,  # noqa: ARG002
+        rng: np.random.Generator,
     ) -> float:
         phase = 2.0 * math.pi * tick / self.period_weeks
-        return float(self.base + self.amplitude * math.cos(phase))
+        # Start the yearly cycle in winter (low), then rise toward summer.
+        seasonal = self.base - self.amplitude * math.cos(phase)
+
+        # Add a subtle, non-perfect weekly pattern so the series does not
+        # look like a mathematically perfect wave.
+        weekly_wobble = self.weekly_wobble_amplitude * (
+            math.sin(2.0 * math.pi * tick / 7.0)
+            + 0.5 * math.sin(2.0 * math.pi * tick / 3.5 + 1.7)
+        )
+
+        # Mean-reverting noise creates realistic weather variability while
+        # staying deterministic for a fixed seed and scenario.
+        innovation = float(rng.normal(0.0, self.noise_sigma))
+        self._noise_state = self._noise_state + self.noise_theta * (
+            innovation - self._noise_state
+        )
+
+        value = seasonal + weekly_wobble + self._noise_state
+        return float(np.clip(value, 0.0, 1.0))
 
 
 @dataclass(slots=True)
@@ -91,6 +113,53 @@ class MonotonicDutyLoad:
         wobble = self.duty_cycle_amplitude * math.sin(2.0 * math.pi * tick / 3.0)
         value = self.base + self.monotonic_drift_per_year * years + wobble
         return float(np.clip(value, 0.0, 1.0))
+
+@dataclass(slots=True)
+class SmoothSyntheticOperationalLoad:
+    """Synthetic operational load with memory.
+
+    Better realism than independent weekly samples:
+    high-load phases and low-load phases persist for several weeks.
+    """
+
+    mean: float = 0.55
+    theta: float = 0.25
+    sigma: float = 0.12
+
+    annual_amplitude: float = 0.15
+    idle_probability: float = 0.05
+    overload_probability: float = 0.04
+
+    weeks_per_year: float = 52.0
+    _state: float | None = field(default=None, init=False)
+
+    def sample(
+        self,
+        tick: int,
+        env: Environment,  # noqa: ARG002
+        rng: np.random.Generator,
+    ) -> float:
+        if self._state is None:
+            self._state = self.mean
+
+        seasonal_target = self.mean + self.annual_amplitude * math.sin(
+            2.0 * math.pi * tick / self.weeks_per_year
+        )
+
+        # mean-reverting process around seasonal demand
+        shock = rng.normal(0.0, self.sigma)
+        load = self._state + self.theta * (seasonal_target - self._state) + shock
+
+        # downtime week
+        if rng.random() < self.idle_probability:
+            load *= rng.uniform(0.1, 0.35)
+
+        # rush production week
+        if rng.random() < self.overload_probability:
+            load += rng.uniform(0.15, 0.30)
+
+        self._state = float(np.clip(load, 0.0, 1.0))
+        return self._state
 
 
 @dataclass(slots=True)

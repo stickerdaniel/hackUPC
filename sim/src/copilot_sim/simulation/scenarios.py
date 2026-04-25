@@ -22,6 +22,7 @@ from ..drivers_src.events import EventOverlay, ScheduledEvent
 from ..drivers_src.generators import (
     DriverGenerator,
     MonotonicDutyLoad,
+    SmoothSyntheticOperationalLoad,
     OUHumidity,
     SinusoidalSeasonalTemp,
     StepMaintenance,
@@ -71,6 +72,9 @@ class TempCfg(_Strict):
     base: float
     amplitude: float
     period_weeks: float = 52.0
+    weekly_wobble_amplitude: float = 0.02
+    noise_sigma: float = 0.01
+    noise_theta: float = 0.35
 
 
 class HumidCfg(_Strict):
@@ -81,10 +85,23 @@ class HumidCfg(_Strict):
 
 
 class LoadCfg(_Strict):
-    kind: str = Field(pattern=r"^monotonic_duty_cycle$")
-    base: float
+    kind: str = Field(pattern=r"^(monotonic_duty_cycle|smooth_synthetic)$")
+
+    # shared
+    weeks_per_year: float = 52.0
+
+    # monotonic_duty_cycle
+    base: float = 0.45
     monotonic_drift_per_year: float = 0.02
     duty_cycle_amplitude: float = 0.10
+
+    # smooth_synthetic
+    mean: float = 0.55
+    theta: float = 0.25
+    sigma: float = 0.12
+    annual_amplitude: float = 0.15
+    idle_probability: float = 0.05
+    overload_probability: float = 0.04
 
 
 class StepEntry(_Strict):
@@ -200,7 +217,12 @@ def load_scenario(path: str | Path) -> ScenarioConfig:
 # --- generator builders ----------------------------------------------------
 def build_temperature(cfg: TempCfg) -> DriverGenerator:
     return SinusoidalSeasonalTemp(
-        base=cfg.base, amplitude=cfg.amplitude, period_weeks=cfg.period_weeks
+        base=cfg.base,
+        amplitude=cfg.amplitude,
+        period_weeks=cfg.period_weeks,
+        weekly_wobble_amplitude=cfg.weekly_wobble_amplitude,
+        noise_sigma=cfg.noise_sigma,
+        noise_theta=cfg.noise_theta,
     )
 
 
@@ -209,11 +231,26 @@ def build_humidity(cfg: HumidCfg) -> DriverGenerator:
 
 
 def build_load(cfg: LoadCfg) -> DriverGenerator:
-    return MonotonicDutyLoad(
-        base=cfg.base,
-        monotonic_drift_per_year=cfg.monotonic_drift_per_year,
-        duty_cycle_amplitude=cfg.duty_cycle_amplitude,
-    )
+    if cfg.kind == "monotonic_duty_cycle":
+        return MonotonicDutyLoad(
+            base=cfg.base,
+            monotonic_drift_per_year=cfg.monotonic_drift_per_year,
+            duty_cycle_amplitude=cfg.duty_cycle_amplitude,
+            weeks_per_year=cfg.weeks_per_year,
+        )
+
+    if cfg.kind == "smooth_synthetic":
+        return SmoothSyntheticOperationalLoad(
+            mean=cfg.mean,
+            theta=cfg.theta,
+            sigma=cfg.sigma,
+            annual_amplitude=cfg.annual_amplitude,
+            idle_probability=cfg.idle_probability,
+            overload_probability=cfg.overload_probability,
+            weeks_per_year=cfg.weeks_per_year,
+        )
+
+    raise ValueError(f"Unknown load generator kind: {cfg.kind!r}")
 
 
 def build_maintenance(cfg: MaintCfg) -> DriverGenerator:
