@@ -40,6 +40,23 @@ export const renderUI = tool({
 			return { ok: false as const, error: `Invalid JSON: ${(e as Error).message}` };
 		}
 
+		// Fill `children: []` on any element missing it. The svelte spec schema
+		// requires `children: z.array(z.string())` on every element (see
+		// references/json-render/packages/svelte/src/schema.ts:24), but the
+		// shadcn catalog only marks containers (Card, Stack, Grid, Tabs,
+		// Collapsible, Dialog, Drawer) with `slots: ["default"]`, so smaller
+		// LLMs reasonably omit `children` on leaf components like Heading,
+		// Text, Badge, Table, Separator. Backfilling here turns those silent
+		// shape errors into successful renders.
+		const rawElements = (parsed as { elements?: Record<string, unknown> }).elements;
+		if (rawElements && typeof rawElements === 'object') {
+			for (const el of Object.values(rawElements)) {
+				if (el && typeof el === 'object' && !('children' in el)) {
+					(el as { children: string[] }).children = [];
+				}
+			}
+		}
+
 		const shape = chatCatalog.validate(parsed);
 		if (!shape.success) {
 			const msg = shape.error?.message ?? 'unknown validation error';

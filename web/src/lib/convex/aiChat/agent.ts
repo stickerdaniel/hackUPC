@@ -53,10 +53,24 @@ The renderUI spec MUST be valid JSON of shape:
     "state": {}    // optional; sample data referenced by $state bindings
   }
 - The element discriminator field is "type" (NOT "component").
+- EVERY element MUST include a "children" array, even leaf components.
+  Use "children": [] on Heading, Text, Badge, Table, Separator, Progress,
+  Alert, Avatar, Image, Button. Only Card, Stack, Grid, Tabs, Collapsible,
+  Dialog, Drawer actually render their children.
 - Every key listed in any "children" array MUST exist as its own entry in "elements".
 - Use only these shadcn components (NO Metric — it does not exist):
   Card, Stack, Grid, Heading, Text, Badge, Table, Alert, Separator,
   Progress, Button, ButtonGroup, Tabs, Avatar, Image.
+
+Valid enum prop values (using anything else fails validation):
+- Stack.gap, Grid.gap: "none" | "sm" | "md" | "lg"  (NOT "xs", "medium", "large")
+- Stack.direction: "horizontal" | "vertical"
+- Stack.align: "start" | "center" | "end" | "stretch"
+- Stack.justify: "start" | "center" | "end" | "between" | "around"
+- Heading.level: "h1" | "h2" | "h3" | "h4"
+- Text.variant: "body" | "caption" | "muted" | "lead" | "code"
+- Badge.variant: "default" | "secondary" | "destructive" | "outline"
+- Card.maxWidth: "sm" | "md" | "lg" | "full"
 
 For weather specifically, the getWeather tool returns:
   { temperature, feelsLike, windSpeed, windGust, description }
