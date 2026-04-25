@@ -1,103 +1,126 @@
-# Dashboard guide — what each chart shows and how to present it
+# Dashboard guide — what each panel shows and how to present it
 
-The Streamlit dashboard renders six charts from one SQLite historian (`data/historian.sqlite`). Pick the run with the sidebar `run_id` selector. All six charts share the same x-axis (simulated tick = one sim-hour).
+The Streamlit dashboard at `streamlit_app.py` packs maximum information about a single selected run into **four panels**. Pick the run with the sidebar `run_id` selector. Pick the focus component for panel 3 with the `component (panel 3)` selector (default `heater`). Move the slider above panel 1 to set the *selected tick* — a black dashed cursor that lines up across the heatmap.
 
-Reference run used for the screenshots and call-outs below: `barcelona-baseline-42-…` — horizon 260 ticks, final state heater + nozzle FAILED, rail CRITICAL. Note distribution `{'ok': 224, 'noisy': 36}`.
+Reference run used for the call-outs below: `barcelona-baseline-42-…` — horizon 260 ticks; final state nozzle / cleaning / rail FAILED, heater + sensor degrading.
 
----
-
-## 1. Component health over time
-
-Six lines, one per component (`blade`, `cleaning`, `heater`, `nozzle`, `rail`, `sensor`). Y axis is the composite **health index** ∈ [0, 1] from `H = H_baseline · H_driver`. Status thresholds: `>0.75` FUNCTIONAL · `>0.40` DEGRADED · `>0.15` CRITICAL · else FAILED.
-
-**What you see**: sawtooth curves. Each downstroke is degradation under the active drivers; each vertical jump back up is the maintenance policy firing `FIX` or `REPLACE`.
-
-**Talking points**:
-- `nozzle` (pink) collapses fastest in Barcelona — humidity + powder contamination drives clog hazard up; it lives at the bottom even after FIX.
-- `blade` and `rail` show the cleanest sawtooth — they're consumable / rebuildable, so REPLACE puts them back near 1.0.
-- `sensor` (green, top) barely moves over 260 ticks — temperature sensors are slow Arrhenius-drift devices, this is the expected shape.
-- `heater` (red) decays smoothly without a reset — once drift exceeds the +10 % cliff it stays FAILED until a REPLACE.
+The four panels answer four questions in order:
+1. **What is failing?**
+2. **Why is it failing?**
+3. **Can we trust the observed data?**
+4. **What did the operator (policy) do about it?**
 
 ---
 
-## 2. Driver streams
+## Metadata strip (top of page)
 
-The four raw inputs the engine consumes every tick (before any coupling):
+Two compact uppercase lines pulled from `runs` + the `print_outcome` distribution on `drivers`:
 
-- `temperature_stress` — sinusoidal day+season profile (Barcelona climate).
-- `humidity_contamination` — Ornstein-Uhlenbeck mean-reverting noise.
-- `operational_load` — duty-cycle square wave around 0.6–0.7.
-- `maintenance_level` — step function (often near zero between scheduled windows).
+```
+RUN  {run_id}  ·  SCENARIO  {scenario}  ·  PROFILE  {profile}
+SEED {seed}  ·  HORIZON {horizon_ticks}  ·  DT {dt_seconds}s  ·  OK x%  ·  DEGRADED y%  ·  HALTED z%
+```
 
-**Talking point**: this is the *cause* panel; everything in chart 1 is the *effect*. The temperature sinusoid in particular maps onto the heater's drift slope.
-
----
-
-## 3. Print outcome distribution
-
-Stacked bars per 10-tick window, counting the per-tick `print_outcome ∈ {OK, QUALITY_DEGRADED, HALTED}` derived at the end of every `Engine.step()`.
-
-**What you see**: early buckets are dominated by QUALITY_DEGRADED + OK; from ~tick 50 onward HALTED takes over as the heater and nozzle hit their cliffs.
-
-**Talking points**:
-- Run totals: 50 OK / 124 QUALITY_DEGRADED / 86 HALTED.
-- This is the operator-facing signal — the machine literally stops printing once a critical component fails, regardless of what any sensor says.
+The OK / DEGRADED / HALTED percentages are the operator-visible KPI — what fraction of ticks the printer actually printed cleanly versus produced bad parts versus halted. Drop a number in conversation when introducing the run.
 
 ---
 
-## 4. Maintenance events
+## Panel 1 — Driver-coupled component decay
 
-Bar chart counting events per tick, coloured by `OperatorEventKind` (`FIX` / `REPLACE` / `TROUBLESHOOT`). Below it, the table shows the last 20 events with `(tick, kind, component_id)`.
+The hero panel. One composed Altair chart, three vertical bands.
 
-**What you see**: solid blue bars at almost every tick from ~5 onward — the heuristic policy is firing `FIX` continuously once health drops below the reactive threshold.
+**Top — three driver sparklines** (`temperature_stress`, `humidity_contamination`, `operational_load`). Thin black lines, no axes, right-edge percentage label. These are the engine's *inputs*; everything in the heatmap below is the *consequence*.
 
-**Talking points**:
-- The policy reads only `ObservedPrinterState`, not the true state — so it reacts to what a real operator would see.
-- Late-run events (tail of the table) cycle FIX across heater → nozzle → blade → rail every tick: panic mode after the first hard failure.
-- If we run the LLM-as-policy A/B, this chart sparser = smarter (preventive REPLACE > reactive FIX spam).
+**Middle — component status heatmap**. One row per component (in canonical order: `blade`, `rail`, `nozzle`, `cleaning`, `heater`, `sensor`), one column per tick. Cell colour is the **status** at that tick:
 
----
+- light grey → FUNCTIONAL
+- medium grey → DEGRADED
+- royal blue (`#3A6FE0`) → CRITICAL
+- near-black (`#111111`) → FAILED
 
-## 5. Coupling factors over time
+If the run has more than ~120 ticks, columns are downsampled and each bucket shows the **worst** status in its window (`FAILED > CRITICAL > DEGRADED > FUNCTIONAL`). Tooltip on every cell carries `tick`, `component`, `status`, exact `health_index`, and the three drivers.
 
-Lines for the named entries in `CouplingContext.factors` — these are the **internal physics** the engine computes each tick from the previous state:
+**Overlays on the heatmap:**
+- Black dashed vertical rule = the selected tick from the slider above the panel.
+- Tiny shape glyphs above each row = maintenance events at that tick (▲ FIX, ▼ REPLACE, ◇ TROUBLESHOOT). The full event story is on panel 4 — these are an at-a-glance summary.
+- Red dashed rules = environmental events (chaos overlays from the YAML — earthquake, HVAC failure, holiday). Only render when the scenario emits them.
 
-- `blade_loss_frac` — fraction of recoater thickness lost (sawtooths to 0 on REPLACE).
-- `cleaning_efficiency` — drops with cumulative cleanings, resets on cleaning REPLACE.
-- `heater_drift_frac` — Arrhenius drift, sawtooths down on heater REPLACE.
-- `control_temp_error_c` — what the controller *thinks* is the temperature error; corrupted by sensor bias.
-- `heater_thermal_stress_…` — the thermal stress the heater self-applies.
-- (also: `powder_spread_quality`, `nozzle_clog_pct`, `humidity_contamination_effective`, `temperature_stress_effective`, `sensor_bias_c`.)
-
-**Talking points**:
-- This is the **cascade attribution view**: when `nozzle` drops in chart 1, walk the cascade — `nozzle.clog → humidity_contamination_effective → powder_spread_quality → blade.loss_frac × rail.alignment_error`.
-- `cleaning_efficiency` resets correlate 1:1 with cleaning REPLACE events in chart 4.
-- Caption reminder: *"powder_spread_quality / cleaning_efficiency are damage proxies that drop as upstream components age; nozzle_clog_pct rises with humidity."*
+**Talking points (Barcelona-baseline-42):**
+- Nozzle row goes near-black almost immediately — humidity + bad powder spread quality cascade fast in the Barcelona profile.
+- Cleaning follows nozzle into FAILED ~tick 109; that's the cleaning↔nozzle coupling loop closing.
+- Rail flips to CRITICAL at 58 then FAILED — coupling driven, not standalone Weibull.
+- Heater + sensor stay grey: the chosen scenario doesn't open the §3.4 sensor-fault gap. Switch to `chaos-stress-test-…` for that story.
 
 ---
 
-## 6. Heater true vs observed (the §3.4 story)
+## Panel 2 — Cascade attribution (left half of middle row)
 
-Two lines for the heater only: ground-truth `health_index` (engine internal) vs `observed_health_index` (what the sensor reports). The caption shows how often `sensor_note` was each of `ok / noisy / drift / stuck / absent` over the run.
+For each component that crossed CRITICAL or FAILED, one card with:
 
-**What you see in the baseline run**: the lines overlap almost perfectly — `{'ok': 224, 'noisy': 36}`, no drift/stuck. The framework is in place but the sensor stayed honest in this scenario.
+- **Status transition header** — every status the component reached and the first tick it reached it. Reads top-to-bottom as a one-line failure timeline.
+- **Top-3 coupling factors** at the worst-status tick, as a horizontal royal-blue bar chart with numeric labels. Source: `reader.fetch_coupling_factors_at(...)` — the same query the CLI's `inspect --failure-analysis` uses, so the numbers match exactly.
+- **Causal chain text** beneath the bars when the queried factors actually contain the keys the chain references. Examples:
+  - `humidity ↑ + powder_spread_quality ↓ → nozzle_clog ↑ → NOZZLE FAILED`
+  - `nozzle_clog ↑ → cleaning_wear ↑ → cleaning_efficiency ↓ → CLEANING FAILED`
+  - `vibration ↑ + blade_loss ↑ → rail_alignment ↑ → RAIL FAILED`
 
-**Talking points**:
-- This is the §3.4 *Observability* twist: the operator only ever sees the observed line. When the sensor degrades, the gap between the two lines is the lie.
-- **For the punchier demo, switch to `chaos-stress-test.yaml` or `phoenix-aggressive.yaml`** — those scenarios push the sensor into `drift` / `stuck` territory and the gap opens up.
-- That gap is exactly what the LLM-as-policy agent uses to emit `TROUBLESHOOT(sensor) → REPLACE(sensor)` instead of misdiagnosing it as a heater fault.
+The bars are the source of truth; the chain is a human-readable annotation. If the data doesn't match the template, the chain is omitted — never invented.
+
+The panel is capped at **3 cards** (worst transitions first, FAILED before CRITICAL, ties broken by lowest `health_index`). Any extras roll into an `Other transitions (n)` expander. If the run has zero CRITICAL/FAILED components, the panel says so plainly.
+
+**Talking points:** this is where the simulator looks smarter than a normal dashboard. A traditional health curve says "nozzle failed at t=11"; the cascade card says "nozzle failed at t=11 *because* powder_spread_quality dropped to 0.62 because blade_loss_frac and rail_alignment_error pulled it down." That's the coupling story.
 
 ---
 
-## Demo flow (5 min)
+## Panel 3 — True vs observed (right half of middle row)
 
-1. Open with chart 1 — "six components, six failure laws, all coupled."
-2. Drop to chart 2 — "these are the four drivers; the temperature sinusoid is what's making the heater bleed."
-3. Chart 5 — "and here's the cascade — when the nozzle clogs it's because the powder line upstream is collapsing."
-4. Chart 4 + chart 3 — "the policy reacts, but in this run it's reactive FIX spam; you can see the print outcome flipping to HALTED anyway."
-5. Chart 6 — "and here's our unique angle — the operator's view is itself a failable signal. Switch scenarios to see the gap."
+The §3.4 sensor-trust panel. The component is chosen from the sidebar (`component (panel 3)`). Renders for the chosen component:
+
+- **Trust verdict chip** at the top — `SENSOR TRUST: TRUSTED / NOISY / DRIFTING / STUCK / ABSENT / SUSPECT`. Verdict is computed in strict priority order (first match wins): `ABSENT > STUCK > DRIFTING > SUSPECT > NOISY > TRUSTED`. Non-`TRUSTED` chips are royal blue; the alarm level is in the *text*, not extra colours.
+- **Two-line chart** — true `health_index` (thin black) vs `observed_health_index` (deeper blue `#0647E8`). When the operator's view diverges from the real state, the gap is the lie the sensor is telling.
+- **Sensor-note strip** below the chart — one row, coloured by `sensor_note` (`ok`, `noisy`, `drift`, `stuck`, `absent`, `degraded`). The strip is the *category* of failure the sensor is in at each tick.
+- **No-data fallback**: if `observed_health_index` is NULL for the entire component (no sensor at all), the observed line drops out, only the true line renders, and the chip reads `ABSENT` with an explanatory caption.
+- Caption ends with the `Note distribution: {…}` dict and a hint to switch to a chaos run if the gap looks small.
+
+**Talking points:** Barcelona-baseline keeps the sensor honest (`{ok: ~85%, noisy: ~15%}`), so the lines overlap. Switch to `chaos-stress-test-…` and pick `sensor` or `heater` to expose the gap — that's where the LLM-as-policy agent (when implemented) would emit `TROUBLESHOOT(sensor) → REPLACE(sensor)` instead of misdiagnosing it as a heater fault.
+
+---
+
+## Panel 4 — Maintenance event timeline (bottom, full width)
+
+Per-component event timeline. Six rows × tick axis. Glyphs:
+
+- ▲ FIX (black)
+- ▼ REPLACE (royal blue — the only blue in this panel)
+- ◇ TROUBLESHOOT (light grey outline)
+
+Above the timeline, a counts strip summarises totals: `FIX 187 · REPLACE 22 · TROUBLESHOOT 48 · TOTAL 257`. Below the timeline, an `Event log (last 50)` expander hides the raw dataframe for backup questions.
+
+**Talking points:** in Barcelona-baseline the timeline is dense black FIX glyphs late in the run on heater / nozzle / blade / rail — the heuristic policy is in panic-fix mode after the first hard failure. That visual is the pitch for the LLM-as-policy: blue REPLACE markers earlier, sparser overall.
+
+---
+
+## 5-minute demo flow
+
+| Time | Panel | What you say |
+| --- | --- | --- |
+| 0:00–0:30 | Metadata strip + Panel 1 sparklines | "Six components, three drivers, one operator KPI. The cascading status heatmap is the run at a glance." |
+| 0:30–1:30 | Panel 1 heatmap | "Nozzle goes black first — coupled to humidity and bad powder. Cleaning, rail follow. Heater + sensor stay grey in this scenario." |
+| 1:30–2:30 | Panel 2 cards | "Every failure has a causal chain — top-3 coupling factors at the failure tick, lifted from the historian, not narrated." |
+| 2:30–3:30 | Panel 3 (switch to chaos run if available) | "And the operator only ever sees the *observed* line. When the sensor lies, this gap opens up." |
+| 3:30–4:30 | Panel 4 | "Here's the policy reacting — dense FIX glyphs late in the run is the panic mode. The LLM-as-policy version (next milestone) cuts this in half with preventive REPLACE earlier." |
+| 4:30–5:00 | Back to Panel 1 | "Same engine, different scenario flips the failure order — Phoenix would put heater + sensor first." |
+
+---
 
 ## Switching runs / scenarios
 
 - Sidebar `run_id` dropdown picks any run already in the historian.
-- To generate a new run: in another terminal, `cd sim && .venv/bin/copilot-sim run <scenario.yaml>` (e.g. `chaos-stress-test.yaml` or `phoenix-aggressive.yaml`), then refresh the page.
+- To generate a new run: in another terminal, `cd sim && uv run copilot-sim run <scenario.yaml>` (e.g. `chaos-stress-test.yaml` or `phoenix-aggressive.yaml`), then refresh the page (the cached `open_db` connection auto-picks up new rows).
+- To wipe the historian (e.g. after a schema change): delete `sim/data/historian.sqlite*` and rerun.
+
+## Aesthetic choices
+
+- White background, black type. Royal blue (`#3A6FE0`) is reserved for CRITICAL cells, REPLACE markers, the trust-verdict chip when not `TRUSTED`. A slightly deeper blue (`#0647E8`) is reserved for the observed-health line in panel 3.
+- Selected-tick rule is **black dashed**, never blue, so the cursor never doubles up as a status indicator.
+- Status palette uses one constant (`STATUS_COLOURS` in `streamlit_app.py`) so all panels match.

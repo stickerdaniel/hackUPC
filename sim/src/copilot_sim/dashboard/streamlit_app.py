@@ -1,39 +1,107 @@
 """Streamlit dashboard for the digital twin demo.
 
-Six charts driven by the SQLite historian:
+Four technical panels for the selected run, in narrative order:
 
-1. Per-component true health over time.
-2. Driver streams (the four brief inputs) over time.
-3. Print outcome ribbon — OK / QUALITY_DEGRADED / HALTED stacked
-   counts per tick window.
-4. Maintenance event timeline by component.
-5. Coupling factor heatmap — how the ten named factors evolved.
-6. True vs observed health for the heater (the §3.4 sensor-fault
-   story made visible).
+1. Driver-coupled component decay — drivers + status heatmap + selected-tick rule.
+2. Cascade attribution — for each CRITICAL/FAILED component, top-3 coupling factors.
+3. True vs observed — per-component sensor-trust verdict (the §3.4 story).
+4. Maintenance event timeline — per-component glyphs by OperatorEventKind.
 
 Launch:
     cd sim
     uv run streamlit run src/copilot_sim/dashboard/streamlit_app.py
 
-If a `--db-path` query arg is set on the URL it is used; otherwise the
-default is `data/historian.sqlite`.
+Reads the SQLite historian at `data/historian.sqlite` by default; override
+in the sidebar.
 """
 
 from __future__ import annotations
 
 import io
-import json
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from typing import Any
 
 import altair as alt
 import pandas as pd
 import streamlit as st
 
 from copilot_sim.cli import main as cli_main
+from copilot_sim.components.registry import COMPONENT_IDS
+from copilot_sim.historian import reader
 from copilot_sim.historian.connection import open_db
 from copilot_sim.historian.writer import list_run_ids
 
+# ──────────────────────────────────────────────────────────────────────────
+# Constants — kept in one place so panels stay consistent.
+# ──────────────────────────────────────────────────────────────────────────
+
+STATUS_COLOURS: dict[str, str] = {
+    "FUNCTIONAL": "#E8E8E8",
+    "DEGRADED": "#9E9E9E",
+    "CRITICAL": "#5683FF",
+    "FAILED": "#1846F5",
+}
+STATUS_ORDER: tuple[str, ...] = ("FUNCTIONAL", "DEGRADED", "CRITICAL", "FAILED")
+# Severity rank for downsampled-bucket reduction (worst wins).
+STATUS_SEVERITY: dict[str, int] = {s: i for i, s in enumerate(STATUS_ORDER)}
+
+EVENT_SHAPES: dict[str, str] = {
+    "FIX": "triangle-up",
+    "REPLACE": "triangle-down",
+    "TROUBLESHOOT": "diamond",
+}
+EVENT_COLOURS: dict[str, str] = {
+    "FIX": "#111111",
+    "REPLACE": "#1846F5",
+    "TROUBLESHOOT": "#9E9E9E",
+}
+
+SENSOR_NOTE_COLOURS: dict[str, str] = {
+    "ok": "#E8E8E8",
+    "noisy": "#9E9E9E",
+    "drift": "#1846F5",
+    "stuck": "#FF8A3D",
+    "absent": "#C42B2B",
+    "degraded": "#5683FF",
+}
+
+ACCENT_BLUE = "#1846F5"   # primary brand blue — REPLACE markers, trust chip when not TRUSTED.
+OBSERVED_BLUE = "#0F2C7A"  # observed-health line in panel 3 only (deepest of the family).
+RULE_GREY = "#5A5A5A"     # subtle dark grey for environmental-event rules.
+
+# Chain text is rendered only when the queried top-3 contains the keys.
+CASCADE_CHAINS: dict[str, tuple[set[str], str]] = {
+    "heater": (
+        {"sensor_bias_c", "control_temp_error_c", "heater_drift_frac"},
+        "sensor_bias ↑ → control_temp_error ↑ → heater_drift ↑ → HEATER",
+    ),
+    "nozzle": (
+        {"humidity_contamination_effective", "powder_spread_quality", "nozzle_clog_pct"},
+        "humidity ↑ + powder_spread_quality ↓ → nozzle_clog ↑ → NOZZLE",
+    ),
+    "blade": (
+        {"rail_alignment_error", "blade_loss_frac"},
+        "rail_alignment ↑ → blade.k_eff ↑ → blade_loss ↑ → BLADE",
+    ),
+    "rail": (
+        {"blade_loss_frac", "rail_alignment_error"},
+        "vibration ↑ + blade_loss ↑ → rail_alignment ↑ → RAIL",
+    ),
+    "cleaning": (
+        {"nozzle_clog_pct", "cleaning_efficiency"},
+        "nozzle_clog ↑ → cleaning_wear ↑ → cleaning_efficiency ↓ → CLEANING",
+    ),
+    "sensor": (
+        {"temperature_stress_effective", "heater_drift_frac", "sensor_bias_c"},
+        "temperature_stress ↑ + heater_drift ↑ → sensor_bias ↑ → SENSOR",
+    ),
+}
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# DB / loaders.
+# ──────────────────────────────────────────────────────────────────────────
 
 def _default_db_path() -> Path:
     return Path("data/historian.sqlite")
@@ -58,7 +126,7 @@ def _load_drivers(conn, run_id: str) -> pd.DataFrame:
     return pd.read_sql_query(
         """
         SELECT tick, temperature_stress, humidity_contamination, operational_load,
-               maintenance_level, print_outcome, coupling_factors_json
+               maintenance_level
         FROM drivers WHERE run_id = ? ORDER BY tick
         """,
         conn,
@@ -66,7 +134,7 @@ def _load_drivers(conn, run_id: str) -> pd.DataFrame:
     )
 
 
-def _load_component_health(conn, run_id: str) -> pd.DataFrame:
+def _load_component_state(conn, run_id: str) -> pd.DataFrame:
     return pd.read_sql_query(
         """
         SELECT tick, component_id, health_index, status
@@ -77,7 +145,7 @@ def _load_component_health(conn, run_id: str) -> pd.DataFrame:
     )
 
 
-def _load_observed_health(conn, run_id: str) -> pd.DataFrame:
+def _load_observed_state(conn, run_id: str) -> pd.DataFrame:
     return pd.read_sql_query(
         """
         SELECT tick, component_id, observed_health_index, observed_status, sensor_note
@@ -91,7 +159,8 @@ def _load_observed_health(conn, run_id: str) -> pd.DataFrame:
 def _load_events(conn, run_id: str) -> pd.DataFrame:
     return pd.read_sql_query(
         """
-        SELECT tick, kind, component_id FROM events WHERE run_id = ? ORDER BY tick
+        SELECT tick, kind, component_id, payload_json
+        FROM events WHERE run_id = ? ORDER BY tick
         """,
         conn,
         params=[run_id],
@@ -99,12 +168,6 @@ def _load_events(conn, run_id: str) -> pd.DataFrame:
 
 
 def _load_environmental_events(conn, run_id: str) -> pd.DataFrame:
-    """Distinct from operator events — narrative one-offs from the YAML.
-
-    Multi-tick events have one row per active tick; we deduplicate by
-    name for display so an "earthquake duration: 3" shows up as one
-    rule, not three.
-    """
     df = pd.read_sql_query(
         """
         SELECT tick, name, payload_json FROM environmental_events
@@ -115,28 +178,899 @@ def _load_environmental_events(conn, run_id: str) -> pd.DataFrame:
     )
     if df.empty:
         return df
-    # Show one mark per (name, first-tick) — the start of each event window.
     return df.groupby("name", as_index=False).first()
 
 
-def _factors_dataframe(drivers_df: pd.DataFrame) -> pd.DataFrame:
-    rows = []
-    for _, row in drivers_df.iterrows():
-        try:
-            data = json.loads(row["coupling_factors_json"])
-        except (json.JSONDecodeError, TypeError):
+# ──────────────────────────────────────────────────────────────────────────
+# Helpers.
+# ──────────────────────────────────────────────────────────────────────────
+
+def _fmt_pct(x: float) -> str:
+    return f"{round(100 * x):d}%"
+
+
+def _outcome_kpis(conn, run_id: str) -> dict[str, int]:
+    return reader.fetch_print_outcome_distribution(conn, run_id)
+
+
+def _failure_cards(
+    conn,
+    run_id: str,
+    component_df: pd.DataFrame,
+    max_cards: int = 3,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build cascade-attribution cards.
+
+    Returns (visible_cards, overflow_cards). Each card has:
+      - component, transitions (dict status -> tick),
+      - worst_tick, worst_status, worst_health,
+      - factors (list of (name, value) sorted by |value| desc, top 3),
+      - chain_text (str | None — only when factors match the template keys).
+    """
+    transitions = reader.fetch_status_transitions(conn, run_id)
+    by_comp: dict[str, dict[str, int]] = {}
+    for row in transitions:
+        cid = row["component_id"]
+        by_comp.setdefault(cid, {}).setdefault(row["status"], int(row["first_tick"]))
+
+    cards: list[dict[str, Any]] = []
+    for cid, t_map in by_comp.items():
+        worst_status = None
+        for status in ("FAILED", "CRITICAL"):
+            if status in t_map:
+                worst_status = status
+                break
+        if worst_status is None:
             continue
-        data["tick"] = int(row["tick"])
-        rows.append(data)
-    return pd.DataFrame(rows).set_index("tick") if rows else pd.DataFrame()
+        worst_tick = int(t_map[worst_status])
+        sub = component_df[
+            (component_df["component_id"] == cid) & (component_df["tick"] == worst_tick)
+        ]
+        worst_health = float(sub["health_index"].iloc[0]) if not sub.empty else None
+
+        factors_dict = reader.fetch_coupling_factors_at(conn, run_id, worst_tick)
+        sorted_factors = sorted(
+            factors_dict.items(), key=lambda kv: abs(kv[1]), reverse=True
+        )[:3]
+        factor_keys = {name for name, _ in sorted_factors}
+        chain = None
+        if cid in CASCADE_CHAINS:
+            required, template = CASCADE_CHAINS[cid]
+            if required & factor_keys:  # at least one template key landed in top-3
+                chain = f"{template} {worst_status}"
+
+        cards.append(
+            {
+                "component": cid,
+                "transitions": t_map,
+                "worst_tick": worst_tick,
+                "worst_status": worst_status,
+                "worst_health": worst_health,
+                "factors": sorted_factors,
+                "chain": chain,
+            }
+        )
+
+    cards.sort(
+        key=lambda c: (
+            0 if c["worst_status"] == "FAILED" else 1,
+            c["worst_health"] if c["worst_health"] is not None else 1.0,
+        )
+    )
+    return cards[:max_cards], cards[max_cards:]
+
+
+def _status_segments(component_df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse per-tick status rows into (start_tick, end_tick, status) segments
+    per component — one row per contiguous run of the same status.
+    """
+    rows: list[dict[str, Any]] = []
+    if component_df.empty:
+        return pd.DataFrame(rows)
+    for cid, sub in component_df.sort_values("tick").groupby("component_id"):
+        sub = sub.reset_index(drop=True)
+        cur_status = str(sub["status"].iloc[0])
+        seg_start = int(sub["tick"].iloc[0])
+        last_tick = int(sub["tick"].iloc[-1])
+        for i in range(1, len(sub)):
+            s = str(sub["status"].iloc[i])
+            t = int(sub["tick"].iloc[i])
+            if s != cur_status:
+                rows.append(
+                    {"component_id": cid, "status": cur_status,
+                     "tick_start": seg_start, "tick_end": t}
+                )
+                cur_status = s
+                seg_start = t
+        rows.append(
+            {"component_id": cid, "status": cur_status,
+             "tick_start": seg_start, "tick_end": last_tick + 1}
+        )
+    return pd.DataFrame(rows)
+
+
+def _trust_verdict(observed: pd.DataFrame) -> str:
+    """Apply the priority rules in strict order. First match wins."""
+    if observed.empty:
+        return "ABSENT"
+    n = len(observed)
+    null_frac = observed["observed_health_index"].isna().mean()
+    if null_frac >= 0.10:
+        return "ABSENT"
+    note_counts = observed["sensor_note"].value_counts(dropna=False)
+    if note_counts.get("stuck", 0) / n >= 0.05:
+        return "STUCK"
+    if note_counts.get("drift", 0) / n >= 0.05:
+        return "DRIFTING"
+    if "true_health" in observed.columns:
+        valid = observed.dropna(subset=["observed_health_index", "true_health"])
+        if not valid.empty:
+            divergence = (valid["true_health"] - valid["observed_health_index"]).abs().mean()
+            if divergence >= 0.10:
+                return "SUSPECT"
+    if note_counts.get("noisy", 0) / n >= 0.20:
+        return "NOISY"
+    return "TRUSTED"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — metadata strip.
+# ──────────────────────────────────────────────────────────────────────────
+
+def _render_metadata_strip(run: dict[str, Any], outcomes: dict[str, int]) -> None:
+    total = sum(outcomes.values()) or 1
+    ok = outcomes.get("OK", 0)
+    deg = outcomes.get("QUALITY_DEGRADED", 0)
+    halt = outcomes.get("HALTED", 0)
+
+    pill_base = (
+        "display:inline-flex;align-items:center;gap:6px;"
+        "padding:4px 10px;background:#F4F6FF;border:1px solid #E0E6FF;"
+        "border-radius:999px;font-size:11px;line-height:1;"
+        "margin-right:6px;margin-bottom:6px;"
+    )
+    label_style = (
+        f"color:{ACCENT_BLUE};font-weight:700;letter-spacing:0.5px;text-transform:uppercase"
+    )
+    value_style = "color:#111;font-variant-numeric:tabular-nums"
+
+    def pill(label: str, value: str, dot: str | None = None) -> str:
+        dot_html = (
+            f"<span style='display:inline-block;width:6px;height:6px;border-radius:999px;"
+            f"background:{dot}'></span>"
+            if dot
+            else ""
+        )
+        return (
+            f"<span style='{pill_base}'>"
+            f"<span style='{label_style}'>{label}</span>"
+            f"{dot_html}"
+            f"<span style='{value_style}'>{value}</span>"
+            f"</span>"
+        )
+
+    pills = [
+        pill("Run", f"<code style='font-size:11px;color:#111'>{run['run_id']}</code>"),
+        pill("Scenario", run["scenario"]),
+        pill("Profile", run.get("profile") or "—"),
+        pill("Seed", str(run["seed"])),
+        pill("Horizon", str(run.get("horizon_ticks") or "—")),
+        pill("dt", f"{run['dt_seconds']}s"),
+        pill("OK", _fmt_pct(ok / total), dot="#3FB37F"),
+        pill("Degraded", _fmt_pct(deg / total), dot="#E8B341"),
+        pill("Halted", _fmt_pct(halt / total), dot="#D45757"),
+    ]
+    st.markdown(
+        f"<div style='display:flex;flex-wrap:wrap;align-items:center;'>{''.join(pills)}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 1: Component health over time (line chart with env-event rules).
+# ──────────────────────────────────────────────────────────────────────────
+
+def _render_panel1(
+    component_df: pd.DataFrame,
+    env_events_df: pd.DataFrame,
+) -> None:
+    if component_df.empty:
+        st.info("No component-state data for this run.")
+        return
+
+    # Order the colour legend by canonical component order so it matches panels 2/4.
+    plot_df = component_df.copy()
+    plot_df["component_id"] = pd.Categorical(
+        plot_df["component_id"], categories=list(COMPONENT_IDS)
+    )
+
+    health_chart = (
+        alt.Chart(plot_df)
+        .mark_line(strokeWidth=1.6)
+        .encode(
+            x=alt.X("tick:Q", title="tick", axis=alt.Axis(labelFontSize=10, titleFontSize=10)),
+            y=alt.Y(
+                "health_index:Q",
+                title="health index",
+                scale=alt.Scale(domain=[0.0, 1.0]),
+                axis=alt.Axis(labelFontSize=10, titleFontSize=10),
+            ),
+            color=alt.Color(
+                "component_id:N",
+                sort=list(COMPONENT_IDS),
+                legend=alt.Legend(
+                    orient="top",
+                    title=None,
+                    labelFontSize=11,
+                    symbolType="circle",
+                    columns=6,
+                ),
+            ),
+            tooltip=[
+                "component_id",
+                alt.Tooltip("tick:Q", title="tick"),
+                alt.Tooltip("health_index:Q", title="health", format=".3f"),
+                "status",
+            ],
+        )
+        .properties(height=320)
+    )
+
+    layers: list[alt.Chart] = [health_chart]
+
+    if not env_events_df.empty:
+        env_rule = (
+            alt.Chart(env_events_df)
+            .mark_rule(color=RULE_GREY, strokeDash=[3, 3], strokeWidth=1, opacity=0.85)
+            .encode(x="tick:Q", tooltip=["name", "tick"])
+        )
+        env_label = (
+            alt.Chart(env_events_df)
+            .mark_text(
+                align="left",
+                baseline="top",
+                dx=4,
+                dy=2,
+                color=RULE_GREY,
+                fontSize=10,
+                fontWeight=600,
+            )
+            .encode(x="tick:Q", y=alt.value(0), text="name:N")
+        )
+        layers.extend([env_rule, env_label])
+
+    composed = (
+        alt.layer(*layers)
+        .configure_view(stroke=None)
+        .configure_axis(grid=True, gridColor="#EFEFEF", domainColor="#111111", tickColor="#111111")
+    )
+    st.altair_chart(composed, width="stretch")
+
+    if not env_events_df.empty:
+        st.caption(
+            "Grey dashed rules mark environmental events from the scenario "
+            "(chaos overlays — earthquake, HVAC failure, holiday, ...)."
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 2: Cascade attribution.
+# ──────────────────────────────────────────────────────────────────────────
+
+def _status_stepper_html(transitions: dict[str, int]) -> str:
+    """Visual stepper: coloured status pills connected by arrows, each with its tick."""
+    steps_present = [s for s in STATUS_ORDER if s in transitions]
+    nodes: list[str] = []
+    for s in steps_present:
+        dot = STATUS_COLOURS[s]
+        text_color = "#FFF" if s in {"CRITICAL", "FAILED"} else "#111"
+        nodes.append(
+            f"<span style='display:inline-flex;align-items:center;gap:5px;"
+            f"padding:3px 9px;background:{dot};color:{text_color};"
+            f"border:1px solid #DDD;border-radius:999px;"
+            f"font-size:10px;font-weight:700;letter-spacing:0.5px'>"
+            f"{s}"
+            f"<span style='opacity:0.85;font-weight:600;font-variant-numeric:tabular-nums'>"
+            f"t={transitions[s]}</span></span>"
+        )
+    arrow = (
+        "<span style='color:#BBB;font-size:13px;margin:0 4px'>→</span>"
+    )
+    return f"<div style='display:flex;flex-wrap:wrap;align-items:center;gap:2px'>{arrow.join(nodes)}</div>"
+
+
+def _render_cascade_card(card: dict[str, Any]) -> None:
+    cid = card["component"].upper()
+    transitions = card["transitions"]
+    st.markdown(
+        f"<div style='font-weight:700;font-size:13px;color:#111;"
+        f"letter-spacing:0.4px;margin-bottom:6px'>{cid}</div>"
+        f"{_status_stepper_html(transitions)}",
+        unsafe_allow_html=True,
+    )
+
+    if not card["factors"]:
+        st.caption("Coupling factors not available at this tick.")
+        return
+
+    bars_df = pd.DataFrame(
+        [{"factor": name, "value": value} for name, value in card["factors"]]
+    )
+    bars_df["abs_value"] = bars_df["value"].abs()
+    bar_chart = (
+        alt.Chart(bars_df)
+        .mark_bar(color=ACCENT_BLUE, height=14)
+        .encode(
+            x=alt.X(
+                "abs_value:Q",
+                title=None,
+                axis=alt.Axis(labelFontSize=9, tickCount=4),
+            ),
+            y=alt.Y("factor:N", sort="-x", title=None, axis=alt.Axis(labelFontSize=10)),
+            tooltip=[
+                alt.Tooltip("factor:N"),
+                alt.Tooltip("value:Q", format=".3f"),
+            ],
+        )
+        .properties(height=80)
+    )
+    text = (
+        alt.Chart(bars_df)
+        .mark_text(align="left", dx=4, color="#111111", fontSize=10)
+        .encode(
+            x="abs_value:Q",
+            y=alt.Y("factor:N", sort="-x"),
+            text=alt.Text("value:Q", format=".3f"),
+        )
+    )
+    st.altair_chart((bar_chart + text).configure_view(stroke=None), width="stretch")
+    if card["chain"]:
+        st.caption(card["chain"])
+
+
+def _render_panel2(cards: list[dict[str, Any]], overflow: list[dict[str, Any]]) -> None:
+    if not cards and not overflow:
+        st.info("No CRITICAL/FAILED transitions in this run.")
+        return
+    for card in cards:
+        _render_cascade_card(card)
+        st.markdown("")
+    if overflow:
+        with st.expander(f"Other transitions ({len(overflow)})"):
+            for card in overflow:
+                _render_cascade_card(card)
+                st.markdown("")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 3: True vs observed.
+# ──────────────────────────────────────────────────────────────────────────
+
+def _render_panel3(
+    component_df: pd.DataFrame,
+    observed_df: pd.DataFrame,
+    selected_component: str,
+) -> None:
+    true_sub = component_df[component_df["component_id"] == selected_component][
+        ["tick", "health_index"]
+    ].rename(columns={"health_index": "true_health"})
+    obs_sub = observed_df[observed_df["component_id"] == selected_component][
+        ["tick", "observed_health_index", "sensor_note"]
+    ].rename(columns={"observed_health_index": "observed_health"})
+    merged = true_sub.merge(obs_sub, on="tick", how="left")
+
+    all_observed_null = merged["observed_health"].isna().all()
+    verdict = (
+        "ABSENT"
+        if all_observed_null
+        else _trust_verdict(
+            merged.rename(columns={"observed_health": "observed_health_index"}).assign(
+                true_health=merged["true_health"]
+            )
+        )
+    )
+    chip_bg = "#E8E8E8" if verdict == "TRUSTED" else ACCENT_BLUE
+    chip_fg = "#111111" if verdict == "TRUSTED" else "#FFFFFF"
+    st.markdown(
+        f"<div style='font-size:12px;font-weight:600;color:#111;margin-bottom:6px'>"
+        f"{selected_component.upper()}  "
+        f"<span style='background:{chip_bg};color:{chip_fg};padding:2px 8px;"
+        f"border-radius:2px;margin-left:6px;font-size:11px'>"
+        f"SENSOR TRUST: {verdict}</span></div>",
+        unsafe_allow_html=True,
+    )
+
+    if all_observed_null:
+        st.caption("No observed data for this component — sensor absent or fully suppressed.")
+        true_only = (
+            alt.Chart(true_sub)
+            .mark_line(color="#111111", strokeWidth=1.4)
+            .encode(
+                x=alt.X("tick:Q"),
+                y=alt.Y("true_health:Q", scale=alt.Scale(domain=[0, 1]), title="health"),
+                tooltip=["tick", alt.Tooltip("true_health:Q", format=".3f")],
+            )
+            .properties(height=200)
+        )
+        st.altair_chart(
+            true_only.configure_view(stroke=None).configure_axis(grid=False), width="stretch"
+        )
+        return
+
+    long = pd.concat(
+        [
+            merged[["tick", "true_health"]]
+            .rename(columns={"true_health": "value"})
+            .assign(series="true"),
+            merged[["tick", "observed_health"]]
+            .rename(columns={"observed_health": "value"})
+            .assign(series="observed"),
+        ]
+    )
+    line_chart = (
+        alt.Chart(long.dropna(subset=["value"]))
+        .mark_line(strokeWidth=1.4)
+        .encode(
+            x=alt.X("tick:Q", title=None),
+            y=alt.Y("value:Q", scale=alt.Scale(domain=[0, 1]), title="health"),
+            color=alt.Color(
+                "series:N",
+                scale=alt.Scale(domain=["true", "observed"], range=["#111111", OBSERVED_BLUE]),
+                legend=alt.Legend(orient="top", title=None, labelFontSize=10),
+            ),
+            tooltip=["series", "tick", alt.Tooltip("value:Q", format=".3f")],
+        )
+        .properties(height=180)
+    )
+
+    note_df = merged[["tick", "sensor_note"]].dropna(subset=["sensor_note"]).copy()
+    if note_df.empty:
+        st.altair_chart(
+            line_chart.configure_view(stroke=None).configure_axis(grid=False),
+            width="stretch",
+        )
+    else:
+        notes_present = sorted(note_df["sensor_note"].unique())
+        note_strip = (
+            alt.Chart(note_df)
+            .mark_rect()
+            .encode(
+                x=alt.X("tick:Q", title="tick"),
+                y=alt.value(8),
+                color=alt.Color(
+                    "sensor_note:N",
+                    scale=alt.Scale(
+                        domain=notes_present,
+                        range=[SENSOR_NOTE_COLOURS.get(n, "#9E9E9E") for n in notes_present],
+                    ),
+                    legend=alt.Legend(orient="bottom", title="sensor_note", labelFontSize=10),
+                ),
+                tooltip=["tick", "sensor_note"],
+            )
+            .properties(height=22)
+        )
+        composed = alt.vconcat(line_chart, note_strip, spacing=4).resolve_scale(x="shared")
+        st.altair_chart(
+            composed.configure_view(stroke=None).configure_axis(grid=False),
+            width="stretch",
+        )
+
+    notes = merged["sensor_note"].dropna().value_counts().to_dict()
+    st.caption(
+        f"Note distribution: {notes}. If the gap looks small, switch the run "
+        f"to a `chaos-stress-test-…` to expose the §3.4 sensor-fault story."
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 4: Maintenance load by component (stacked bars).
+# ──────────────────────────────────────────────────────────────────────────
+
+def _render_panel4(events_df: pd.DataFrame) -> None:
+    if events_df.empty:
+        st.info("No maintenance events in this run.")
+        return
+
+    counts = events_df["kind"].value_counts().to_dict()
+    fix = counts.get("FIX", 0)
+    rep = counts.get("REPLACE", 0)
+    tro = counts.get("TROUBLESHOOT", 0)
+    total = len(events_df)
+    st.markdown(
+        f"<div style='font-size:11px;font-weight:600;color:#111;letter-spacing:0.4px;margin-bottom:6px'>"
+        f"FIX {fix}  ·  REPLACE {rep}  ·  TROUBLESHOOT {tro}  ·  TOTAL {total}</div>",
+        unsafe_allow_html=True,
+    )
+
+    ev = events_df.copy()
+    ev = ev[ev["component_id"].isin(COMPONENT_IDS)]
+    if ev.empty:
+        st.info("Events recorded but none tied to a tracked component.")
+        return
+
+    counts_by = (
+        ev.groupby(["component_id", "kind"], observed=True)
+        .size()
+        .reset_index(name="count")
+    )
+    counts_by["component_id"] = pd.Categorical(
+        counts_by["component_id"], categories=list(COMPONENT_IDS)
+    )
+    counts_by["kind"] = pd.Categorical(
+        counts_by["kind"], categories=list(EVENT_COLOURS.keys())
+    )
+
+    bars = (
+        alt.Chart(counts_by)
+        .mark_bar(height=22)
+        .encode(
+            y=alt.Y(
+                "component_id:N",
+                sort=list(COMPONENT_IDS),
+                title=None,
+                axis=alt.Axis(labelFontSize=11, labelFontWeight=600, ticks=False),
+            ),
+            x=alt.X(
+                "count:Q",
+                stack="zero",
+                title="event count",
+                axis=alt.Axis(labelFontSize=10, titleFontSize=10),
+            ),
+            color=alt.Color(
+                "kind:N",
+                scale=alt.Scale(
+                    domain=list(EVENT_COLOURS.keys()),
+                    range=list(EVENT_COLOURS.values()),
+                ),
+                legend=alt.Legend(
+                    orient="top",
+                    title=None,
+                    labelFontSize=11,
+                    symbolType="square",
+                ),
+            ),
+            tooltip=["component_id", "kind", "count"],
+        )
+        .properties(height=max(180, 36 * len(COMPONENT_IDS)))
+    )
+
+    totals = (
+        counts_by.groupby("component_id", observed=True)["count"].sum().reset_index()
+    )
+    total_labels = (
+        alt.Chart(totals)
+        .mark_text(align="left", dx=4, color="#111", fontSize=11, fontWeight=600)
+        .encode(
+            y=alt.Y("component_id:N", sort=list(COMPONENT_IDS)),
+            x="count:Q",
+            text=alt.Text("count:Q", format="d"),
+        )
+    )
+
+    st.altair_chart(
+        (bars + total_labels)
+        .configure_view(stroke=None)
+        .configure_axis(grid=True, gridColor="#EFEFEF", domainColor="#111111"),
+        width="stretch",
+    )
+
+    with st.expander(f"Event log (last 50 of {total})", expanded=False):
+        st.dataframe(events_df.sort_values("tick", ascending=False).head(50))
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Main.
+# ──────────────────────────────────────────────────────────────────────────
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 5: Driver streams (4 brief inputs).
+# ──────────────────────────────────────────────────────────────────────────
+
+def _driver_sparkline(df: pd.DataFrame, field: str, label: str, value_fmt: str) -> alt.Chart:
+    if df.empty:
+        return alt.Chart(pd.DataFrame({"tick": [0], field: [0.0]})).mark_point()
+    latest = float(df[field].iloc[-1])
+    last_tick = int(df["tick"].iloc[-1])
+    line = (
+        alt.Chart(df)
+        .mark_line(color="#111", strokeWidth=1.4)
+        .encode(
+            x=alt.X("tick:Q", axis=None),
+            y=alt.Y(f"{field}:Q", axis=None, scale=alt.Scale(zero=False, nice=False)),
+            tooltip=[
+                alt.Tooltip("tick:Q", title="tick"),
+                alt.Tooltip(f"{field}:Q", title=field, format=".3f"),
+            ],
+        )
+        .properties(
+            height=46,
+            title=alt.TitleParams(
+                label.upper(),
+                fontSize=10,
+                fontWeight=700,
+                color="#111",
+                anchor="start",
+                offset=2,
+            ),
+        )
+    )
+    label_chart = (
+        alt.Chart(pd.DataFrame({"tick": [last_tick], "v": [latest]}))
+        .mark_text(
+            align="right",
+            baseline="middle",
+            dx=-2,
+            color=ACCENT_BLUE,
+            fontSize=12,
+            fontWeight=700,
+        )
+        .encode(x="tick:Q", y=alt.value(28), text=alt.Text("v:Q", format=value_fmt))
+    )
+    return line + label_chart
+
+
+def _render_panel5(drivers_df: pd.DataFrame) -> None:
+    if drivers_df.empty:
+        st.info("No driver data for this run.")
+        return
+    sparks = alt.vconcat(
+        _driver_sparkline(drivers_df, "temperature_stress", "Temperature stress", ".0%"),
+        _driver_sparkline(drivers_df, "humidity_contamination", "Humidity contamination", ".0%"),
+        _driver_sparkline(drivers_df, "operational_load", "Operational load", ".0%"),
+        _driver_sparkline(drivers_df, "maintenance_level", "Maintenance level", ".0%"),
+        spacing=10,
+    )
+    composed = (
+        sparks.configure_view(stroke=None)
+        .configure_axis(grid=False, domainColor="#DDD")
+        .configure_concat(spacing=10)
+    )
+    st.altair_chart(composed, width="stretch")
+    st.caption(
+        "Four engine inputs every tick. Right-edge value is the latest reading; "
+        "all four are wired into the coupled engine on every step."
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 6: Status timeline (per-component Gantt of status periods).
+# ──────────────────────────────────────────────────────────────────────────
+
+def _render_panel6(component_df: pd.DataFrame) -> None:
+    if component_df.empty:
+        st.info("No component-state data for this run.")
+        return
+    segs = _status_segments(component_df)
+    if segs.empty:
+        st.info("No status segments to display.")
+        return
+    segs = segs.assign(
+        component_id=pd.Categorical(segs["component_id"], categories=list(COMPONENT_IDS)),
+        status=pd.Categorical(segs["status"], categories=list(STATUS_ORDER)),
+    )
+
+    bars = (
+        alt.Chart(segs)
+        .mark_bar(height=20, stroke="#FFF", strokeWidth=1)
+        .encode(
+            x=alt.X(
+                "tick_start:Q",
+                title="tick",
+                axis=alt.Axis(labelFontSize=10, titleFontSize=10),
+            ),
+            x2="tick_end:Q",
+            y=alt.Y(
+                "component_id:N",
+                sort=list(COMPONENT_IDS),
+                title=None,
+                axis=alt.Axis(labelFontSize=11, labelFontWeight=600, ticks=False),
+            ),
+            color=alt.Color(
+                "status:N",
+                scale=alt.Scale(
+                    domain=list(STATUS_ORDER),
+                    range=[STATUS_COLOURS[s] for s in STATUS_ORDER],
+                ),
+                legend=alt.Legend(
+                    orient="top",
+                    title=None,
+                    labelFontSize=11,
+                    symbolType="square",
+                ),
+            ),
+            tooltip=[
+                "component_id",
+                "status",
+                alt.Tooltip("tick_start:Q", title="from"),
+                alt.Tooltip("tick_end:Q", title="to"),
+            ],
+        )
+        .properties(height=max(180, 32 * len(COMPONENT_IDS)))
+    )
+    st.altair_chart(
+        bars.configure_view(stroke=None).configure_axis(
+            grid=True, gridColor="#EFEFEF", domainColor="#111111"
+        ),
+        width="stretch",
+    )
+    st.caption(
+        "Same data as the line chart above, painted as continuous status periods. "
+        "Look for the moment each row turns blue — that's a CRITICAL crossing."
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 7: Co-Pilot recommendations (Phase 3 / Intelligence preview).
+# ──────────────────────────────────────────────────────────────────────────
+
+# (status, severity_dot, recommendation verb, action_label)
+_PHASE3_RULES: dict[str, tuple[str, str, str]] = {
+    "DEGRADED": ("#E8B341", "Watch closely", "WATCH"),
+    "CRITICAL": ("#5683FF", "Schedule a FIX in the next maintenance window", "SCHEDULE FIX"),
+    "FAILED": ("#1846F5", "Replace immediately — print outcomes are degrading", "REPLACE NOW"),
+}
+
+
+def _render_panel7(
+    conn,
+    run_id: str,
+    component_df: pd.DataFrame,
+) -> None:
+    cards, overflow = _failure_cards(conn, run_id, component_df, max_cards=6)
+    all_cards = cards + overflow
+    if not all_cards:
+        st.info("No CRITICAL/FAILED components to recommend on.")
+        return
+
+    for card in all_cards:
+        cid = card["component"].upper()
+        status = card["worst_status"]
+        dot, recommendation, action = _PHASE3_RULES.get(
+            status, ("#9E9E9E", "Monitor", "MONITOR")
+        )
+        health = card["worst_health"]
+        health_str = f"{health:.2f}" if health is not None else "—"
+        top_factor = (
+            f"{card['factors'][0][0]} = {card['factors'][0][1]:.3f}"
+            if card["factors"]
+            else "factors not recorded at this tick"
+        )
+
+        st.markdown(
+            f"<div style='border:1px solid #E8E8E8;border-radius:8px;padding:10px 12px;"
+            f"margin-bottom:8px;background:#FFF'>"
+            f"<div style='display:flex;align-items:center;gap:8px;margin-bottom:4px'>"
+            f"<span style='display:inline-block;width:8px;height:8px;border-radius:999px;"
+            f"background:{dot}'></span>"
+            f"<span style='font-weight:700;font-size:13px;color:#111;letter-spacing:0.3px'>"
+            f"{cid}</span>"
+            f"<span style='font-size:10px;color:#888;letter-spacing:0.4px;text-transform:uppercase'>"
+            f"@ t={card['worst_tick']}  ·  health {health_str}  ·  status {status}</span>"
+            f"</div>"
+            f"<div style='color:#444;font-size:12px;margin-bottom:6px;line-height:1.5'>"
+            f"<b>Why:</b> top driver was <code style='color:#111;background:#F4F6FF;"
+            f"padding:1px 5px;border-radius:3px;font-size:11px'>{top_factor}</code>. "
+            f"{card['chain'] or 'Cascade chain not recoverable from the recorded factors.'}</div>"
+            f"<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap'>"
+            f"<span style='font-size:10px;color:#666;letter-spacing:0.4px;text-transform:uppercase'>"
+            f"Suggested next step</span>"
+            f"<span style='display:inline-flex;align-items:center;gap:5px;"
+            f"padding:2px 9px;background:#FFF;color:{ACCENT_BLUE};"
+            f"border:1px solid {ACCENT_BLUE};border-radius:4px;"
+            f"font-size:11px;font-weight:700;letter-spacing:0.5px'>"
+            f"<span style='display:inline-block;width:5px;height:5px;border-radius:999px;"
+            f"background:{ACCENT_BLUE}'></span>{action}</span>"
+            f"<span style='color:#444;font-size:12px'>· {recommendation}</span>"
+            f"</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Render — Panel 8: Proactive alerts feed (Phase 3 / Autonomy preview).
+# ──────────────────────────────────────────────────────────────────────────
+
+_ALERT_GLYPH: dict[str, str] = {
+    "FUNCTIONAL": "○",
+    "DEGRADED": "◐",
+    "CRITICAL": "◑",
+    "FAILED": "●",
+}
+_ALERT_DOT: dict[str, str] = {
+    "FUNCTIONAL": "#9E9E9E",
+    "DEGRADED": "#E8B341",
+    "CRITICAL": "#5683FF",
+    "FAILED": "#1846F5",
+}
+
+
+def _render_panel8(conn, run_id: str) -> None:
+    transitions = reader.fetch_status_transitions(conn, run_id)
+    # Drop FUNCTIONAL "transitions" (every component starts there) — alerts only fire on degradation.
+    transitions = [t for t in transitions if t["status"] != "FUNCTIONAL"]
+    transitions.sort(key=lambda r: (int(r["first_tick"]), r["component_id"]))
+
+    if not transitions:
+        st.info("No status transitions raised during this run.")
+        return
+
+    rows_html = []
+    for t in transitions:
+        cid = t["component_id"]
+        status = t["status"]
+        tick = int(t["first_tick"])
+        glyph = _ALERT_GLYPH.get(status, "•")
+        dot = _ALERT_DOT.get(status, "#9E9E9E")
+        factors = reader.fetch_coupling_factors_at(conn, run_id, tick)
+        top = ""
+        if factors:
+            top_name, top_value = max(factors.items(), key=lambda kv: abs(kv[1]))
+            top = (
+                f"<span style='color:#666'>· top driver </span>"
+                f"<code style='color:#111;background:#F4F6FF;padding:1px 5px;border-radius:3px;"
+                f"font-size:11px'>{top_name} = {top_value:.3f}</code>"
+            )
+        rows_html.append(
+            f"<div style='display:flex;align-items:center;gap:10px;padding:7px 10px;"
+            f"border-bottom:1px solid #F2F2F2'>"
+            f"<span style='color:{dot};font-size:14px;width:14px;text-align:center'>{glyph}</span>"
+            f"<span style='font-size:10px;color:#888;letter-spacing:0.4px;width:62px'>"
+            f"TICK {tick}</span>"
+            f"<span style='font-weight:700;font-size:12px;color:#111;letter-spacing:0.3px'>"
+            f"{cid.upper()}</span>"
+            f"<span style='font-size:10px;color:#888;letter-spacing:0.4px'>→</span>"
+            f"<span style='font-size:11px;font-weight:700;color:{dot};letter-spacing:0.4px'>"
+            f"{status}</span>"
+            f"{top}"
+            f"</div>"
+        )
+
+    st.markdown(
+        f"<div style='border:1px solid #E8E8E8;border-radius:8px;background:#FFF;"
+        f"max-height:360px;overflow-y:auto'>{''.join(rows_html)}</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        f"{len(transitions)} alerts. Each row is what the proactive agent would have raised "
+        "the moment a component crossed a status threshold."
+    )
+
+
+def _section_header(eyebrow: str, title: str) -> None:
+    st.markdown(
+        f"<div style='font-size:11px;font-weight:600;color:{ACCENT_BLUE};"
+        f"letter-spacing:0.6px;text-transform:uppercase;margin-top:18px'>{eyebrow}</div>"
+        f"<div style='font-size:20px;font-weight:700;color:#111;letter-spacing:-0.2px;"
+        f"margin-top:2px;margin-bottom:8px'>{title}</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def main() -> None:
-    st.set_page_config(page_title="Metal Jet Digital Twin", layout="wide")
-    st.title("HP Metal Jet S100 — Digital Co-Pilot")
-    st.caption(
-        "Live telemetry from the coupled simulation engine — health, drivers, "
-        "events, coupling and the §3.4 sensor-fault story."
+    st.set_page_config(page_title="HP CoPilot Twin — hpct.work", layout="wide")
+    st.markdown(
+        f"<div style='display:flex;align-items:center;gap:10px;"
+        f"font-size:11px;letter-spacing:0.6px;text-transform:uppercase;'>"
+        f"<span style='color:{ACCENT_BLUE};font-weight:700'>hpct.work</span>"
+        f"<span style='color:#BBB'>·</span>"
+        f"<span style='color:#666;font-weight:600'>HP Metal Jet S100 digital twin</span>"
+        f"</div>"
+        f"<div style='display:flex;align-items:baseline;gap:12px;margin-top:4px;margin-bottom:6px;'>"
+        f"<h1 style='margin:0;font-weight:700;color:#111;letter-spacing:-0.6px;font-size:36px;'>"
+        f"HP <span style='color:{ACCENT_BLUE}'>Co</span>Pilot "
+        f"<span style='font-weight:500;color:#444'>Twin</span></h1>"
+        f"<span style='display:inline-flex;align-items:center;gap:6px;"
+        f"padding:3px 10px;background:#111;color:#FFF;border-radius:999px;"
+        f"font-size:10px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;'>"
+        f"<span style='display:inline-block;width:6px;height:6px;border-radius:999px;"
+        f"background:#3FB37F'></span>Operator</span>"
+        f"</div>"
+        f"<div style='color:#666;font-size:12px;margin-bottom:14px;max-width:760px;line-height:1.5'>"
+        f"Operator dashboard for the coupled simulation engine — drivers, status decay, "
+        f"cascade attribution, sensor trust, and operator response, sourced from the "
+        f"SQLite historian for the selected run.</div>",
+        unsafe_allow_html=True,
     )
 
     db_input = st.sidebar.text_input("historian db path", str(_default_db_path()))
@@ -173,118 +1107,89 @@ def main() -> None:
         return
 
     conn = open_db(db_input)
-    try:
-        run_ids = list(list_run_ids(conn))
-        if not run_ids:
-            st.warning("Historian is empty.")
-            return
-        run_id = st.sidebar.selectbox("run_id", run_ids, index=0)
+    run_ids = list(list_run_ids(conn))
+    if not run_ids:
+        st.warning("Historian is empty.")
+        return
+    run_id = st.sidebar.selectbox("run_id", run_ids, index=0)
 
-        drivers_df = _load_drivers(conn, run_id)
-        component_df = _load_component_health(conn, run_id)
-        observed_df = _load_observed_health(conn, run_id)
-        events_df = _load_events(conn, run_id)
-        env_events_df = _load_environmental_events(conn, run_id)
-        factors_df = _factors_dataframe(drivers_df)
-    finally:
-        conn.close()
+    component_choice = st.sidebar.selectbox(
+        "component (panel 3)", list(COMPONENT_IDS), index=list(COMPONENT_IDS).index("heater")
+    )
 
-    # Chart 1: per-component health (Altair so we can overlay event rules)
-    st.subheader("1. Component health over time")
-    if not component_df.empty:
-        health_chart = (
-            alt.Chart(component_df)
-            .mark_line()
-            .encode(
-                x=alt.X("tick:Q", title="tick"),
-                y=alt.Y("health_index:Q", scale=alt.Scale(domain=[0.0, 1.0])),
-                color=alt.Color("component_id:N", legend=alt.Legend(title="component")),
-                tooltip=["component_id", "tick", "health_index", "status"],
-            )
-        )
-        if not env_events_df.empty:
-            rule = (
-                alt.Chart(env_events_df)
-                .mark_rule(color="firebrick", strokeDash=[4, 4])
-                .encode(x="tick:Q", tooltip=["name", "tick"])
-            )
-            label = (
-                alt.Chart(env_events_df)
-                .mark_text(align="left", baseline="top", dx=4, dy=2, color="firebrick", fontSize=11)
-                .encode(x="tick:Q", y=alt.value(0), text="name:N")
-            )
-            health_chart = health_chart + rule + label
-        st.altair_chart(health_chart.properties(height=320), use_container_width=True)
-        if not env_events_df.empty:
-            st.caption("Red dashed lines mark environmental events.")
-            st.dataframe(
-                env_events_df[["tick", "name", "payload_json"]].rename(
-                    columns={"payload_json": "payload"}
-                )
-            )
+    run_meta = reader.fetch_run(conn, run_id)
+    if run_meta is None:
+        st.error(f"run_id not found: {run_id}")
+        return
+    outcomes = _outcome_kpis(conn, run_id)
+    drivers_df = _load_drivers(conn, run_id)
+    component_df = _load_component_state(conn, run_id)
+    observed_df = _load_observed_state(conn, run_id)
+    events_df = _load_events(conn, run_id)
+    env_events_df = _load_environmental_events(conn, run_id)
 
-    # Chart 2: driver streams
-    st.subheader("2. Driver streams")
-    if not drivers_df.empty:
-        st.line_chart(
-            drivers_df.set_index("tick")[
-                [
-                    "temperature_stress",
-                    "humidity_contamination",
-                    "operational_load",
-                    "maintenance_level",
-                ]
-            ]
-        )
+    _render_metadata_strip(run_meta, outcomes)
+    st.markdown("---")
 
-    # Chart 3: print outcome ribbon (counts per 10-tick bucket)
-    st.subheader("3. Print outcome distribution")
-    if not drivers_df.empty:
-        outcome_counts = (
-            drivers_df.assign(bucket=(drivers_df["tick"] // 10) * 10)
-            .groupby(["bucket", "print_outcome"])
-            .size()
-            .unstack(fill_value=0)
-        )
-        st.bar_chart(outcome_counts)
+    # Panel 1 — Component health over time.
+    _section_header("Phase 1 / coupled engine", "Component health over time")
+    _render_panel1(component_df, env_events_df)
+    st.markdown("---")
 
-    # Chart 4: maintenance events
-    st.subheader("4. Maintenance events")
-    if not events_df.empty:
-        events_pivot = events_df.assign(count=1).pivot_table(
-            index="tick", columns="kind", values="count", aggfunc="sum", fill_value=0
-        )
-        st.bar_chart(events_pivot)
-        st.dataframe(events_df.tail(20))
-    else:
-        st.info("No maintenance events.")
+    # Middle row — Panels 2 & 3 side by side.
+    col_left, col_right = st.columns(2, gap="large")
+    with col_left:
+        _section_header("Phase 2 / failure explanation", "Cascade attribution")
+        cards, overflow = _failure_cards(conn, run_id, component_df)
+        _render_panel2(cards, overflow)
+    with col_right:
+        _section_header("§3.4 / sensor trust", "True vs observed health")
+        _render_panel3(component_df, observed_df, component_choice)
+    st.markdown("---")
 
-    # Chart 5: coupling factors heatmap
-    st.subheader("5. Coupling factors over time")
-    if not factors_df.empty:
-        st.line_chart(factors_df)
+    # Panel 4 — Maintenance load by component.
+    _section_header("Phase 2 / operator response", "Maintenance load by component")
+    _render_panel4(events_df)
+    st.markdown("---")
+
+    # Bonus row — extra options the team can pick from when finalising the demo.
+    st.markdown(
+        f"<div style='font-size:11px;font-weight:700;color:{ACCENT_BLUE};"
+        f"letter-spacing:0.6px;text-transform:uppercase;margin-top:6px;margin-bottom:6px'>"
+        f"Also available · pick four for the demo</div>",
+        unsafe_allow_html=True,
+    )
+    col_a, col_b = st.columns(2, gap="large")
+    with col_a:
+        _section_header("Phase 2 / brief inputs", "Driver streams")
+        _render_panel5(drivers_df)
+    with col_b:
+        _section_header("Phase 1 / status decay", "Status timeline")
+        _render_panel6(component_df)
+    st.markdown("---")
+
+    # Phase 3 preview row — AI co-pilot framing built on real historian data.
+    st.markdown(
+        f"<div style='font-size:11px;font-weight:700;color:{ACCENT_BLUE};"
+        f"letter-spacing:0.6px;text-transform:uppercase;margin-top:6px;margin-bottom:6px'>"
+        f"Phase 3 preview · Reliability · Intelligence · Autonomy</div>",
+        unsafe_allow_html=True,
+    )
+    col_c, col_d = st.columns(2, gap="large")
+    with col_c:
+        _section_header("Phase 3 / heuristic preview", "Recommendation cards")
         st.caption(
-            "powder_spread_quality / cleaning_efficiency are damage proxies that "
-            "drop as upstream components age; nozzle_clog_pct rises with humidity."
+            "Read-only insight cards — rule-based today (status → suggested action lookup); "
+            "the LLM agent in Phase 3 will replace the rule with a generated rationale."
         )
-
-    # Chart 6: §3.4 sensor-fault story
-    st.subheader("6. Sensor-fault vs component-fault — heater true vs observed")
-    if not component_df.empty and not observed_df.empty:
-        true_heater = component_df[component_df["component_id"] == "heater"][
-            ["tick", "health_index"]
-        ].rename(columns={"health_index": "true_health"})
-        obs_heater = observed_df[observed_df["component_id"] == "heater"][
-            ["tick", "observed_health_index", "sensor_note"]
-        ].rename(columns={"observed_health_index": "observed_health"})
-        merged = true_heater.merge(obs_heater, on="tick").set_index("tick")
-        st.line_chart(merged[["true_health", "observed_health"]])
-        notes = merged["sensor_note"].value_counts().to_dict()
+        _render_panel7(conn, run_id, component_df)
+    with col_d:
+        _section_header("Phase 3 / autonomy preview", "Proactive alerts feed")
         st.caption(
-            "When sensor_note flips to 'drift' or 'stuck' the observed line "
-            "diverges from the true line; that gap is the §3.4 story. "
-            f"Note distribution: {notes}"
+            "Notification-style log of every status crossing the engine produced — "
+            "what the autonomous agent would have raised in real time."
         )
+        _render_panel8(conn, run_id)
 
 
 if __name__ == "__main__":
