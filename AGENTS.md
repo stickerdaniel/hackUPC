@@ -14,6 +14,12 @@ HackUPC hackathon project.
 - Prefer editing existing files over creating new ones.
 - Use package manager commands to add dependencies (no manual edits to `package.json` / `pyproject.toml`).
 
+## Simulation Modeling
+
+- Rule: Phase 1 component updates are state transitions from `t-1` to `t`, not independent per-tick formulas. Each component starts from explicit initial metric values, then updates from its own previous state, the environmental/operational drivers, and relevant previous states of other components.
+  - Why: The printer should behave like a coupled system: e.g. overheating, contamination, or degradation in one subsystem can mathematically affect another subsystem on the next tick.
+  - How to apply: Design `Engine.step()` so all components read from the same immutable previous `PrinterState`; compute cross-component influence terms from `tn-1`; then produce the new `PrinterState` for `tn` without letting update order affect results.
+
 ## Commit Style
 
 ### When to Commit
