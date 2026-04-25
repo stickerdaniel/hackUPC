@@ -30,3 +30,17 @@ repos:
         types: [python]
         files: ^sim/
         pass_filenames: false
+
+      - id: web-varlock-scan
+        name: varlock scan (web)
+        entry: bash -c 'cd web && bunx varlock scan --staged'
+        language: system
+        files: ^web/
+        pass_filenames: false
+
+      - id: web-static-checks
+        name: static-checks (web)
+        entry: bash -c 'cd web && bun run static-checks:staged'
+        language: system
+        files: ^web/
+        pass_filenames: false

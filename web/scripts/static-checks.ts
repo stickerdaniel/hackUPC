@@ -97,7 +97,11 @@ function runCommand(command: string, args: string[], options?: SpawnSyncOptions)
 }
 
 /**
- * Get list of staged files from git
+ * Get list of staged files from git, scoped to the script's cwd in a monorepo.
+ *
+ * `git diff --cached` returns paths from the repo root. When this script runs
+ * from a subdirectory (e.g. monorepo `web/`), strip the prefix so all
+ * downstream tools (eslint, prettier, `git add`) get cwd-relative paths.
  */
 function getStagedFiles(): string[] {
 	const result = spawnSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
@@ -109,7 +113,13 @@ function getStagedFiles(): string[] {
 		process.exit(1);
 	}
 
-	return result.stdout.trim().split('\n').filter(Boolean);
+	const all = result.stdout.trim().split('\n').filter(Boolean);
+
+	const prefixResult = spawnSync('git', ['rev-parse', '--show-prefix'], { encoding: 'utf-8' });
+	const prefix = prefixResult.status === 0 ? prefixResult.stdout.trim().replace(/\/$/, '') : '';
+	if (!prefix) return all;
+
+	return all.filter((f) => f.startsWith(`${prefix}/`)).map((f) => f.slice(prefix.length + 1));
 }
 
 /**
