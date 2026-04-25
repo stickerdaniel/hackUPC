@@ -19,6 +19,7 @@
  */
 
 import { spawnSync, type SpawnSyncOptions } from 'child_process';
+import path from 'path';
 import { parseArgs } from 'util';
 
 // Configuration (matches CI static-checks.yml exclusions)
@@ -97,6 +98,47 @@ function runCommand(command: string, args: string[], options?: SpawnSyncOptions)
 }
 
 /**
+ * Resolve the cwd prefix relative to the git repo root. Used to translate
+ * between repo-root paths (what `git diff --cached` returns and what `git add`
+ * writes back to the index) and cwd-relative paths (what eslint/prettier need).
+ *
+ * Pre-commit framework sets GIT_DIR and friends so each hook sees an isolated
+ * index. With those set, `git rev-parse` resolves the "worktree" to the gitdir
+ * target and treats process.cwd() as toplevel, so `--show-prefix` returns
+ * empty. Strip the overrides for prefix discovery.
+ */
+function getCwdPrefix(): string {
+	const cleanGitEnv = { ...process.env };
+	delete cleanGitEnv.GIT_DIR;
+	delete cleanGitEnv.GIT_WORK_TREE;
+	delete cleanGitEnv.GIT_INDEX_FILE;
+	delete cleanGitEnv.GIT_OBJECT_DIRECTORY;
+
+	const prefixResult = spawnSync('git', ['rev-parse', '--show-prefix'], {
+		encoding: 'utf-8',
+		env: cleanGitEnv
+	});
+	if (prefixResult.status === 0) {
+		const p = prefixResult.stdout.trim().replace(/\/$/, '');
+		if (p) return p;
+	}
+
+	const toplevelResult = spawnSync('git', ['rev-parse', '--show-toplevel'], {
+		encoding: 'utf-8',
+		env: cleanGitEnv
+	});
+	if (toplevelResult.status === 0) {
+		const toplevel = toplevelResult.stdout.trim();
+		const rel = path.relative(toplevel, process.cwd());
+		if (rel && !rel.startsWith('..')) return rel.split(path.sep).join('/');
+	}
+
+	return '';
+}
+
+const cwdPrefix = getCwdPrefix();
+
+/**
  * Get list of staged files from git, scoped to the script's cwd in a monorepo.
  *
  * `git diff --cached` returns paths from the repo root. When this script runs
@@ -114,12 +156,9 @@ function getStagedFiles(): string[] {
 	}
 
 	const all = result.stdout.trim().split('\n').filter(Boolean);
+	if (!cwdPrefix) return all;
 
-	const prefixResult = spawnSync('git', ['rev-parse', '--show-prefix'], { encoding: 'utf-8' });
-	const prefix = prefixResult.status === 0 ? prefixResult.stdout.trim().replace(/\/$/, '') : '';
-	if (!prefix) return all;
-
-	return all.filter((f) => f.startsWith(`${prefix}/`)).map((f) => f.slice(prefix.length + 1));
+	return all.filter((f) => f.startsWith(`${cwdPrefix}/`)).map((f) => f.slice(cwdPrefix.length + 1));
 }
 
 /**
@@ -362,10 +401,21 @@ async function main(): Promise<void> {
 		console.log('\n');
 	}
 
-	// Re-stage files if they were modified during --staged checks
-	if (mode === 'staged' && !ciMode) {
+	// Re-stage files if they were modified during --staged checks.
+	// Skipped under the pre-commit framework (or any context where GIT_DIR is
+	// set externally): pre-commit detects working-tree modifications after the
+	// hook returns and stages them itself, and running `git add` here under
+	// its GIT_DIR override targets the wrong index entries — cwd-relative
+	// paths get matched against repo-root index keys, producing bogus
+	// root-level entries that turn the commit into pure deletions.
+	const underPreCommit =
+		process.env.GIT_DIR !== undefined ||
+		process.env.PRE_COMMIT !== undefined ||
+		process.env.PRE_COMMIT_FROM_REF !== undefined ||
+		process.env.PRE_COMMIT_TO_REF !== undefined;
+	if (mode === 'staged' && !ciMode && !underPreCommit) {
 		console.log('Re-staging modified files...');
-		runCommand('git', ['add', ...allFiles]);
+		runCommand('git', ['add', '--', ...allFiles]);
 		console.log('');
 	}
 
