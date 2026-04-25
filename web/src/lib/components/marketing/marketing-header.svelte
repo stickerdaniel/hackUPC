@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CommandTrigger from '$lib/components/global-search/command-trigger.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
@@ -121,7 +120,6 @@
 
 				<!-- Desktop Actions -->
 				<div class="hidden items-center gap-3 lg:flex">
-					<CommandTrigger />
 					<Button
 						variant="ghost"
 						size="icon"

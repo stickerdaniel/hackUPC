@@ -5,7 +5,6 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
-	import CommandTrigger from '$lib/components/global-search/command-trigger.svelte';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { getTranslate } from '@tolgee/svelte';
 
@@ -81,7 +80,6 @@
 			</Breadcrumb.List>
 		</Breadcrumb.Root>
 		<div class="ml-auto flex items-center gap-2">
-			<CommandTrigger class="hidden md:inline-flex" />
 			<Button
 				variant="ghost"
 				size="icon"
