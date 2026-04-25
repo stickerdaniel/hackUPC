@@ -150,6 +150,7 @@ class EventCfg(_Strict):
     duration: int = Field(default=1, ge=1)
     driver_overrides: dict[str, float] = Field(default_factory=dict)
     env_overrides: dict[str, float] = Field(default_factory=dict)
+    disable_human_maintenance: bool = False
 
     @field_validator("driver_overrides")
     @classmethod
@@ -294,6 +295,7 @@ def build_event_overlay(cfg_events: list[EventCfg], horizon_ticks: int) -> Event
             duration=cfg.duration,
             driver_overrides=dict(cfg.driver_overrides),
             env_overrides=dict(cfg.env_overrides),
+            disable_human_maintenance=bool(cfg.disable_human_maintenance),
         )
         for cfg in cfg_events
     )

@@ -41,6 +41,7 @@ class SimulationLoop:
     def run(self, initial_state: PrinterState) -> PrinterState:
         state = initial_state
         start = self.start_time or datetime.now(UTC)
+        human_maintenance_enabled = True
         for tick_index in range(self.horizon_ticks):
             step = self.profile.sample(tick_index)
             new_state, observed, coupling = self.engine.step(state, step.drivers, step.env, dt=1.0)
@@ -58,6 +59,8 @@ class SimulationLoop:
             # Environmental events come from the world — recorded BEFORE
             # the operator reacts via the maintenance policy.
             for fired in step.fired_events:
+                if fired.disable_human_maintenance:
+                    human_maintenance_enabled = False
                 self.writer.write_environmental_event(
                     name=fired.name,
                     tick=new_state.tick,
@@ -65,6 +68,7 @@ class SimulationLoop:
                     payload={
                         "driver_overrides": dict(fired.driver_overrides),
                         "env_overrides": dict(fired.env_overrides),
+                        "disable_human_maintenance": bool(fired.disable_human_maintenance),
                         "duration_remaining": (fired.output_tick + fired.duration - new_state.tick),
                     },
                     ts_iso=ts_iso,
@@ -72,7 +76,7 @@ class SimulationLoop:
 
             state = new_state
 
-            if self.policy is not None:
+            if self.policy is not None and human_maintenance_enabled:
                 actions = self.policy.decide(observed, tick=new_state.tick)
                 for action in actions:
                     state, event = self.engine.apply_maintenance(state, action)

@@ -46,6 +46,7 @@ class ScheduledEvent:
     duration: int
     driver_overrides: Mapping[str, float]
     env_overrides: Mapping[str, float]
+    disable_human_maintenance: bool = False
 
     def is_active_at(self, output_tick: int) -> bool:
         return self.output_tick <= output_tick < self.output_tick + self.duration

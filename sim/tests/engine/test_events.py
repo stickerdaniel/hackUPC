@@ -260,3 +260,29 @@ def test_load_scenario_round_trip_with_events() -> None:
     cfg = load_scenario(_scenario_root() / "barcelona-with-events.yaml")
     names = [e.name for e in cfg.events]
     assert names == ["earthquake", "hvac-failure", "operator-holiday"]
+
+
+def test_human_disruption_disables_policy_events_after_start(tmp_path: Path) -> None:
+    db_path = tmp_path / "human-disruption.sqlite"
+    rc = main(
+        [
+            "run",
+            str(_scenario_root() / "barcelona-human-disruption-no-maintenance.yaml"),
+            "--db-path",
+            str(db_path),
+        ]
+    )
+    assert rc == 0
+
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    rows = conn.execute(
+        "SELECT tick FROM events ORDER BY tick"
+    ).fetchall()
+    conn.close()
+
+    assert all(int(tick) < 140 for (tick,) in rows), (
+        "No policy-driven human maintenance events should occur once "
+        "human-disruption begins at tick 140"
+    )

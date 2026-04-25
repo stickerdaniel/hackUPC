@@ -16,6 +16,8 @@ def test_list_scenarios(capsys) -> None:
     assert rc == 0
     out = capsys.readouterr().out
     assert "barcelona-baseline.yaml" in out
+    assert "barcelona-powder-bug-with-maintenance.yaml" in out
+    assert "barcelona-human-disruption-no-maintenance.yaml" in out
     assert "phoenix-aggressive.yaml" in out
     assert "chaos-stress-test.yaml" in out
 

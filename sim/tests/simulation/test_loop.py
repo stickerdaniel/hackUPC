@@ -18,7 +18,13 @@ def _scenario_root() -> Path:
 
 
 def test_load_three_scenarios() -> None:
-    for name in ("barcelona-baseline", "phoenix-aggressive", "chaos-stress-test"):
+    for name in (
+        "barcelona-baseline",
+        "barcelona-powder-bug-with-maintenance",
+        "barcelona-human-disruption-no-maintenance",
+        "phoenix-aggressive",
+        "chaos-stress-test",
+    ):
         cfg = load_scenario(_scenario_root() / f"{name}.yaml")
         assert cfg.run.horizon_ticks > 0
 

@@ -25,7 +25,13 @@ def _scenario_root() -> Path:
 
 @pytest.mark.parametrize(
     "scenario_name",
-    ["barcelona-baseline.yaml", "phoenix-aggressive.yaml", "chaos-stress-test.yaml"],
+    [
+        "barcelona-baseline.yaml",
+        "barcelona-powder-bug-with-maintenance.yaml",
+        "barcelona-human-disruption-no-maintenance.yaml",
+        "phoenix-aggressive.yaml",
+        "chaos-stress-test.yaml",
+    ],
 )
 def test_scenario_full_horizon(tmp_path: Path, capsys, scenario_name: str) -> None:
     db_path = tmp_path / "historian.sqlite"

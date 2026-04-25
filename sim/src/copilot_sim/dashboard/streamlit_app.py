@@ -21,13 +21,16 @@ default is `data/historian.sqlite`.
 
 from __future__ import annotations
 
+import io
 import json
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
 import streamlit as st
 
+from copilot_sim.cli import main as cli_main
 from copilot_sim.historian.connection import open_db
 from copilot_sim.historian.writer import list_run_ids
 
@@ -36,9 +39,19 @@ def _default_db_path() -> Path:
     return Path("data/historian.sqlite")
 
 
-@st.cache_resource
-def _open(db_path: str):
-    return open_db(db_path)
+def _scenarios_dir() -> Path:
+    return Path(__file__).resolve().parents[3] / "scenarios"
+
+
+def _available_scenarios() -> list[Path]:
+    return sorted(_scenarios_dir().glob("*.yaml"))
+
+
+def _run_scenario(scenario_path: Path, db_path: Path) -> tuple[int, str]:
+    buffer = io.StringIO()
+    with redirect_stdout(buffer), redirect_stderr(buffer):
+        rc = cli_main(["run", str(scenario_path), "--db-path", str(db_path)])
+    return rc, buffer.getvalue()
 
 
 def _load_drivers(conn, run_id: str) -> pd.DataFrame:
@@ -127,26 +140,54 @@ def main() -> None:
     )
 
     db_input = st.sidebar.text_input("historian db path", str(_default_db_path()))
+    scenarios = _available_scenarios()
+    if scenarios:
+        selected_scenario = st.sidebar.selectbox(
+            "scenario to run",
+            scenarios,
+            format_func=lambda path: path.name,
+            index=0,
+        )
+        if st.sidebar.button("Run selected scenario", width="stretch"):
+            db_path = Path(db_input)
+            with st.spinner(f"Running {selected_scenario.name}..."):
+                rc, output = _run_scenario(selected_scenario, db_path)
+            st.session_state["last_run_output"] = output
+            if rc == 0:
+                st.session_state["last_run_scenario"] = selected_scenario.name
+                st.rerun()
+            st.error(f"Scenario run failed with exit code {rc}.")
+            if output:
+                st.code(output)
+    else:
+        st.sidebar.info("No scenarios found in sim/scenarios.")
+
+    if st.session_state.get("last_run_output"):
+        with st.expander("Last scenario run output", expanded=False):
+            st.code(st.session_state["last_run_output"])
+
     if not Path(db_input).exists():
         st.warning(
-            f"No historian DB at `{db_input}`. Run a scenario first:\n\n"
-            "`uv run copilot-sim run barcelona-baseline.yaml`"
+            f"No historian DB at `{db_input}` yet. Choose a scenario on the left and run it."
         )
         return
 
-    conn = _open(db_input)
-    run_ids = list(list_run_ids(conn))
-    if not run_ids:
-        st.warning("Historian is empty.")
-        return
-    run_id = st.sidebar.selectbox("run_id", run_ids, index=0)
+    conn = open_db(db_input)
+    try:
+        run_ids = list(list_run_ids(conn))
+        if not run_ids:
+            st.warning("Historian is empty.")
+            return
+        run_id = st.sidebar.selectbox("run_id", run_ids, index=0)
 
-    drivers_df = _load_drivers(conn, run_id)
-    component_df = _load_component_health(conn, run_id)
-    observed_df = _load_observed_health(conn, run_id)
-    events_df = _load_events(conn, run_id)
-    env_events_df = _load_environmental_events(conn, run_id)
-    factors_df = _factors_dataframe(drivers_df)
+        drivers_df = _load_drivers(conn, run_id)
+        component_df = _load_component_health(conn, run_id)
+        observed_df = _load_observed_health(conn, run_id)
+        events_df = _load_events(conn, run_id)
+        env_events_df = _load_environmental_events(conn, run_id)
+        factors_df = _factors_dataframe(drivers_df)
+    finally:
+        conn.close()
 
     # Chart 1: per-component health (Altair so we can overlay event rules)
     st.subheader("1. Component health over time")
