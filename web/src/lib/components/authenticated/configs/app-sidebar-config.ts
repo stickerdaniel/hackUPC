@@ -1,6 +1,7 @@
 import { localizedHref } from '$lib/utils/i18n';
 import { cmdOrCtrl, ctrlSymbol } from '$lib/hooks/is-mac.svelte';
 import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
+import ActivityIcon from '@lucide/svelte/icons/activity';
 import ServerCogIcon from '@lucide/svelte/icons/server-cog';
 import Logo from '$lib/components/icons/logo.svelte';
 import type { SidebarConfig, NavSubItem } from '../types';
@@ -64,6 +65,12 @@ export function getAppSidebarConfig(
 				kbd: [ctrlSymbol, '⇧', '1'],
 				// Disable nav when already on the warm thread (already "new chat")
 				disableNav: !!activeThreadId && activeThreadId === warmThreadId
+			},
+			{
+				translationKey: 'app.sidebar.runs',
+				url: localizedHref('/app/runs'),
+				icon: ActivityIcon,
+				isActive: pathname.startsWith(`/${lang}/app/runs`)
 			}
 		],
 		footerLinks:
