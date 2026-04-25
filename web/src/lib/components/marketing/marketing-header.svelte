@@ -126,7 +126,7 @@
 					<Button
 						variant="ghost"
 						size="icon"
-						href="https://github.com/hackupc"
+						href="https://github.com/stickerdaniel/hackUPC"
 						target="_blank"
 						rel="noopener noreferrer"
 						aria-label={$t('aria.github_repository')}
@@ -187,7 +187,7 @@
 					<Button
 						variant="ghost"
 						size="icon"
-						href="https://github.com/hackupc"
+						href="https://github.com/stickerdaniel/hackUPC"
 						target="_blank"
 						rel="noopener noreferrer"
 						aria-label={$t('aria.github_repository')}
