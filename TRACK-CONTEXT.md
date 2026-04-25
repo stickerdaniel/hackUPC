@@ -64,6 +64,28 @@ Per component, every tick:
 
 Same inputs → same outputs. Stochasticity, if added, is seeded.
 
+### 3.4 Observability — sensors are optional, partial, and themselves fail
+
+Confirmed by the challenge organisers: **we choose how the operator perceives component health**. Not every component carries a health sensor, and the ones that do can themselves degrade.
+
+- **Per component, we decide whether it has a sensor.** Sensored components expose direct readouts (e.g. heater resistance, nozzle clog %, blade thickness via load cell). Unsensored ones are only knowable through downstream effects.
+- **Sensors decay and fail too.** A sensor can drift, freeze, or report unrealistic values — and a wrong reading the system trusts can drive bad maintenance decisions and affect production.
+- **The print itself is a signal.** When a component is badly degraded, the print either halts entirely or produces a part with visibly poor quality. The operator notices, stops the machine, troubleshoots, and fixes or replaces the part before resuming.
+- **Operator loop we are supporting:** *notice anomaly → stop → diagnose → fix or replace → resume.* The Digital Co-Pilot's job is to shorten or pre-empt every step of this loop.
+
+**Implications for our model**
+
+| Layer | What changes |
+| :--- | :--- |
+| **Phase 1** | Separate **true state** (ground-truth health, used internally) from **observed state** (what a sensor or quality metric exposes). Each sensored component carries its own sensor model: `(true_value, sensor_health, drift, noise) → observed_value`. |
+| **Phase 2** | Historian stores both true and observed values per tick, plus a `print_outcome` field per run (`OK` / `QUALITY_DEGRADED` / `HALTED`) and operator events (`troubleshoot`, `fix`, `replace`). |
+| **Phase 3** | The co-pilot must reason about **how much to trust each reading** and cross-reference sensors, print outcomes, and component history to distinguish *component fault* from *sensor fault*. Natural fit for the Agentic Diagnosis pattern and a strong differentiator on the Reasoning Depth and Proactive Intelligence pillars. |
+
+**Open design choices** *(to resolve in Phase 1 planning)*
+- Which components get a direct sensor and which are inferred from print quality / halts?
+- Failure modes per sensor: stuck-at, drift, additive noise, full dropout?
+- What "print outcome" signals do we expose to the operator/AI as ground-truth observable events?
+
 ---
 
 ## 4. The Three Phases
@@ -267,3 +289,4 @@ input drivers ─▶│  Degradation Model   │──▶ component health (t)
 
 - **2026-04-25** — Initial draft from verbal briefing transcript.
 - **2026-04-25** — Rewritten from authoritative briefing pack (4 markdowns + 21-page deck): added HP Metal Jet S100 specifics, mandatory components per subsystem, the four-driver contract, output schema with status enum, Phase 1/2/3 patterns and minimum bars, Phase 3 grounding protocol + four evaluation pillars, submission package, pre-demo checklist, strategic bet on Phase 3.
+- **2026-04-25** — Added §3.4 Observability after organiser clarification: sensors are optional and per-component, sensors themselves decay and can mislead, print halt / quality drop are first-class observable signals, and the operator's notice→stop→diagnose→fix→resume loop is what the Co-Pilot supports. Introduces the true-state vs observed-state split, sensor models, and `print_outcome` / operator-event fields in the historian.
