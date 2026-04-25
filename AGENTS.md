@@ -20,6 +20,16 @@ HackUPC hackathon project.
 - Use package manager commands to add dependencies (no manual edits to `package.json` / `pyproject.toml`).
 - **Before starting, make sure to clone all submodules.** `references/` contains vendored upstream repos (e.g. `streamlit`, `scikit-learn`, `httpx`, `pydantic`) so you can read real source instead of guessing. Figure out the right git command for the current repo state and run it before doing any non-trivial work.
 
+## Operational hazards
+
+- Always push to `stickerdaniel/hackUPC`. Run `git remote -v` first.
+- Always re-run `git status --short` before staging — session-start snapshot can be stale.
+- `git commit --allow-empty` still includes anything staged. Verify `git diff --cached` first.
+- Never `stash drop` a stash you didn't create.
+- Don't blanket `--no-verify`. If pre-commit conflicts on stash pop, commit/stash WIP first.
+- `grep -r <file>` before deleting any config-adjacent file (e.g. `web/.gitignore` is read by `web/eslint.config.js`).
+- Workers Builds status: `gh api repos/stickerdaniel/hackUPC/commits/<sha>/check-runs`. `wrangler deployments list` only shows already-deployed.
+
 ## Simulation Modeling
 
 - Rule: Phase 1 component updates are state transitions from `t-1` to `t`, not independent per-tick formulas. Each component starts from explicit initial metric values, then updates from its own previous state, the environmental/operational drivers, and relevant previous states of other components.
