@@ -1,0 +1,12 @@
+[submodule "references/streamlit"]
+	path = references/streamlit
+	url = https://github.com/streamlit/streamlit.git
+[submodule "references/scikit-learn"]
+	path = references/scikit-learn
+	url = https://github.com/scikit-learn/scikit-learn.git
+[submodule "references/httpx"]
+	path = references/httpx
+	url = https://github.com/encode/httpx.git
+[submodule "references/pydantic"]
+	path = references/pydantic
+	url = https://github.com/pydantic/pydantic.git

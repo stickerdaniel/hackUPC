@@ -13,6 +13,7 @@ HackUPC hackathon project.
 - Keep changes minimal and focused.
 - Prefer editing existing files over creating new ones.
 - Use package manager commands to add dependencies (no manual edits to `package.json` / `pyproject.toml`).
+- **Before starting, make sure to clone all submodules.** `references/` contains vendored upstream repos (e.g. `streamlit`, `scikit-learn`, `httpx`, `pydantic`) so you can read real source instead of guessing. Figure out the right git command for the current repo state and run it before doing any non-trivial work.
 
 ## Simulation Modeling
 
