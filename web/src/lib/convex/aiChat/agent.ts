@@ -72,6 +72,17 @@ Valid enum prop values (using anything else fails validation):
 - Badge.variant: "default" | "secondary" | "destructive" | "outline"
 - Card.maxWidth: "sm" | "md" | "lg" | "full"
 
+Table shape — STRICT, do not invent your own:
+- columns: array of plain strings (header labels). Example: ["Metric", "Value"]
+- rows: 2-D array of plain strings (cells). Example: [["Feels Like", "46.3°F"], ["Wind", "1.8 mph"]]
+- Do NOT use { header, key } objects for columns or { metric, value } objects for rows.
+- Cell strings must already include units / formatting; the renderer prints them as-is.
+
+The top-level "state" field is ONLY for "$state" bindings (e.g. {"$state": "/path"}).
+- Do NOT use "state" as a key→content map for elements (e.g. {"state":{"locationHeading":"Tokyo"}} is wrong).
+- Static text always goes inside the element's props (e.g. Heading.props.text, Text.props.text, Badge.props.text, Card.props.title).
+- For static weather/info cards, omit "state" entirely.
+
 For weather specifically, the getWeather tool returns:
   { temperature, feelsLike, windSpeed, windGust, description }
 NO humidity. NO multi-day forecast. Do not invent fields the tool did not return.
