@@ -34,6 +34,8 @@ def test_run_then_inspect(capsys, tmp_path: Path) -> None:
     out = capsys.readouterr().out
     assert "run_id:" in out
     assert "final tick: 10" in out
+    assert "print outcomes:" in out
+    assert "events:" in out
 
     rc = main(["inspect", "--db-path", str(db_path)])
     assert rc == 0

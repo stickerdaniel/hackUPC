@@ -79,12 +79,26 @@ def _cmd_run(args: argparse.Namespace) -> int:
         horizon_ticks=config.run.horizon_ticks,
         dt_seconds=config.run.dt_seconds,
     )
-    final_state = loop.run(state)
+    loop.run(state)
+    # Read the summary back from the historian rather than the in-memory
+    # post-maintenance state. The historian's last tick row is the
+    # pre-maintenance state, which is what `inspect` and the dashboard
+    # both show — one source of truth across CLI surfaces.
+    final_rows = reader.fetch_final_component_states(conn, run_id)
+    outcomes = reader.fetch_print_outcome_distribution(conn, run_id)
+    event_count = reader.fetch_event_count(conn, run_id)
+    final_tick = final_rows[0]["tick"] if final_rows else config.run.horizon_ticks
     conn.close()
 
     print(f"run_id: {run_id}")
-    print(f"final tick: {final_state.tick}")
-    print(f"final print_outcome: {final_state.print_outcome.value}")
+    print(f"final tick: {final_tick}")
+    print(
+        "print outcomes: "
+        f"OK={outcomes.get('OK', 0)} "
+        f"QUALITY_DEGRADED={outcomes.get('QUALITY_DEGRADED', 0)} "
+        f"HALTED={outcomes.get('HALTED', 0)}"
+    )
+    print(f"events: {event_count}")
     return 0
 
 

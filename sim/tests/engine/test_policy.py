@@ -101,6 +101,55 @@ def test_unknown_takes_priority_over_low_health() -> None:
     assert actions[0].component_id == "heater"
 
 
+def test_lowest_observed_health_wins_when_multiple_below_threshold() -> None:
+    """Two components below the FIX threshold — the worst-health one wins
+    regardless of registry order.
+    """
+    components = {cid: _ok_observed(cid) for cid in COMPONENT_IDS}
+    # nozzle is third in COMPONENT_IDS, blade is first. Under the old
+    # fixed-iteration policy, blade@0.30 would have won by being first;
+    # here we make blade=0.40 (mild) and nozzle=0.25 (worse) — nozzle
+    # should win by being the worst, which is also the fixed-order
+    # outcome. Flip with rail to genuinely exercise the sort.
+    components["blade"] = _ok_observed("blade", health=0.40)
+    components["rail"] = _ok_observed("rail", health=0.30)
+    components["nozzle"] = _ok_observed("nozzle", health=0.42)
+    observed = _make(components)
+    policy = HeuristicPolicy()
+    actions = policy.decide(observed, tick=10)
+    assert actions[0].kind is OperatorEventKind.FIX
+    assert actions[0].component_id == "rail", (
+        "worst-first triage: rail@0.30 must beat blade@0.40 and nozzle@0.42 "
+        "even though blade comes first in COMPONENT_IDS"
+    )
+
+
+def test_lowest_health_replace_threshold_overrides_fix() -> None:
+    """A component below 0.20 ranks as REPLACE; a milder one stays FIX —
+    the worst (REPLACE-bound) one wins.
+    """
+    components = {cid: _ok_observed(cid) for cid in COMPONENT_IDS}
+    components["blade"] = _ok_observed("blade", health=0.30)
+    components["heater"] = _ok_observed("heater", health=0.10)
+    observed = _make(components)
+    policy = HeuristicPolicy()
+    actions = policy.decide(observed, tick=10)
+    assert actions[0].component_id == "heater"
+    assert actions[0].kind is OperatorEventKind.REPLACE
+
+
+def test_tie_breaks_by_registry_order() -> None:
+    """Two equally-bad components → the one earlier in COMPONENT_IDS wins."""
+    components = {cid: _ok_observed(cid) for cid in COMPONENT_IDS}
+    components["blade"] = _ok_observed("blade", health=0.30)
+    components["nozzle"] = _ok_observed("nozzle", health=0.30)
+    observed = _make(components)
+    policy = HeuristicPolicy()
+    actions = policy.decide(observed, tick=10)
+    # blade is first in COMPONENT_IDS, nozzle is third.
+    assert actions[0].component_id == "blade"
+
+
 def _state_with_initial(observed_components):
     return _make(observed_components)
 

@@ -7,10 +7,18 @@ order, lifted from the plan + doc 09:
 
 1. Any `observed_status is UNKNOWN` → `TROUBLESHOOT(component)`. The
    policy never acts blind on a missing sensor reading.
-2. `observed_health_index < 0.20` → `REPLACE(component)`.
-3. `observed_health_index < 0.45` → `FIX(component)`.
-4. Monthly preventive `FIX` of the longest-unmaintained component when
+2. Among components with `observed_health_index < 0.45`, pick the
+   **lowest-health** one and emit `REPLACE` (if `< 0.20`) or `FIX`
+   (otherwise). Ties broken by `COMPONENT_IDS` order so the policy
+   stays deterministic.
+3. Monthly preventive `FIX` of the longest-unmaintained component when
    nothing else is firing.
+
+The "worst-first" tie-break in rule 2 fixes a fairness issue the
+fixed-iteration earlier draft had: nozzle (which decays fastest)
+would always win the FIX queue even when rail or heater were
+materially worse, because the fixed walk picked the first match.
+Sorting by health makes the policy's event log a fair triage signal.
 
 `decide` returns at most one action per tick — the list shape leaves
 room for a future LLM-as-policy that can issue concurrent actions
@@ -48,20 +56,27 @@ class HeuristicPolicy:
             if oc.observed_status is OperationalStatus.UNKNOWN:
                 return [self._action(cid, OperatorEventKind.TROUBLESHOOT)]
 
-        # Rule 2 + 3 — REPLACE / FIX on low observed health.
-        for cid in COMPONENT_IDS:
+        # Rule 2 — REPLACE / FIX on lowest observed health. Worst-first
+        # triage with deterministic tie-break by registry order.
+        candidates: list[tuple[float, int, str]] = []
+        for index, cid in enumerate(COMPONENT_IDS):
             oc = observed.components.get(cid)
             if oc is None:
                 continue
             health = oc.observed_health_index
             if health is None:
                 continue
-            if health < _UNHEALTHY_REPLACE:
-                return [self._action(cid, OperatorEventKind.REPLACE, tick=tick)]
             if health < _UNHEALTHY_FIX:
-                return [self._action(cid, OperatorEventKind.FIX, tick=tick)]
+                candidates.append((float(health), index, cid))
+        if candidates:
+            candidates.sort()  # (health asc, registry_index asc, cid asc)
+            health, _, cid = candidates[0]
+            kind = (
+                OperatorEventKind.REPLACE if health < _UNHEALTHY_REPLACE else OperatorEventKind.FIX
+            )
+            return [self._action(cid, kind, tick=tick)]
 
-        # Rule 4 — monthly preventive FIX of the longest-unmaintained.
+        # Rule 3 — monthly preventive FIX of the longest-unmaintained.
         oldest = self._oldest_component(tick)
         if (
             oldest is not None
