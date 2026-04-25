@@ -50,7 +50,12 @@ EA_EV = 0.7  # activation energy for Ni-Cr resistance drift.
 KB_EV_PER_K = 8.617e-5  # Boltzmann constant in eV/K.
 
 # Self-heating range: 0 °C at zero load → SELF_HEATING_C at full load.
-SELF_HEATING_C = 50.0
+# Calibrated so operating_C reaches the S100 binder-cure temperature (~150 °C)
+# at full load with Barcelona ambient — i.e. operating_K ≈ T_REF_K at full duty.
+# At AF ≈ 1, the Arrhenius drift physics matches the cited 0.025/week health
+# drop rate from doc 22; previously SELF_HEATING_C = 50 left AF ≈ 0.003 at
+# typical load and the Weibull baseline dominated drift physics entirely.
+SELF_HEATING_C = 130.0
 
 # Resistance drift expressed as fraction of nominal — 0.10 (10 %) is the
 # doc-04 failed-element anchor.

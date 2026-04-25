@@ -46,6 +46,13 @@ T_REF_K = 423.0
 EA_EV = 0.7
 KB_EV_PER_K = 8.617e-5
 
+# Self-heating mirror — the PT100 sits in the heater zone and reads bed
+# temperature, not ambient air. Matches heater.SELF_HEATING_C; without this
+# the sensor saw only ambient (~22 °C) and AF stayed at ~0.0004 even while
+# the heater was running at cure temperature, so the sensor never drifted
+# enough to trigger the §3.4 sensor-fault story.
+SELF_HEATING_C = 130.0
+
 BIAS_HARD_FAIL_C = 5.0
 NOISE_AT_FAILURE = 0.5
 
@@ -80,7 +87,8 @@ def step(
     damp = maintenance_damper(coupling.maintenance_level_effective)
 
     ambient_C = ambient_temperature_C_effective(env, coupling)
-    operating_K = max(ambient_C + 273.15, 250.0)
+    operating_C = ambient_C + SELF_HEATING_C * load_eff
+    operating_K = max(operating_C + 273.15, 250.0)
     af = math.exp((EA_EV / KB_EV_PER_K) * (1.0 / T_REF_K - 1.0 / operating_K))
 
     temp_stress_bonus = 1.0 + 0.3 * temp_eff
