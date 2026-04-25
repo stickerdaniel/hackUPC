@@ -1,0 +1,55 @@
+run:
+  scenario: barcelona
+  profile: with-chaos
+  seed: 42
+  horizon_ticks: 260   # 5 years × 52 weeks
+  dt_seconds: 604800   # 1 week
+
+environment:
+  base_ambient_C: 22.0
+  amplitude_C: 8.0
+  weekly_runtime_hours: 60
+  vibration_level: 0.10
+
+drivers:
+  temperature_stress:
+    kind: sinusoidal_seasonal
+    base: 0.30
+    amplitude: 0.10
+    period_weeks: 52
+    weekly_wobble_amplitude: 0.015
+    noise_sigma: 0.008
+    noise_theta: 0.30
+  humidity_contamination:
+    kind: ornstein_uhlenbeck
+    mean: 0.35
+    theta: 0.05
+    sigma: 0.04
+  operational_load:
+    kind: smooth_synthetic
+    mean: 0.55
+    theta: 0.25
+    sigma: 0.12
+    annual_amplitude: 0.15
+    idle_probability: 0.05
+    overload_probability: 0.04
+  maintenance_level:
+    kind: step
+    schedule:
+      - tick: 0
+        value: 0.7
+
+# Stochastic Realism bonus — Poisson temp spikes, contamination bursts,
+# Bernoulli skipped maintenance. Pre-rolled at scenario load with a
+# separate RNG tag so chaos schedule is stable across process restarts.
+chaos:
+  enabled: true
+  temp_spike_lambda_per_year: 4.0
+  contamination_burst_lambda_per_year: 6.0
+  skipped_maintenance_p: 0.10
+
+policy:
+  kind: heuristic
+
+historian:
+  path: data/historian.sqlite
