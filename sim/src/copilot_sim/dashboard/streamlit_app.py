@@ -27,8 +27,8 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from ..historian.connection import open_db
-from ..historian.writer import list_run_ids
+from copilot_sim.historian.connection import open_db
+from copilot_sim.historian.writer import list_run_ids
 
 
 def _default_db_path() -> Path:
