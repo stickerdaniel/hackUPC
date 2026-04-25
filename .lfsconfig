@@ -1,0 +1,9 @@
+[lfs]
+	# Skip LFS smudge on every clone by default. The two HP brand
+	# files tracked through LFS (a 133 MB PSB and a 649 MB PPTX) are
+	# referenced for design work only; they're never needed by the
+	# build, by Cloudflare Workers Builds, or by anyone reviewing
+	# code. Pointers stay in git so collaborators can opt in via
+	#     git lfs fetch --include='assets/hp-brand/...' && git lfs checkout
+	# when they actually want the binaries.
+	fetchexclude = *
