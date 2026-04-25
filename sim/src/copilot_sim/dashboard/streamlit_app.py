@@ -376,10 +376,17 @@ def _render_panel1(
     # left pushes the controls toward the chart's right edge. Inside the
     # control column, arrows flank the segmented control so the panning
     # controls bracket the range buttons (← [6mo|1y|3y|all] →).
+    #
+    # Symmetry trick: pass `width="stretch"` to all three widgets so each
+    # one fills its column edge-to-edge. The button label and the segmented
+    # control's pill group are then horizontally centred inside their
+    # respective columns by Streamlit's own rendering, so with column
+    # ratios `[1, X, 1]` (equal-width outer columns) the arrows land at
+    # equal distance from the segmented control's left/right edges.
     _, ctrl_col = st.columns([5, 4])
     with ctrl_col:
         prev_col, range_col, next_col = st.columns(
-            [1, 5, 1], vertical_alignment="bottom"
+            [1, 1.8, 1], vertical_alignment="bottom"
         )
         # Compute disabled state from the CURRENT (pre-click) session state
         # so the button visuals are right after the previous interaction.
@@ -391,7 +398,11 @@ def _render_panel1(
         at_right = (cur_start + cur_window) >= total_ticks
         with prev_col:
             prev_clicked = st.button(
-                "←", key="panel1_prev", disabled=at_left, help="Pan earlier"
+                "←",
+                key="panel1_prev",
+                disabled=at_left,
+                help="Pan earlier",
+                width="stretch",
             )
         with range_col:
             window_label = st.segmented_control(
@@ -399,10 +410,15 @@ def _render_panel1(
                 options=[opt[0] for opt in window_options],
                 key="panel1_window_label",
                 label_visibility="collapsed",
+                width="stretch",
             )
         with next_col:
             next_clicked = st.button(
-                "→", key="panel1_next", disabled=at_right, help="Pan later"
+                "→",
+                key="panel1_next",
+                disabled=at_right,
+                help="Pan later",
+                width="stretch",
             )
 
     # Resolve window size and pan step. `window_label` is None on first render
