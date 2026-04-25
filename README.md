@@ -27,6 +27,27 @@ Full briefing: [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md). Source docs: [`docs/bri
 
 ---
 
+## Cloning
+
+The repo is plain git except for two oversized HP brand assets (one PowerPoint playbook, one Photoshop source) that exceed GitHub's 100 MB per-file hard limit and live in Git LFS. Install `git-lfs` first (`brew install git-lfs && git lfs install`, or your distro's equivalent), then clone normally:
+
+```bash
+git clone https://github.com/stickerdaniel/hackUPC.git
+cd hackUPC
+```
+
+If you don't need the two LFS files (most contributors don't — everything else is regular git), skip the LFS payload:
+
+```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/stickerdaniel/hackUPC.git
+```
+
+You'll still get every other brand asset, all simulation code, and the docs. Pull individual LFS files later with `git lfs pull --include="<path>"`.
+
+If you already cloned and the working tree contains ~130-byte text files where the binaries should be, run `git lfs install && git lfs pull` from the repo root.
+
+---
+
 ## Status
 
 **Research locked. Engine types in code. Components landing.** The coupled-engine type layer — `Drivers`, `CouplingContext`, `PrinterState`, `ObservedPrinterState`, `MaintenanceAction`, `OperatorEvent` — lives in [`sim/src/copilot_sim/domain/`](./sim/src/copilot_sim/domain/) as frozen+slots dataclasses. Per-component `step()` functions are next.
