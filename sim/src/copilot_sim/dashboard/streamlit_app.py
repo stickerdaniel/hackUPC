@@ -346,17 +346,115 @@ def _render_panel1(
         st.info("No component-state data for this run.")
         return
 
-    # Order the colour legend by canonical component order so it matches panels 2/4.
-    plot_df = component_df.copy()
-    plot_df["component_id"] = pd.Categorical(
-        plot_df["component_id"], categories=list(COMPONENT_IDS)
+    max_tick = int(component_df["tick"].max())
+    total_ticks = max_tick + 1
+
+    # Window options in weekly ticks (dt = 1 week, so 1 year = 52 ticks).
+    # "all" sizes the window to cover the full run regardless of length.
+    window_options: list[tuple[str, int]] = [
+        ("6mo", 26),
+        ("1y", 52),
+        ("3y", 156),
+        ("all", total_ticks),
+    ]
+    label_to_size = dict(window_options)
+
+    # One-time session-state init. Default to 1y if the run is long enough,
+    # otherwise step down through 6mo before showing everything.
+    if "panel1_window_label" not in st.session_state:
+        if max_tick >= 52:
+            default_label = "1y"
+        elif max_tick >= 26:
+            default_label = "6mo"
+        else:
+            default_label = "all"
+        st.session_state["panel1_window_label"] = default_label
+    if "panel1_start_tick" not in st.session_state:
+        st.session_state["panel1_start_tick"] = 0
+
+    # Controls row above the chart, right-aligned. Spacer column on the
+    # left pushes the controls toward the chart's right edge. Inside the
+    # control column, arrows flank the segmented control so the panning
+    # controls bracket the range buttons (← [6mo|1y|3y|all] →).
+    _, ctrl_col = st.columns([5, 4])
+    with ctrl_col:
+        prev_col, range_col, next_col = st.columns(
+            [1, 5, 1], vertical_alignment="bottom"
+        )
+        # Compute disabled state from the CURRENT (pre-click) session state
+        # so the button visuals are right after the previous interaction.
+        cur_start = int(st.session_state["panel1_start_tick"])
+        cur_window = label_to_size.get(
+            st.session_state.get("panel1_window_label", "1y"), 52
+        )
+        at_left = cur_start <= 0
+        at_right = (cur_start + cur_window) >= total_ticks
+        with prev_col:
+            prev_clicked = st.button(
+                "←", key="panel1_prev", disabled=at_left, help="Pan earlier"
+            )
+        with range_col:
+            window_label = st.segmented_control(
+                "range",
+                options=[opt[0] for opt in window_options],
+                key="panel1_window_label",
+                label_visibility="collapsed",
+            )
+        with next_col:
+            next_clicked = st.button(
+                "→", key="panel1_next", disabled=at_right, help="Pan later"
+            )
+
+    # Resolve window size and pan step. `window_label` is None on first render
+    # if the user has just deselected the segmented control; fall back to the
+    # session-state default.
+    if window_label is None:
+        window_label = st.session_state.get("panel1_window_label", "1y")
+    window_size = label_to_size[window_label]
+    pan_step = max(1, window_size // 2)
+
+    start_tick = int(st.session_state["panel1_start_tick"])
+    if prev_clicked:
+        start_tick -= pan_step
+    if next_clicked:
+        start_tick += pan_step
+    # Clamp to valid range — also handles run changes (different total_ticks)
+    # and window-size changes (e.g. zooming out from 1y to 5y).
+    upper_start = max(0, total_ticks - window_size)
+    start_tick = max(0, min(start_tick, upper_start))
+    st.session_state["panel1_start_tick"] = start_tick
+    end_tick = start_tick + window_size  # exclusive
+
+    # Filter component_df + env_events_df to the visible window.
+    visible_df = component_df[
+        (component_df["tick"] >= start_tick) & (component_df["tick"] < end_tick)
+    ].copy()
+    visible_df["component_id"] = pd.Categorical(
+        visible_df["component_id"], categories=list(COMPONENT_IDS)
+    )
+    visible_env = (
+        env_events_df[
+            (env_events_df["tick"] >= start_tick) & (env_events_df["tick"] < end_tick)
+        ]
+        if not env_events_df.empty
+        else env_events_df
     )
 
+    # Lock the x-axis domain to the chosen window so panning feels stable
+    # (the chart doesn't auto-rescale when only one component has data in
+    # the window after filtering).
+    x_domain = [start_tick, min(end_tick, total_ticks) - 1]
+
     health_chart = (
-        alt.Chart(plot_df)
+        alt.Chart(visible_df)
         .mark_line(strokeWidth=1.6)
         .encode(
-            x=alt.X("tick:Q", title="tick", axis=alt.Axis(labelFontSize=10, titleFontSize=10)),
+            x=alt.X(
+                "tick:Q",
+                title="tick",
+                scale=alt.Scale(domain=x_domain),
+                axis=alt.Axis(labelFontSize=10, titleFontSize=10),
+            ),
             y=alt.Y(
                 "health_index:Q",
                 title="health index",
@@ -386,14 +484,14 @@ def _render_panel1(
 
     layers: list[alt.Chart] = [health_chart]
 
-    if not env_events_df.empty:
+    if not visible_env.empty:
         env_rule = (
-            alt.Chart(env_events_df)
+            alt.Chart(visible_env)
             .mark_rule(color=RULE_GREY, strokeDash=[3, 3], strokeWidth=1, opacity=0.85)
             .encode(x="tick:Q", tooltip=["name", "tick"])
         )
         env_label = (
-            alt.Chart(env_events_df)
+            alt.Chart(visible_env)
             .mark_text(
                 align="left",
                 baseline="top",
@@ -414,11 +512,19 @@ def _render_panel1(
     )
     st.altair_chart(composed, width="stretch")
 
-    if not env_events_df.empty:
+    # Caption — current window + env-event legend if any are visible.
+    visible_last = min(end_tick - 1, max_tick)
+    range_caption = (
+        f"showing ticks {start_tick}–{visible_last} of {total_ticks} total"
+    )
+    if not visible_env.empty:
         st.caption(
-            "Grey dashed rules mark environmental events from the scenario "
-            "(chaos overlays — earthquake, HVAC failure, holiday, ...)."
+            f"{range_caption} · grey dashed rules mark environmental events "
+            f"from the scenario (chaos overlays — earthquake, HVAC failure, "
+            f"holiday, ...)."
         )
+    else:
+        st.caption(range_caption)
 
 
 # ──────────────────────────────────────────────────────────────────────────
