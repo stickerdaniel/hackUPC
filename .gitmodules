@@ -16,3 +16,6 @@
 [submodule "references/saas-starter"]
 	path = references/saas-starter
 	url = https://github.com/stickerdaniel/saas-starter.git
+[submodule "references/json-render"]
+	path = references/json-render
+	url = https://github.com/vercel-labs/json-render.git
