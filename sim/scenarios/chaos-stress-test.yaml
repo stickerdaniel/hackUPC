@@ -1,0 +1,46 @@
+run:
+  scenario: chaos
+  profile: stress
+  seed: 999
+  horizon_ticks: 260
+  dt_seconds: 604800
+
+environment:
+  base_ambient_C: 28.0
+  amplitude_C: 10.0
+  weekly_runtime_hours: 90
+  vibration_level: 0.20
+
+drivers:
+  temperature_stress:
+    kind: sinusoidal_seasonal
+    base: 0.55
+    amplitude: 0.15
+    period_weeks: 52
+  humidity_contamination:
+    kind: ornstein_uhlenbeck
+    mean: 0.45
+    theta: 0.05
+    sigma: 0.06
+  operational_load:
+    kind: monotonic_duty_cycle
+    base: 0.70
+    monotonic_drift_per_year: 0.03
+    duty_cycle_amplitude: 0.15
+  maintenance_level:
+    kind: step
+    schedule:
+      - tick: 0
+        value: 0.4
+
+chaos:
+  enabled: true
+  temp_spike_lambda_per_year: 4.0
+  contamination_burst_lambda_per_year: 6.0
+  skipped_maintenance_p: 0.10
+
+policy:
+  kind: heuristic
+
+historian:
+  path: data/historian.sqlite

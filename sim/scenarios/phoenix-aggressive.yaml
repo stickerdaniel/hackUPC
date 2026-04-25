@@ -1,0 +1,43 @@
+run:
+  scenario: phoenix
+  profile: aggressive
+  seed: 7
+  horizon_ticks: 260
+  dt_seconds: 604800
+
+environment:
+  base_ambient_C: 32.0
+  amplitude_C: 12.0
+  weekly_runtime_hours: 110
+  vibration_level: 0.15
+
+drivers:
+  temperature_stress:
+    kind: sinusoidal_seasonal
+    base: 0.65
+    amplitude: 0.20
+    period_weeks: 52
+  humidity_contamination:
+    kind: ornstein_uhlenbeck
+    mean: 0.30
+    theta: 0.05
+    sigma: 0.05
+  operational_load:
+    kind: monotonic_duty_cycle
+    base: 0.85
+    monotonic_drift_per_year: 0.02
+    duty_cycle_amplitude: 0.10
+  maintenance_level:
+    kind: step
+    schedule:
+      - tick: 0
+        value: 0.5
+
+chaos:
+  enabled: false
+
+policy:
+  kind: heuristic
+
+historian:
+  path: data/historian.sqlite
