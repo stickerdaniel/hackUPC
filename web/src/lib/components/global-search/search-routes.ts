@@ -1,0 +1,96 @@
+export type SearchAccess = 'public' | 'authenticated' | 'admin';
+
+export type SearchRouteGroup = 'public' | 'authentication' | 'app' | 'admin';
+
+export interface SearchRouteEntry {
+	href: string;
+	access: SearchAccess;
+	group: SearchRouteGroup;
+	titleKey?: string;
+	keywords?: string[];
+}
+
+export const SEARCH_ROUTES: SearchRouteEntry[] = [
+	{
+		href: '/',
+		access: 'public',
+		group: 'public',
+		titleKey: 'nav.home',
+		keywords: ['home', 'landing']
+	},
+	{
+		href: '/about',
+		access: 'public',
+		group: 'public',
+		titleKey: 'nav.about',
+		keywords: ['about', 'team']
+	},
+	{
+		href: '/signin',
+		access: 'public',
+		group: 'authentication',
+		titleKey: 'auth.signin.tab_signin',
+		keywords: ['signin', 'login', 'auth']
+	},
+	{
+		href: '/forgot-password',
+		access: 'public',
+		group: 'authentication',
+		titleKey: 'auth.forgot_password.title',
+		keywords: ['forgot password', 'reset']
+	},
+	{
+		href: '/app/ai-chat',
+		access: 'authenticated',
+		group: 'app',
+		titleKey: 'app.sidebar.ai_chat',
+		keywords: ['ai', 'chat', 'assistant', 'bot']
+	},
+	{
+		href: '/app/settings',
+		access: 'authenticated',
+		group: 'app',
+		titleKey: 'settings.title',
+		keywords: ['settings', 'account']
+	},
+	{
+		href: '/admin/dashboard',
+		access: 'admin',
+		group: 'admin',
+		titleKey: 'admin.sidebar.dashboard',
+		keywords: ['admin dashboard']
+	},
+	{
+		href: '/admin/users',
+		access: 'admin',
+		group: 'admin',
+		titleKey: 'admin.sidebar.users',
+		keywords: ['users', 'admin users']
+	},
+	{
+		href: '/admin/support',
+		access: 'admin',
+		group: 'admin',
+		titleKey: 'admin.sidebar.support',
+		keywords: ['support', 'tickets']
+	},
+	{
+		href: '/admin/settings',
+		access: 'admin',
+		group: 'admin',
+		titleKey: 'admin.sidebar.settings',
+		keywords: ['admin settings']
+	}
+];
+
+export function titleizeRouteFromHref(href: string): string {
+	if (href === '/') return 'Home';
+
+	const segments = href.split('/').filter(Boolean);
+	const segment = segments[segments.length - 1] ?? href;
+
+	return segment
+		.split('-')
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
+}
