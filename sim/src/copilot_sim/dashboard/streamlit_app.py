@@ -378,21 +378,15 @@ def _render_panel1(
     # controls bracket the range buttons (← [6mo|1y|3y|all] →).
     _, ctrl_col = st.columns([5, 4])
     with ctrl_col:
-        prev_col, range_col, next_col = st.columns(
-            [1, 5, 1], vertical_alignment="bottom"
-        )
+        prev_col, range_col, next_col = st.columns([1, 5, 1], vertical_alignment="bottom")
         # Compute disabled state from the CURRENT (pre-click) session state
         # so the button visuals are right after the previous interaction.
         cur_start = int(st.session_state["panel1_start_tick"])
-        cur_window = label_to_size.get(
-            st.session_state.get("panel1_window_label", "1y"), 52
-        )
+        cur_window = label_to_size.get(st.session_state.get("panel1_window_label", "1y"), 52)
         at_left = cur_start <= 0
         at_right = (cur_start + cur_window) >= total_ticks
         with prev_col:
-            prev_clicked = st.button(
-                "←", key="panel1_prev", disabled=at_left, help="Pan earlier"
-            )
+            prev_clicked = st.button("←", key="panel1_prev", disabled=at_left, help="Pan earlier")
         with range_col:
             window_label = st.segmented_control(
                 "range",
@@ -401,9 +395,7 @@ def _render_panel1(
                 label_visibility="collapsed",
             )
         with next_col:
-            next_clicked = st.button(
-                "→", key="panel1_next", disabled=at_right, help="Pan later"
-            )
+            next_clicked = st.button("→", key="panel1_next", disabled=at_right, help="Pan later")
 
     # Resolve window size and pan step. `window_label` is None on first render
     # if the user has just deselected the segmented control; fall back to the
@@ -433,9 +425,7 @@ def _render_panel1(
         visible_df["component_id"], categories=list(COMPONENT_IDS)
     )
     visible_env = (
-        env_events_df[
-            (env_events_df["tick"] >= start_tick) & (env_events_df["tick"] < end_tick)
-        ]
+        env_events_df[(env_events_df["tick"] >= start_tick) & (env_events_df["tick"] < end_tick)]
         if not env_events_df.empty
         else env_events_df
     )
@@ -514,9 +504,7 @@ def _render_panel1(
 
     # Caption — current window + env-event legend if any are visible.
     visible_last = min(end_tick - 1, max_tick)
-    range_caption = (
-        f"showing ticks {start_tick}–{visible_last} of {total_ticks} total"
-    )
+    range_caption = f"showing ticks {start_tick}–{visible_last} of {total_ticks} total"
     if not visible_env.empty:
         st.caption(
             f"{range_caption} · grey dashed rules mark environmental events "
