@@ -13,3 +13,6 @@
 [submodule "references/openai-python"]
 	path = references/openai-python
 	url = https://github.com/openai/openai-python.git
+[submodule "references/saas-starter"]
+	path = references/saas-starter
+	url = https://github.com/stickerdaniel/saas-starter.git
