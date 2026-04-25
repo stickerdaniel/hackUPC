@@ -277,9 +277,7 @@ def test_human_disruption_disables_policy_events_after_start(tmp_path: Path) -> 
     import sqlite3
 
     conn = sqlite3.connect(db_path)
-    rows = conn.execute(
-        "SELECT tick FROM events ORDER BY tick"
-    ).fetchall()
+    rows = conn.execute("SELECT tick FROM events ORDER BY tick").fetchall()
     conn.close()
 
     assert all(int(tick) < 140 for (tick,) in rows), (

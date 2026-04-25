@@ -66,9 +66,9 @@ SENSOR_NOTE_COLOURS: dict[str, str] = {
     "degraded": "#5683FF",
 }
 
-ACCENT_BLUE = "#1846F5"   # primary brand blue — REPLACE markers, trust chip when not TRUSTED.
+ACCENT_BLUE = "#1846F5"  # primary brand blue — REPLACE markers, trust chip when not TRUSTED.
 OBSERVED_BLUE = "#0F2C7A"  # observed-health line in panel 3 only (deepest of the family).
-RULE_GREY = "#5A5A5A"     # subtle dark grey for environmental-event rules.
+RULE_GREY = "#5A5A5A"  # subtle dark grey for environmental-event rules.
 
 # Chain text is rendered only when the queried top-3 contains the keys.
 CASCADE_CHAINS: dict[str, tuple[set[str], str]] = {
@@ -102,6 +102,7 @@ CASCADE_CHAINS: dict[str, tuple[set[str], str]] = {
 # ──────────────────────────────────────────────────────────────────────────
 # DB / loaders.
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _default_db_path() -> Path:
     return Path("data/historian.sqlite")
@@ -185,6 +186,7 @@ def _load_environmental_events(conn, run_id: str) -> pd.DataFrame:
 # Helpers.
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def _fmt_pct(x: float) -> str:
     return f"{round(100 * x):d}%"
 
@@ -229,9 +231,7 @@ def _failure_cards(
         worst_health = float(sub["health_index"].iloc[0]) if not sub.empty else None
 
         factors_dict = reader.fetch_coupling_factors_at(conn, run_id, worst_tick)
-        sorted_factors = sorted(
-            factors_dict.items(), key=lambda kv: abs(kv[1]), reverse=True
-        )[:3]
+        sorted_factors = sorted(factors_dict.items(), key=lambda kv: abs(kv[1]), reverse=True)[:3]
         factor_keys = {name for name, _ in sorted_factors}
         chain = None
         if cid in CASCADE_CHAINS:
@@ -277,14 +277,22 @@ def _status_segments(component_df: pd.DataFrame) -> pd.DataFrame:
             t = int(sub["tick"].iloc[i])
             if s != cur_status:
                 rows.append(
-                    {"component_id": cid, "status": cur_status,
-                     "tick_start": seg_start, "tick_end": t}
+                    {
+                        "component_id": cid,
+                        "status": cur_status,
+                        "tick_start": seg_start,
+                        "tick_end": t,
+                    }
                 )
                 cur_status = s
                 seg_start = t
         rows.append(
-            {"component_id": cid, "status": cur_status,
-             "tick_start": seg_start, "tick_end": last_tick + 1}
+            {
+                "component_id": cid,
+                "status": cur_status,
+                "tick_start": seg_start,
+                "tick_end": last_tick + 1,
+            }
         )
     return pd.DataFrame(rows)
 
@@ -316,6 +324,7 @@ def _trust_verdict(observed: pd.DataFrame) -> str:
 # ──────────────────────────────────────────────────────────────────────────
 # Render — metadata strip.
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _render_metadata_strip(run: dict[str, Any], outcomes: dict[str, int]) -> None:
     total = sum(outcomes.values()) or 1
@@ -369,6 +378,7 @@ def _render_metadata_strip(run: dict[str, Any], outcomes: dict[str, int]) -> Non
 # ──────────────────────────────────────────────────────────────────────────
 # Render — Panel 1: Component health over time (line chart with env-event rules).
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _render_panel1(
     component_df: pd.DataFrame,
@@ -457,6 +467,7 @@ def _render_panel1(
 # Render — Panel 2: Cascade attribution.
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def _status_stepper_html(transitions: dict[str, int]) -> str:
     """Visual stepper: coloured status pills connected by arrows, each with its tick."""
     steps_present = [s for s in STATUS_ORDER if s in transitions]
@@ -473,9 +484,7 @@ def _status_stepper_html(transitions: dict[str, int]) -> str:
             f"<span style='opacity:0.85;font-weight:600;font-variant-numeric:tabular-nums'>"
             f"t={transitions[s]}</span></span>"
         )
-    arrow = (
-        "<span style='color:#BBB;font-size:13px;margin:0 4px'>→</span>"
-    )
+    arrow = "<span style='color:#BBB;font-size:13px;margin:0 4px'>→</span>"
     return f"<div style='display:flex;flex-wrap:wrap;align-items:center;gap:2px'>{arrow.join(nodes)}</div>"
 
 
@@ -493,9 +502,7 @@ def _render_cascade_card(card: dict[str, Any]) -> None:
         st.caption("Coupling factors not available at this tick.")
         return
 
-    bars_df = pd.DataFrame(
-        [{"factor": name, "value": value} for name, value in card["factors"]]
-    )
+    bars_df = pd.DataFrame([{"factor": name, "value": value} for name, value in card["factors"]])
     bars_df["abs_value"] = bars_df["value"].abs()
     bar_chart = (
         alt.Chart(bars_df)
@@ -545,6 +552,7 @@ def _render_panel2(cards: list[dict[str, Any]], overflow: list[dict[str, Any]]) 
 # ──────────────────────────────────────────────────────────────────────────
 # Render — Panel 3: True vs observed.
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _render_panel3(
     component_df: pd.DataFrame,
@@ -666,6 +674,7 @@ def _render_panel3(
 # Render — Panel 4: Maintenance load by component (stacked bars).
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def _render_panel4(events_df: pd.DataFrame) -> None:
     if events_df.empty:
         st.info("No maintenance events in this run.")
@@ -688,17 +697,11 @@ def _render_panel4(events_df: pd.DataFrame) -> None:
         st.info("Events recorded but none tied to a tracked component.")
         return
 
-    counts_by = (
-        ev.groupby(["component_id", "kind"], observed=True)
-        .size()
-        .reset_index(name="count")
-    )
+    counts_by = ev.groupby(["component_id", "kind"], observed=True).size().reset_index(name="count")
     counts_by["component_id"] = pd.Categorical(
         counts_by["component_id"], categories=list(COMPONENT_IDS)
     )
-    counts_by["kind"] = pd.Categorical(
-        counts_by["kind"], categories=list(EVENT_COLOURS.keys())
-    )
+    counts_by["kind"] = pd.Categorical(counts_by["kind"], categories=list(EVENT_COLOURS.keys()))
 
     bars = (
         alt.Chart(counts_by)
@@ -734,9 +737,7 @@ def _render_panel4(events_df: pd.DataFrame) -> None:
         .properties(height=max(180, 36 * len(COMPONENT_IDS)))
     )
 
-    totals = (
-        counts_by.groupby("component_id", observed=True)["count"].sum().reset_index()
-    )
+    totals = counts_by.groupby("component_id", observed=True)["count"].sum().reset_index()
     total_labels = (
         alt.Chart(totals)
         .mark_text(align="left", dx=4, color="#111", fontSize=11, fontWeight=600)
@@ -765,6 +766,7 @@ def _render_panel4(events_df: pd.DataFrame) -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # Render — Panel 5: Driver streams (4 brief inputs).
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _driver_sparkline(df: pd.DataFrame, field: str, label: str, value_fmt: str) -> alt.Chart:
     if df.empty:
@@ -835,6 +837,7 @@ def _render_panel5(drivers_df: pd.DataFrame) -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # Render — Panel 6: Status timeline (per-component Gantt of status periods).
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _render_panel6(component_df: pd.DataFrame) -> None:
     if component_df.empty:
@@ -925,9 +928,7 @@ def _render_panel7(
     for card in all_cards:
         cid = card["component"].upper()
         status = card["worst_status"]
-        dot, recommendation, action = _PHASE3_RULES.get(
-            status, ("#9E9E9E", "Monitor", "MONITOR")
-        )
+        dot, recommendation, action = _PHASE3_RULES.get(status, ("#9E9E9E", "Monitor", "MONITOR"))
         health = card["worst_health"]
         health_str = f"{health:.2f}" if health is not None else "—"
         top_factor = (
