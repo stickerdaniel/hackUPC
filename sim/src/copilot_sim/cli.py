@@ -88,6 +88,54 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_failure_analysis(conn: sqlite3.Connection, run_id: str) -> None:
+    """Per-component first DEGRADED / CRITICAL / FAILED tick + the top
+    three coupling factors at each transition.
+
+    Reads everything from the historian — no engine re-run, no
+    fabrication. The caller has already printed the run header.
+    """
+    from .components.registry import COMPONENT_IDS
+
+    rows = reader.fetch_status_transitions(conn, run_id)
+    by_component: dict[str, dict[str, int]] = {cid: {} for cid in COMPONENT_IDS}
+    for row in rows:
+        cid = row["component_id"]
+        if cid not in by_component:
+            by_component[cid] = {}
+        by_component[cid].setdefault(row["status"], int(row["first_tick"]))
+
+    print("failure analysis (per-component first transitions):")
+    for cid in COMPONENT_IDS:
+        transitions = by_component.get(cid, {})
+        first_degraded = transitions.get("DEGRADED")
+        first_critical = transitions.get("CRITICAL")
+        first_failed = transitions.get("FAILED")
+        line = (
+            f"  {cid:<10}  "
+            f"DEGRADED={_fmt_tick(first_degraded)}  "
+            f"CRITICAL={_fmt_tick(first_critical)}  "
+            f"FAILED={_fmt_tick(first_failed)}"
+        )
+        print(line)
+        for label, tick_value in (
+            ("at-DEGRADED", first_degraded),
+            ("at-CRITICAL", first_critical),
+            ("at-FAILED", first_failed),
+        ):
+            if tick_value is None:
+                continue
+            factors = reader.fetch_coupling_factors_at(conn, run_id, tick_value)
+            top = sorted(factors.items(), key=lambda kv: abs(kv[1]), reverse=True)[:3]
+            if top:
+                top_str = ", ".join(f"{k}={v:.3f}" for k, v in top)
+                print(f"      {label} (tick {tick_value}): {top_str}")
+
+
+def _fmt_tick(t: int | None) -> str:
+    return "never" if t is None else f"t={t}"
+
+
 def _cmd_inspect(args: argparse.Namespace) -> int:
     db_path = Path(args.db_path or "data/historian.sqlite")
     if not db_path.exists():
@@ -127,6 +175,9 @@ def _cmd_inspect(args: argparse.Namespace) -> int:
             print(f"  {kind:<18}  {count}")
         print()
         print(f"events: {reader.fetch_event_count(conn, run_id)}")
+        if args.failure_analysis:
+            print()
+            _print_failure_analysis(conn, run_id)
         return 0
     finally:
         conn.close()
@@ -152,6 +203,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_inspect = sub.add_parser("inspect", help="print summary for a run_id")
     p_inspect.add_argument("run_id", nargs="?", help="run id (default: most recent)")
     p_inspect.add_argument("--db-path", help="override the historian DB path")
+    p_inspect.add_argument(
+        "--failure-analysis",
+        action="store_true",
+        help="add per-component first transition tick + top coupling factors",
+    )
     p_inspect.set_defaults(func=_cmd_inspect)
 
     return parser
