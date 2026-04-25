@@ -1,0 +1,4 @@
+{
+	"buildCommand": "bunx varlock run -- bun scripts/deploy.ts",
+	"framework": "sveltekit"
+}

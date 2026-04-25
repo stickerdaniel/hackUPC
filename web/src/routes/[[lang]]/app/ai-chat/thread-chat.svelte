@@ -1,0 +1,173 @@
+<script lang="ts">
+	import { useConvexClient } from 'convex-svelte';
+	import { toast } from 'svelte-sonner';
+	import { watch } from 'runed';
+	import { api } from '$lib/convex/_generated/api';
+	import ChatRoot from '$lib/chat/ui/ChatRoot.svelte';
+	import ChatMessages from '$lib/chat/ui/ChatMessages.svelte';
+	import ChatInput from '$lib/chat/ui/ChatInput.svelte';
+	import { PromptSuggestion } from '$lib/components/prompt-kit/prompt-suggestion';
+	import { ChatUIContext, type UploadConfig } from '$lib/chat/ui/ChatContext.svelte';
+	import { ChatCore } from '$lib/chat/core/ChatCore.svelte';
+	import { ChatDraftManager } from '$lib/chat/core/ChatDraftManager.svelte';
+	import { getTranslate } from '@tolgee/svelte';
+	import { page } from '$app/state';
+	import { tick } from 'svelte';
+
+	const { t } = getTranslate();
+
+	let {
+		threadId,
+		onMessageSent
+	}: {
+		threadId: string;
+		onMessageSent?: () => void;
+	} = $props();
+
+	const client = useConvexClient();
+
+	const uploadConfig: UploadConfig = {
+		generateUploadUrl: api.aiChat.files.generateUploadUrl,
+		saveUploadedFile: api.aiChat.files.saveUploadedFile,
+		locale: page.data.lang,
+		getAccessKey: () => threadId || 'ai-chat'
+	};
+
+	// Create ChatCore for this thread
+	// svelte-ignore state_referenced_locally
+	const chatCore = new ChatCore({
+		threadId: threadId || null,
+		api: {
+			sendMessage: api.aiChat.messages.sendMessage,
+			listMessages: api.aiChat.messages.listMessages
+		}
+	});
+
+	$effect(() => {
+		const newId = threadId || null;
+		if (chatCore.threadId !== newId) {
+			// When transitioning from null to a real threadId (initial creation),
+			// just update the ID without resetting state to avoid re-animating suggestions
+			if (chatCore.threadId === null && newId !== null) {
+				chatCore.threadId = newId;
+			} else {
+				chatCore.setThread(newId);
+			}
+		}
+	});
+
+	const chatUIContext = new ChatUIContext(chatCore, client, uploadConfig, 'right');
+
+	// Draft persistence across thread switches and page refreshes
+	const draftManager = new ChatDraftManager('drafts:ai-chat');
+	let sending = $state(false);
+
+	// Save draft on leave, restore on enter
+	watch(
+		() => threadId,
+		(current, previous) => {
+			if (previous && chatUIContext.inputValue.trim()) {
+				draftManager.setDraft(previous, chatUIContext.inputValue);
+			}
+			chatUIContext.setInputValue(draftManager.getDraft(current));
+		}
+	);
+
+	// Continuous save for refresh persistence — watch untracks the callback,
+	// avoiding a reactive loop with PersistedState's Proxy set trap
+	watch(
+		() => [chatUIContext.inputValue, threadId, sending] as const,
+		([value, id, isSending]) => {
+			if (isSending && !value.trim()) return;
+			draftManager.setDraft(id, value);
+		}
+	);
+
+	// Auto-focus input when thread changes
+	let chatContainer: HTMLDivElement | undefined = $state();
+
+	$effect(() => {
+		void threadId;
+		if (!chatContainer) return;
+		tick().then(() => {
+			chatContainer?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+		});
+	});
+
+	const suggestions = [
+		{ text: $t('ai_chat.suggestion.weather'), label: $t('ai_chat.suggestion.weather') },
+		{ text: $t('ai_chat.suggestion.explain'), label: $t('ai_chat.suggestion.explain') },
+		{ text: $t('ai_chat.suggestion.help'), label: $t('ai_chat.suggestion.help') }
+	];
+</script>
+
+<div bind:this={chatContainer} class="flex h-full flex-col">
+	<ChatRoot
+		threadId={threadId || null}
+		externalCore={chatCore}
+		externalUIContext={chatUIContext}
+		api={{
+			listMessages: api.aiChat.messages.listMessages,
+			sendMessage: api.aiChat.messages.sendMessage
+		}}
+	>
+		<div class="flex-1 overflow-hidden">
+			<ChatMessages />
+		</div>
+
+		<div class="relative z-20 mx-auto w-full max-w-3xl -translate-y-4">
+			{#if (chatCore.isNewConversation || chatUIContext.messagesReady) && chatUIContext.displayMessages.length === 0 && !chatUIContext.inputValue.trim() && suggestions.length > 0}
+				<div class="mx-4 pb-2">
+					{#key chatCore.threadGeneration}
+						<div class="flex flex-wrap gap-2">
+							{#each suggestions as suggestion, i (suggestion.text)}
+								<div
+									class="motion-safe:animate-[chip-in_375ms_ease-out_both]"
+									style="animation-delay: {i * 50}ms"
+								>
+									<PromptSuggestion
+										onclick={() => {
+											chatUIContext.setInputValue(suggestion.text);
+											tick().then(() => {
+												chatContainer?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+											});
+										}}
+									>
+										{suggestion.label}
+									</PromptSuggestion>
+								</div>
+							{/each}
+						</div>
+					{/key}
+				</div>
+			{/if}
+			<ChatInput
+				class="mx-4"
+				placeholder={$t('ai_chat.input.placeholder')}
+				suggestions={[]}
+				showFileButton={true}
+				showHandoffButton={false}
+				isRateLimited={false}
+				onSend={async (prompt) => {
+					if (!prompt?.trim()) return;
+					sending = true;
+					try {
+						await chatCore.sendMessage(client, prompt, {
+							fileIds: chatUIContext.uploadedFileIds,
+							attachments: chatUIContext.attachments
+						});
+						chatUIContext.clearAttachments();
+						draftManager.clearDraft(threadId);
+						onMessageSent?.();
+					} catch (error) {
+						console.error('[AI Chat sendMessage] Error:', error);
+						chatUIContext.setInputValue(prompt);
+						toast.error($t('chat.messages.send_failed'));
+					} finally {
+						sending = false;
+					}
+				}}
+			/>
+		</div>
+	</ChatRoot>
+</div>

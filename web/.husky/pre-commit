@@ -1,0 +1,2 @@
+bunx varlock scan --staged
+bun run static-checks:staged

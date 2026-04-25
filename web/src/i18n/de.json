@@ -1,0 +1,2182 @@
+{
+	"a11y": {
+		"skip_to_content": "Zum Inhalt springen"
+	},
+	"admin": {
+		"actions": {
+			"ban": "Benutzer sperren",
+			"impersonate": "Identität annehmen",
+			"revoke_sessions": "Sitzungen widerrufen",
+			"set_role": "Rolle ändern",
+			"unban": "Sperre aufheben"
+		},
+		"dashboard": {
+			"database_backend": "Datenbank & Backend",
+			"email_service": "E-Mail-Zustelldienst",
+			"external_services": "Externe Dienste",
+			"hosting_deployment": "Hosting & Deployment",
+			"no_framework_activity": "Es wurden noch keine Framework-Aktionen aufgezeichnet.",
+			"playground": "QA-Spielplatz",
+			"playground_description": "Öffnet den deterministischen Demo-Spielplatz und setzt das Admin-v2-Showcase auf einen bekannten Ausgangszustand zurück.",
+			"recent_framework_activity": "Letzte Framework-Aktivität",
+			"resource_overview": "Ressourcenübersicht",
+			"resource_records": "{count} Einträge",
+			"title": "Admin Dashboard"
+		},
+		"dialog": {
+			"ban_description": "Möchten Sie {email} wirklich sperren? Der Zugriff auf die App wird blockiert.",
+			"ban_reason_placeholder": "Sperrgrund (optional)",
+			"ban_title": "Benutzer sperren",
+			"impersonation_active_description": "Bitte laden Sie die Seite neu, um als der andere Benutzer angemeldet zu werden.",
+			"impersonation_active_title": "Identitätswechsel aktiv",
+			"reload_page": "Seite neu laden",
+			"revoke_description": "Möchten Sie wirklich alle Sitzungen für {email} widerrufen? Die Person wird überall abgemeldet.",
+			"revoke_title": "Sitzungen widerrufen",
+			"set_role_description": "Möchten Sie die Rolle von {email} wirklich auf {role} ändern?",
+			"set_role_title": "Benutzerrolle ändern",
+			"unban_description": "Möchten Sie die Sperre für {email} wirklich aufheben? Der Zugriff wird wiederhergestellt.",
+			"unban_title": "Sperre aufheben"
+		},
+		"metrics": {
+			"active_sessions": "Aktiv (24h)",
+			"active_sessions_desc": "In den letzten 24 Stunden aktiv",
+			"admin_users": "Plattformverwaltung",
+			"admins": "Admins",
+			"admins_desc": "Benutzer mit Admin-Rechten",
+			"banned_users": "Gesperrte Benutzer",
+			"banned_users_desc": "Zugriff eingeschränkt",
+			"currently_active": "Tägliche Aktivität",
+			"last_7_days": "Letzte 7 Tage",
+			"recent_signups": "Neuanmeldungen",
+			"recent_signups_desc": "Neue Benutzer",
+			"registered_users": "Plattform-Nutzerbasis",
+			"total_users": "Benutzer gesamt",
+			"total_users_desc": "Alle registrierten Konten",
+			"users_banned": "Konten zur Überprüfung"
+		},
+		"navigation": {
+			"app": "App",
+			"home": "Startseite",
+			"website": "Webseite"
+		},
+		"notifications": {
+			"bell_label": "Benachrichtigungen",
+			"close": "Schließen",
+			"delete": "Löschen",
+			"mark_all_read": "Alle als gelesen markieren",
+			"mark_read": "Als gelesen markieren",
+			"mark_unread": "Als ungelesen markieren",
+			"new_notification": "Sie haben eine neue Benachrichtigung",
+			"no_notifications": "Keine Benachrichtigungen",
+			"no_notifications_description": "Alles erledigt.",
+			"queued_action_failure": "Hintergrundaktion „{action}“ mit {failures} Fehlern bei {resource} abgeschlossen",
+			"queued_action_success": "Hintergrundaktion „{action}“ für {count} {resource}-Einträge abgeschlossen",
+			"title": "Benachrichtigungen"
+		},
+		"resources": {
+			"actions": {
+				"associate": "Zuordnen",
+				"attach": "Anhängen",
+				"create": "Erstellen",
+				"create_resource": "{resource} erstellen",
+				"delete": "Löschen",
+				"detach": "Trennen",
+				"dissociate": "Trennen",
+				"edit": "Bearbeiten",
+				"force_delete": "Endgültig löschen",
+				"preview": "Vorschau",
+				"replicate": "Duplizieren",
+				"restore": "Wiederherstellen",
+				"select_exactly_one": "Bitte wählen Sie genau einen Datensatz aus.",
+				"status_completed": "Abgeschlossen",
+				"status_failed": "Fehlgeschlagen",
+				"status_pending": "Ausstehend",
+				"status_running": "Laufend",
+				"update_resource": "{resource} aktualisieren",
+				"view": "Ansehen"
+			},
+			"actions_column": "Aktionen",
+			"activity": {
+				"audit_trail": "Audit-Protokoll",
+				"no_actions": "Für diesen Eintrag wurden noch keine Aktionen ausgeführt.",
+				"no_audit_events": "Für diesen Eintrag wurden noch keine Audit-Ereignisse aufgezeichnet.",
+				"recent_actions": "Letzte Aktionen"
+			},
+			"admin_audit_logs": {
+				"columns": {
+					"action": "Aktion",
+					"admin_user_id": "Admin-Benutzer",
+					"metadata": "Metadaten",
+					"target_user_id": "Zielbenutzer",
+					"timestamp": "Eingetreten am"
+				},
+				"dashboard_description": "Legacy-Operator-Audit-Trail",
+				"empty_description": "Keine Audit-Log-Einträge entsprechen der aktuellen Suche oder dem Filter.",
+				"empty_title": "Keine Audit-Log-Einträge",
+				"fields": {
+					"action": "Aktion",
+					"admin_user_id": "Admin-Benutzer",
+					"metadata_json": "Metadaten-JSON",
+					"target_user_id": "Zielbenutzer",
+					"timestamp": "Eingetreten am"
+				},
+				"filters": {
+					"action": "Aktion",
+					"all_actions": "Alle Aktionen"
+				},
+				"lenses": {
+					"all": "Alle Aktivitäten",
+					"bans": "Sperraktionen",
+					"impersonation": "Identitätswechsel",
+					"role_changes": "Rollenänderungen"
+				},
+				"options": {
+					"ban_user": "Benutzer sperren",
+					"impersonate": "Identität übernehmen",
+					"revoke_sessions": "Sitzungen widerrufen",
+					"set_role": "Rolle setzen",
+					"stop_impersonation": "Identitätswechsel beenden",
+					"unban_user": "Benutzersperre aufheben"
+				},
+				"plural_label": "Admin-Audit-Logs",
+				"search_placeholder": "Audit-Logs durchsuchen...",
+				"singular_label": "Admin-Audit-Log"
+			},
+			"aria": {
+				"select_all": "Select all rows",
+				"select_row": "Select row"
+			},
+			"articles": {
+				"actions": {
+					"publish": "Veröffentlichen",
+					"unpublish": "Zurückziehen"
+				},
+				"buttons": {
+					"publish_article": "Artikel veröffentlichen"
+				},
+				"fields": {
+					"api_key": "API-Schlüssel",
+					"author_avatar": "Autor-Avatar",
+					"author_name": "Autorname",
+					"body": "Inhalt",
+					"body_help": "Artikelinhalt schreiben. Unterstützt einfachen Text.",
+					"body_placeholder": "Beginnen Sie mit dem Schreiben...",
+					"category": "Kategorie",
+					"internal_ref": "Interne Referenz",
+					"is_published": "Veröffentlicht",
+					"metadata": "Metadaten",
+					"permissions": "Berechtigungen",
+					"price": "Preis",
+					"priority": "Priorität",
+					"published_at": "Veröffentlicht am",
+					"settings_heading": "Einstellungen",
+					"slug": "Slug",
+					"status": "Status",
+					"tags": "Tags",
+					"title": "Titel",
+					"website_url": "Website-URL"
+				},
+				"groups": {
+					"settings": "Einstellungen"
+				},
+				"lenses": {
+					"drafts": "Entwürfe",
+					"published": "Veröffentlichte Artikel"
+				},
+				"metrics": {
+					"published_rate": "Veröffentlichungsrate",
+					"total": "Artikel gesamt",
+					"total_desc": "Alle registrierten Artikel",
+					"total_subtitle": "Artikel-Portfolio"
+				},
+				"nav_title": "Demo Artikel",
+				"options": {
+					"category_business": "Wirtschaft",
+					"category_design": "Design",
+					"category_science": "Wissenschaft",
+					"category_tech": "Technologie",
+					"perm_admin": "Verwalten",
+					"perm_delete": "Löschen",
+					"perm_read": "Lesen",
+					"perm_write": "Schreiben",
+					"priority_critical": "Kritisch",
+					"priority_high": "Hoch",
+					"priority_low": "Niedrig",
+					"priority_medium": "Mittel",
+					"status_archived": "Archiviert",
+					"status_draft": "Entwurf",
+					"status_published": "Veröffentlicht",
+					"tag_editorial": "Redaktionell",
+					"tag_featured": "Empfohlen",
+					"tag_sponsored": "Gesponsert",
+					"tag_trending": "Trending"
+				}
+			},
+			"auth_users": {
+				"dashboard_description": "Better-Auth-basiertes Admin-Benutzerverzeichnis",
+				"empty_description": "Keine verwalteten Benutzer entsprechen der aktuellen Suche oder den Filtern.",
+				"empty_title": "Keine verwalteten Benutzer",
+				"fields": {
+					"ban_reason": "Sperrgrund"
+				},
+				"filters": {
+					"provider": "Anbieter",
+					"role": "Rolle",
+					"status": "Status"
+				},
+				"lenses": {
+					"admins": "Admins",
+					"all": "Alle Benutzer",
+					"banned": "Gesperrte Benutzer",
+					"recent": "Neue Registrierungen"
+				},
+				"metrics": {
+					"admins": "Admins",
+					"banned": "Gesperrte Benutzer",
+					"total": "Benutzer insgesamt",
+					"unverified": "Nicht verifiziert"
+				},
+				"plural_label": "Verwaltete Benutzer",
+				"search_placeholder": "Verwaltete Benutzer durchsuchen...",
+				"singular_label": "Verwalteter Benutzer"
+			},
+			"bulk": {
+				"action_cancelled": "Abgebrochen. {processed} von {total} verarbeitet.",
+				"action_partial_failure": "{failed} von {total} fehlgeschlagen.",
+				"chunks_failed": "{count} Stapel fehlgeschlagen",
+				"delete": "Mehrfach löschen",
+				"delete_description": "{count} ausgewählte Einträge löschen?",
+				"force_delete": "Endgültig mehrfach löschen",
+				"force_delete_description": "{count} ausgewählte Einträge dauerhaft löschen?",
+				"partial_delete_error": "{failed} von {total} Löschungen fehlgeschlagen.",
+				"processing_chunks": "Verarbeite {current} von {total}...",
+				"restore": "Mehrfach wiederherstellen"
+			},
+			"columns": {
+				"actions": "Actions"
+			},
+			"comments": {
+				"actions": {
+					"mark_reviewed": "Mark Reviewed"
+				},
+				"fields": {
+					"author_email": "Author Email",
+					"target": "Target",
+					"text": "Text",
+					"text_aria": "Kommentartext-Eingabe"
+				},
+				"filters": {
+					"target_kind": "Target Kind"
+				},
+				"lenses": {
+					"project": "Project Comments",
+					"task": "Task Comments"
+				},
+				"metrics": {
+					"project": "Project Comments",
+					"target_distribution": "Nach Zieltyp",
+					"task": "Task Comments",
+					"total": "Kommentare gesamt",
+					"total_desc": "Alle Kommentare über alle Ziele",
+					"total_subtitle": "Kommentaraktivität"
+				},
+				"nav_title": "Demo Comments",
+				"options": {
+					"project": "Project",
+					"task": "Task"
+				}
+			},
+			"confirm": {
+				"delete_description": "This action cannot be undone.",
+				"force_delete_description": "This permanently removes the record and related data.",
+				"inline_edit_description": "Diese Inline-Änderung jetzt speichern?",
+				"inline_edit_title": "Inline-Änderung bestätigen"
+			},
+			"conflicts": {
+				"description": "{count} Feldkonflikte müssen geprüft werden.",
+				"discard": "Meine Änderungen verwerfen",
+				"keep_mine": "Meinen behalten",
+				"local_value": "Mein Wert",
+				"remote_value": "Remote-Wert",
+				"review": "Konflikte prüfen",
+				"title": "Dieser Datensatz wurde aktualisiert",
+				"use_theirs": "Deren übernehmen"
+			},
+			"copy": {
+				"copied_tooltip": "Kopiert!",
+				"tooltip": "In Zwischenablage kopieren"
+			},
+			"demo_assets": {
+				"actions": {
+					"delete_description": "Demo-Asset „{name}“ löschen? Hochgeladene Dateien werden ebenfalls entfernt.",
+					"delete_title": "Demo-Asset löschen",
+					"seed_data": "Demo-Assets befüllen"
+				},
+				"dashboard_description": "Medien- und Rich-Field-Showcase für Uploads, Markdown, Code und JSON.",
+				"empty_description": "Erstellen Sie ein Demo-Asset oder befüllen Sie die Showcase-Daten, um die Rich-Field-Darstellung zu prüfen.",
+				"empty_title": "Keine Demo-Assets",
+				"fields": {
+					"attachment": "Anhang",
+					"attachment_help": "Laden Sie eine herunterladbare Datei hoch, um den generischen Datei-Lebenszyklus zu prüfen.",
+					"code_snippet": "Code-Snippet",
+					"content_summary": "Inhaltsübersicht",
+					"content_summary_help": "Berechnete Vorschau des aktuellen Markdown-Inhalts und der Upload-Abdeckung.",
+					"coverage": "Abdeckung",
+					"hero_image": "Hero-Bild",
+					"hero_image_help": "Laden Sie ein Bild hoch, um Vorschau-Darstellung und Asset-Speicherung zu prüfen.",
+					"markdown_body": "Markdown-Inhalt",
+					"name": "Name",
+					"price": "Preis (USD)",
+					"published_at": "Veröffentlicht am",
+					"release_date": "Release-Datum",
+					"settings_json": "Settings-JSON",
+					"slug": "Slug",
+					"slug_help": "Nur Kleinbuchstaben, Zahlen und Bindestriche."
+				},
+				"groups": {
+					"content": "Inhalt",
+					"media": "Medien"
+				},
+				"metrics": {
+					"total": "Assets gesamt",
+					"total_desc": "Alle Demo-Asset-Einträge",
+					"with_attachments": "Mit Anhängen",
+					"with_attachments_desc": "Assets mit herunterladbarer Datei",
+					"with_images": "Mit Bildern",
+					"with_images_desc": "Assets mit Hero-Bild"
+				},
+				"plural_label": "Demo-Assets",
+				"search_placeholder": "Demo-Assets durchsuchen...",
+				"singular_label": "Demo-Asset",
+				"toasts": {
+					"deleted": "Demo-Asset gelöscht",
+					"seeded": "Demo-Assets befüllt"
+				},
+				"validation": {
+					"invalid_json": "Settings-JSON muss gültiges JSON sein.",
+					"invalid_price": "Der Preis muss null oder größer sein.",
+					"invalid_published_at": "„Veröffentlicht am“ muss ein gültiges Datum mit Uhrzeit sein.",
+					"invalid_release_date": "Das Release-Datum muss ein gültiges Datum sein.",
+					"invalid_slug": "Der Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten."
+				},
+				"values": {
+					"coverage_missing": "Uploads fehlen",
+					"coverage_partial": "Teilweise bereit",
+					"coverage_ready": "Bereit"
+				}
+			},
+			"detail_missing_description": "Dieser Eintrag existiert nicht mehr oder ist für die aktuelle Admin-Sitzung nicht sichtbar.",
+			"detail_missing_title": "Eintrag nicht gefunden",
+			"email_events": {
+				"columns": {
+					"email_id": "E-Mail-ID",
+					"event_type": "Ereignis",
+					"payload": "Payload-Vorschau",
+					"timestamp": "Eingetreten am"
+				},
+				"dashboard_description": "Resend-Webhook-Zustellungsstream",
+				"detail_missing_description": "Dieses Ereignis existiert nicht mehr oder ist für die aktuelle Admin-Sitzung nicht sichtbar.",
+				"detail_missing_title": "E-Mail-Ereignis nicht gefunden",
+				"empty_description": "Keine E-Mail-Ereignisse entsprechen der aktuellen Suche.",
+				"empty_title": "Keine E-Mail-Ereignisse",
+				"fields": {
+					"created_at": "Gespeichert am",
+					"email_id": "E-Mail-ID",
+					"event_type": "Ereignistyp",
+					"payload_json": "Payload-JSON",
+					"timestamp": "Eingetreten am"
+				},
+				"plural_label": "E-Mail-Ereignisse",
+				"search_placeholder": "E-Mail-Ereignisse durchsuchen...",
+				"singular_label": "E-Mail-Ereignis"
+			},
+			"empty": "No records found.",
+			"export": {
+				"csv": "CSV exportieren",
+				"json": "JSON exportieren",
+				"limit_error": "Export ist auf {limit} Einträge begrenzt.",
+				"success_csv": "CSV-Export gestartet",
+				"success_json": "JSON-Export gestartet"
+			},
+			"fields": {
+				"created_at": "Erstellt am",
+				"updated_at": "Aktualisiert am"
+			},
+			"filters": {
+				"all": "All",
+				"clear": "Clear",
+				"created_range": "Erstellungszeitraum",
+				"no": "Nein",
+				"select_placeholder": "Select option",
+				"yes": "Ja"
+			},
+			"form": {
+				"add_pair": "Paar hinzufügen",
+				"auto_generate": "Automatisch generieren",
+				"characters_count": "{count} / {limit}",
+				"fix_errors": "Bitte korrigiere die markierten Felder.",
+				"hide_content": "Inhalt ausblenden",
+				"image_required": "Bitte laden Sie eine Bilddatei hoch.",
+				"invalid": "Invalid field value",
+				"key_placeholder": "Schlüssel",
+				"local_override_notice": "Sie haben dieses Feld lokal geändert. Eingehende Live-Updates überschreiben es nicht.",
+				"markdown_placeholder": "## Markdown-Inhalt",
+				"max_file_size": "Die Datei überschreitet die maximale Größe von {size} MB.",
+				"maxlength_exceeded": "Maximale Zeichenanzahl von {limit} überschritten",
+				"no_relation_options": "No options available",
+				"no_suggestions": "Keine Vorschläge",
+				"remove_pair": "Paar entfernen",
+				"required": "This field is required",
+				"show_content": "Inhalt anzeigen",
+				"slug_preview": "Slug-Vorschau",
+				"suggestions_input": "Tippen, um Vorschläge zu suchen",
+				"suggestions_loading": "Vorschläge werden geladen…",
+				"upload": "Datei hochladen",
+				"upload_ready": "Upload abgeschlossen",
+				"uploading_progress": "Wird hochgeladen… {progress}%",
+				"value_placeholder": "Wert"
+			},
+			"framework_activity": {
+				"dashboard_description": "Aktuelle V2-Aktionen und Audit-Feed",
+				"empty_description": "Keine Framework-Aktivität entspricht der aktuellen Suche oder den Filtern.",
+				"empty_title": "Keine Framework-Aktivität",
+				"fields": {
+					"actor": "Akteur",
+					"created_at": "Erstellt am",
+					"detail": "Detail",
+					"label": "Bezeichnung",
+					"record": "Datensatz",
+					"resource": "Ressource",
+					"source": "Quelle",
+					"status": "Status",
+					"summary": "Zusammenfassung"
+				},
+				"filters": {
+					"all_resources": "Alle Ressourcen",
+					"all_sources": "Alle Quellen",
+					"resource": "Ressource",
+					"source": "Quelle"
+				},
+				"lenses": {
+					"actions": "Aktionen",
+					"all": "Alle Aktivitäten",
+					"audits": "Audits",
+					"failed": "Fehlgeschlagene Aktionen"
+				},
+				"metrics": {
+					"actions": "Aktionsläufe",
+					"audits": "Audit-Ereignisse",
+					"failed_actions": "Fehlgeschlagene Aktionen",
+					"total": "Aktivität insgesamt"
+				},
+				"options": {
+					"action": "Aktion",
+					"audit": "Audit"
+				},
+				"plural_label": "Framework-Aktivität",
+				"search_placeholder": "Framework-Aktivität durchsuchen...",
+				"singular_label": "Framework-Aktivitätseintrag"
+			},
+			"groups": {
+				"access": "Zugriff",
+				"assignment": "Zuweisung",
+				"content": "Inhalt",
+				"context": "Kontext",
+				"demo_data": "Demo Resources",
+				"detail": "Details",
+				"event": "Ereignis",
+				"identity": "Identität",
+				"main": "Hauptbereich",
+				"media": "Medien",
+				"metadata": "Metadaten",
+				"notifications": "Benachrichtigungen",
+				"other": "Weitere",
+				"overview": "Übersicht",
+				"payload": "Payload",
+				"recipient": "Empfänger",
+				"related": "Verknüpft",
+				"relations": "Beziehungen",
+				"system": "System",
+				"timestamps": "Zeitstempel"
+			},
+			"internal_user_notes": {
+				"dashboard_description": "Operator-Notizen zu verwalteten Benutzern",
+				"empty_description": "Keine internen Notizen entsprechen der aktuellen Suche.",
+				"empty_title": "Keine internen Notizen",
+				"fields": {
+					"admin_user": "Admin-Autor",
+					"content": "Notiz",
+					"user_id": "Verwalteter Benutzer"
+				},
+				"plural_label": "Interne Benutzernotizen",
+				"search_placeholder": "Interne Notizen durchsuchen...",
+				"singular_label": "Interne Benutzernotiz"
+			},
+			"lenses": {
+				"all": "All Lenses"
+			},
+			"loading": "Loading resources...",
+			"notification_recipients": {
+				"actions": {
+					"delete_custom": "Benutzerdefinierten Empfänger löschen",
+					"delete_selected_custom": "Ausgewählte benutzerdefinierte Empfänger löschen",
+					"disable_all": "Alle Benachrichtigungen deaktivieren",
+					"disable_selected": "Ausgewählte Benachrichtigungen deaktivieren",
+					"enable_all": "Alle Benachrichtigungen aktivieren",
+					"enable_selected": "Ausgewählte Benachrichtigungen aktivieren",
+					"sync_admins": "Admin-Empfänger synchronisieren"
+				},
+				"columns": {
+					"email": "E-Mail",
+					"name": "Name",
+					"new_signups": "Neue Registrierungen",
+					"new_tickets": "Neue Tickets",
+					"type": "Typ",
+					"user_replies": "Nutzerantworten"
+				},
+				"dashboard_description": "Admin-Benachrichtigungsrouting-Einträge",
+				"delete_description": "{email} aus der Liste der benutzerdefinierten Benachrichtigungsempfänger löschen?",
+				"delete_selected_description": "{count} ausgewählte benutzerdefinierte Benachrichtigungsempfänger löschen?",
+				"delete_selected_title": "Ausgewählte Benachrichtigungsempfänger löschen",
+				"delete_title": "Benachrichtigungsempfänger löschen",
+				"empty_description": "Keine Benachrichtigungsempfänger entsprechen der aktuellen Suche.",
+				"empty_title": "Keine Benachrichtigungsempfänger",
+				"fields": {
+					"email": "E-Mail",
+					"name": "Name",
+					"new_signups": "Neue Registrierungen",
+					"new_tickets": "Neue Tickets",
+					"type": "Typ",
+					"user_replies": "Nutzerantworten"
+				},
+				"metrics": {
+					"admin": "Admin-Empfänger",
+					"custom": "Benutzerdefinierte Empfänger",
+					"fully_enabled": "Vollständig aktiviert",
+					"total": "Empfänger gesamt"
+				},
+				"options": {
+					"admin": "Admin",
+					"custom": "Benutzerdefiniert",
+					"disabled": "Deaktiviert",
+					"enabled": "Aktiviert",
+					"off": "Aus",
+					"on": "An"
+				},
+				"plural_label": "Benachrichtigungsempfänger",
+				"search_placeholder": "Benachrichtigungsempfänger durchsuchen...",
+				"singular_label": "Benachrichtigungsempfänger",
+				"toasts": {
+					"deleted": "Benachrichtigungsempfänger gelöscht",
+					"disable_all": "Alle Benachrichtigungsschalter deaktiviert",
+					"enable_all": "Alle Benachrichtigungsschalter aktiviert",
+					"sync_started": "Synchronisierung der Admin-Empfänger gestartet"
+				},
+				"validation": {
+					"email_locked": "E-Mail-Adressen von adminverwalteten Empfängern können nicht geändert werden."
+				}
+			},
+			"peek": {
+				"empty": "Keine Daten zum Anzeigen.",
+				"loading": "Laden..."
+			},
+			"project_members": {
+				"associate_project_description": "Diesen Pivot-Eintrag einem Demo-Projekt zuordnen.",
+				"associate_project_empty_description": "Demo-Daten laden oder die Suche verfeinern, um ein Projekt zu finden.",
+				"associate_project_empty_title": "Keine Projekte verfügbar",
+				"associate_project_search_placeholder": "Projekte durchsuchen...",
+				"associate_user_description": "Diesen Pivot-Eintrag einem verwalteten Benutzer zuordnen.",
+				"associate_user_empty_description": "Die Suche verfeinern, um einen verwalteten Benutzer zu finden.",
+				"associate_user_empty_title": "Keine verwalteten Benutzer verfügbar",
+				"associate_user_search_placeholder": "Verwaltete Benutzer durchsuchen...",
+				"dashboard_description": "Pivot-artige Mitgliedschaftseinträge zum Prüfen von Zuordnen- und Trennen-Workflows.",
+				"delete_description": "Diesen Projektmitglied-Eintrag mit der Rolle {role} löschen?",
+				"delete_title": "Projektmitglied löschen",
+				"dissociate_project_description": "{name} von diesem Projektmitglied-Eintrag trennen?",
+				"dissociate_project_title": "Projekt trennen",
+				"dissociate_user_description": "{name} von diesem Projektmitglied-Eintrag trennen?",
+				"dissociate_user_title": "Benutzer trennen",
+				"empty_description": "Ein Demo-Projektmitglied erstellen oder die Suche anpassen, um Pivot-Einträge zu sehen.",
+				"empty_title": "Keine Projektmitglieder",
+				"fields": {
+					"allocation_percent": "Auslastung",
+					"allocation_percent_help": "Prozentualer Aufwand dieses Mitglieds für das zugeordnete Projekt.",
+					"joined_at": "Beigetreten am",
+					"project": "Projekt",
+					"role": "Rolle",
+					"user": "Verwalteter Benutzer",
+					"user_email": "Benutzer-E-Mail"
+				},
+				"groups": {
+					"assignment": "Zuordnung",
+					"membership": "Mitgliedschaft"
+				},
+				"metrics": {
+					"total": "Mitglieder gesamt",
+					"total_desc": "Alle Pivot-Einträge",
+					"with_project": "Verknüpfte Projekte",
+					"with_project_desc": "Einträge mit Projektzuordnung",
+					"with_user": "Verknüpfte Benutzer",
+					"with_user_desc": "Einträge mit Benutzerzuordnung"
+				},
+				"options": {
+					"role_contributor": "Mitwirkend",
+					"role_lead": "Lead",
+					"role_reviewer": "Reviewer"
+				},
+				"plural_label": "Demo-Projektmitglieder",
+				"search_placeholder": "Demo-Projektmitglieder durchsuchen...",
+				"singular_label": "Demo-Projektmitglied",
+				"toasts": {
+					"deleted": "Projektmitglied gelöscht",
+					"project_associated": "Projekt zugeordnet",
+					"project_dissociated": "Projekt getrennt",
+					"user_associated": "Verwalteter Benutzer zugeordnet",
+					"user_dissociated": "Verwalteter Benutzer getrennt"
+				},
+				"validation": {
+					"invalid_allocation_percent": "Die Auslastung muss zwischen 0 und 100 liegen."
+				},
+				"values": {
+					"unassigned": "Nicht zugewiesen"
+				}
+			},
+			"projects": {
+				"actions": {
+					"archive": "Archive",
+					"attach_tag": "Tag anhängen",
+					"export_csv": "CSV exportieren",
+					"feature": "Als hervorgehoben markieren",
+					"force_delete": "Endgültig löschen",
+					"purge": "Endgültig löschen",
+					"purge_cancel_btn": "Abbrechen",
+					"purge_confirm": "Die ausgewählten Projekte und alle zugehörigen Daten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+					"purge_confirm_btn": "Ja, löschen",
+					"restore_archived": "Archivierte Projekte wiederherstellen",
+					"restore_trashed": "Papierkorb-Projekte wiederherstellen",
+					"seed_data": "Testdaten anlegen"
+				},
+				"dashboard_description": "Parity-Spielwiese für reichere admin-v2-Ressourcenabläufe.",
+				"empty_active_description": "Stelle ein Papierkorb-Projekt wieder her oder lege Demodaten an, um die Linse für aktive Projekte zu prüfen.",
+				"empty_active_title": "Keine aktiven Projekte",
+				"empty_archived_description": "Archiviere ein Projekt oder lege Demodaten an, um archivierte Wiederherstellungsabläufe zu prüfen.",
+				"empty_archived_title": "Keine archivierten Projekte",
+				"empty_description": "Lege Testdaten an oder passe die Filter an, um Projekte zu sehen.",
+				"empty_featured_description": "Markiere ein Projekt als hervorgehoben oder lege Demodaten an, um die Linse für hervorgehobene Projekte zu prüfen.",
+				"empty_featured_title": "Keine hervorgehobenen Projekte",
+				"empty_title": "Keine Projekte gefunden",
+				"empty_trashed_description": "Verschiebe ein Projekt in den Papierkorb oder lege Demodaten an, um Wiederherstellungsabläufe zu prüfen.",
+				"empty_trashed_title": "Keine Papierkorb-Projekte",
+				"fields": {
+					"brand_color": "Markenfarbe",
+					"brand_color_help": "Primäre Akzentfarbe für Vorschauen und die Operator-QA.",
+					"brand_color_placeholder": "#6586E5",
+					"budget": "Budget",
+					"code_snippet": "Code-Snippet",
+					"cover_image": "Cover-Bild-URL",
+					"deleted_at": "Gelöscht am",
+					"description": "Beschreibung",
+					"description_help": "Unterstützt Markdown-Formatierung.",
+					"featured": "Hervorgehoben",
+					"name": "Name",
+					"owner_email": "Owner-E-Mail",
+					"owner_email_placeholder": "inhaber@beispiel.de",
+					"settings_json": "Einstellungen JSON",
+					"slug": "Slug",
+					"spec_sheet": "Datenblatt-URL",
+					"status": "Status",
+					"tag": "Tag",
+					"tags": "Tags",
+					"tasks": "Tasks"
+				},
+				"filters": {
+					"featured": "Featured",
+					"featured_only": "Featured Only",
+					"owner_1": "Eigentümer 1",
+					"owner_2": "Eigentümer 2",
+					"regular_only": "Nur reguläre",
+					"status": "Status",
+					"trashed": "Papierkorb"
+				},
+				"lenses": {
+					"active": "Aktive Projekte",
+					"archived": "Archived Projects",
+					"featured": "Hervorgehobene Projekte",
+					"trashed": "Papierkorb-Projekte"
+				},
+				"metrics": {
+					"active": "Aktive Projekte",
+					"active_desc": "Derzeit aktive Projekte",
+					"active_subtitle": "Status: aktiv",
+					"budget": "Aktives Budget",
+					"budget_desc": "Gesamtbudget aktiver Projekte",
+					"budget_subtitle": "Über alle aktiven Projekte",
+					"completion": "Fertigstellung",
+					"error_rate": "Fehlerrate",
+					"featured": "Hervorgehobene Projekte",
+					"featured_desc": "Als hervorgehoben markierte Projekte",
+					"featured_subtitle": "Ausgewählte Projekte",
+					"total": "Projekte gesamt",
+					"total_desc": "Alle registrierten Projekte",
+					"total_subtitle": "Projektportfolio"
+				},
+				"nav_title": "Demo-Projekte",
+				"options": {
+					"status_active": "Aktiv",
+					"status_archived": "Archived",
+					"status_draft": "Entwurf",
+					"status_trashed": "Papierkorb"
+				},
+				"plural_label": "Demo-Projekte",
+				"search_placeholder": "Demo-Projekte durchsuchen...",
+				"search_placeholder_active": "Aktive Projekte durchsuchen...",
+				"search_placeholder_archived": "Archivierte Projekte durchsuchen...",
+				"search_placeholder_featured": "Hervorgehobene Projekte durchsuchen...",
+				"search_placeholder_trashed": "Papierkorb-Projekte durchsuchen...",
+				"singular_label": "Demo-Projekt",
+				"validation": {
+					"invalid_brand_color": "Die Markenfarbe muss ein gültiger Hex-Farbwert sein.",
+					"invalid_json": "Das Einstellungs-JSON muss gültiges JSON sein."
+				}
+			},
+			"queued_actions": {
+				"cancel_job": "Abbrechen",
+				"enqueued": "Aktion zur Hintergrundverarbeitung eingereiht",
+				"fields": {
+					"action": "Aktion",
+					"status": "Status",
+					"summary": "Zusammenfassung",
+					"updated": "Aktualisiert"
+				},
+				"no_active_jobs": "Keine aktiven Hintergrundaufgaben",
+				"panel_title": "Hintergrundaufgaben",
+				"progress": "{processed} von {total} verarbeitet",
+				"status_cancelled": "Abgebrochen",
+				"status_completed": "Abgeschlossen",
+				"status_failed": "Fehlgeschlagen",
+				"status_pending": "Ausstehend",
+				"status_running": "Laufend",
+				"will_run_in_background": "Diese Aktion wird im Hintergrund ausgeführt"
+			},
+			"relations": {
+				"actor_user": "Akteur-Benutzer",
+				"actor_user_description": "Verwalteter Benutzer, der aus dem Akteur dieses Framework-Eintrags aufgelöst wurde.",
+				"admin_actor": "Admin-Akteur",
+				"admin_actor_description": "Admin-Benutzer, der mit diesem Audit- oder Notizeintrag verknüpft ist.",
+				"associated_project": "Zugeordnetes Projekt",
+				"associated_project_description": "Demo-Projekt, das aktuell mit diesem Pivot-Eintrag verknüpft ist.",
+				"associated_user": "Zugeordneter Benutzer",
+				"associated_user_description": "Verwalteter Benutzer, der aktuell mit diesem Pivot-Eintrag verknüpft ist.",
+				"duplicates_allowed": "Duplikate sind für diese Relation erlaubt. Wenn derselbe Datensatz erneut gewählt wird, entsteht eine weitere Zuordnung statt einer Ersetzung.",
+				"internal_notes": "Interne Notizen",
+				"internal_notes_description": "Von Operatoren verfasste Notizen, die mit diesem verwalteten Benutzer verknüpft sind.",
+				"managed_user": "Verwalteter Benutzer",
+				"managed_user_description": "Verwalteter Benutzer, der mit diesem Benachrichtigungsempfänger verknüpft ist.",
+				"project_tags": "Projekt-Tags",
+				"project_tags_description": "Wiederverwendbare Demo-Tags, die über den generischen Relations-Workflow mit diesem Projekt verbunden sind.",
+				"project_tasks": "Projektaufgaben",
+				"project_tasks_description": "Einklappbare Aufgaben-Relation zum QAen von Inline-Erstellung, Zeilenaktionen und kontextbezogenen Task-Workflows.",
+				"related_record": "Verknüpfter Datensatz",
+				"related_record_description": "Framework-Datensatz, auf den dieser Aktivitätseintrag verweist.",
+				"related_record_unavailable": "Der verknüpfte Datensatz ist derzeit nicht verfügbar.",
+				"related_user": "Verknüpfter Benutzer",
+				"related_user_description": "Verwalteter Benutzer, der mit dieser Notiz verknüpft ist.",
+				"target_user": "Zielbenutzer",
+				"target_user_description": "Verwalteter Benutzer, auf den sich dieses Audit-Ereignis bezieht."
+			},
+			"rows_per_page": "Rows per page",
+			"search_placeholder": "Search resources...",
+			"sections": {
+				"details": "Details",
+				"preview": "Preview"
+			},
+			"selected": "{selected} of {total} selected",
+			"tags": {
+				"attach_description": "Hängen Sie ein vorhandenes Demo-Tag an dieses Projekt an.",
+				"attach_empty_description": "Erstellen Sie ein neues Tag oder verfeinern Sie die Suche, um anhängbare Tags zu finden.",
+				"attach_empty_title": "Keine anhängbaren Tags",
+				"attach_search_placeholder": "Anhängbare Tags suchen...",
+				"dashboard_description": "Wiederverwendbare Demo-Tags für QA von Relations-Anhängen und -Trennungen.",
+				"delete_description": "Tag „{name}“ löschen? An Projekte angehängte Tags können nicht gelöscht werden.",
+				"delete_title": "Demo-Tag löschen",
+				"empty_description": "Keine Demo-Tags entsprechen der aktuellen Suche.",
+				"empty_relation_description": "Hängen Sie ein vorhandenes Tag an oder erstellen Sie von diesem Panel aus ein neues.",
+				"empty_relation_title": "Keine Tags angehängt",
+				"empty_title": "Keine Demo-Tags",
+				"fields": {
+					"color": "Farbe",
+					"name": "Name",
+					"usage_count": "Nutzungsanzahl"
+				},
+				"metrics": {
+					"total": "Tags gesamt",
+					"total_desc": "Alle verfügbaren Tags",
+					"total_subtitle": "Tag-Bibliothek"
+				},
+				"nav_title": "Demo-Tags",
+				"plural_label": "Demo-Tags",
+				"search_placeholder": "Demo-Tags suchen...",
+				"singular_label": "Demo-Tag",
+				"toasts": {
+					"attached": "Tag angehängt",
+					"detached": "Tag getrennt"
+				},
+				"validation": {
+					"invalid_color": "Die Tag-Farbe muss eine gültige Hex-Farbe sein."
+				}
+			},
+			"tasks": {
+				"actions": {
+					"assign_to_me": "Mir zuweisen",
+					"inline_create": "Aufgabe inline anlegen",
+					"mark_done": "Als erledigt markieren",
+					"mark_in_progress": "In Bearbeitung setzen",
+					"queued_bulk_process": "Massenaktualisierung in Warteschlange",
+					"quick_done": "Schnell erledigen",
+					"seed_data": "Demo-Aufgaben erzeugen",
+					"update_status": "Status aktualisieren"
+				},
+				"dashboard_description": "Showcase-Aufgaben für Aktionsformulare, Warteschlangen-Jobs, Preview-Route und Inline-Erstellung.",
+				"delete_description": "{title} dauerhaft aus der Demo-Aufgabenfläche entfernen?",
+				"delete_title": "Demo-Aufgabe löschen",
+				"empty_completed_description": "Keine abgeschlossenen Demo-Aufgaben entsprechen der aktuellen Suche.",
+				"empty_completed_title": "Keine abgeschlossenen Demo-Aufgaben",
+				"empty_description": "Keine Demo-Aufgaben entsprechen der aktuellen Suche.",
+				"empty_due_description": "Derzeit sind keine bevorstehenden Demo-Aufgaben bald fällig.",
+				"empty_due_title": "Keine bald fälligen Aufgaben",
+				"empty_relation_description": "Erstelle eine Aufgabe direkt in der Projektansicht oder öffne die vollständige Aufgabenressource.",
+				"empty_relation_title": "Noch keine verknüpften Aufgaben",
+				"empty_title": "Keine Demo-Aufgaben",
+				"fields": {
+					"assignee_email": "Zugewiesene E-Mail",
+					"due_at": "Fällig am",
+					"estimate_hours": "Geschätzte Stunden",
+					"note": "Operator-Notiz",
+					"priority": "Priorität",
+					"project": "Projekt",
+					"status": "Status",
+					"title": "Titel",
+					"workload": "Auslastung"
+				},
+				"filters": {
+					"all_priorities": "Alle Prioritäten",
+					"all_statuses": "Alle Status",
+					"priority": "Priorität",
+					"status": "Status"
+				},
+				"groups": {
+					"delivery": "Lieferung",
+					"schedule": "Planung"
+				},
+				"lenses": {
+					"completed": "Abgeschlossene Aufgaben",
+					"due": "Fällige Aufgaben"
+				},
+				"metrics": {
+					"completion_rate": "Fertigstellungsrate",
+					"completion_rate_desc": "Erledigt vs. Gesamtaufgaben",
+					"completion_rate_subtitle": "Gesamtfortschritt",
+					"done": "Erledigt",
+					"done_desc": "Als abgeschlossen markierte Aufgaben",
+					"done_subtitle": "Abgeschlossene Arbeit",
+					"estimate": "Geschätzte Stunden",
+					"estimate_by_status": "Schätzung nach Status",
+					"estimate_desc": "Gesamte geschätzte Arbeitsstunden",
+					"estimate_subtitle": "Über alle Aufgaben",
+					"in_progress": "In Bearbeitung",
+					"in_progress_desc": "Aufgaben in aktiver Bearbeitung",
+					"in_progress_subtitle": "Aktive Arbeit",
+					"priority_split": "Prioritätsverteilung",
+					"status_trend": "Status-Trend",
+					"todo": "Zu erledigen",
+					"todo_desc": "Aufgaben, die noch nicht begonnen wurden",
+					"todo_subtitle": "Backlog-Elemente",
+					"total": "Aufgaben gesamt",
+					"total_desc": "Alle Demo-Aufgaben im Showcase"
+				},
+				"nav_title": "Demo-Aufgaben",
+				"options": {
+					"done": "Erledigt",
+					"high": "Hoch",
+					"in_progress": "In Bearbeitung",
+					"low": "Niedrig",
+					"medium": "Mittel",
+					"todo": "Zu erledigen"
+				},
+				"plural_label": "Demo-Aufgaben",
+				"search_placeholder": "Demo-Aufgaben durchsuchen...",
+				"search_placeholder_completed": "Abgeschlossene Aufgaben durchsuchen...",
+				"search_placeholder_due": "Fällige Aufgaben durchsuchen...",
+				"singular_label": "Demo-Aufgabe",
+				"toasts": {
+					"bulk_started": "Massenaktualisierung der Aufgaben wurde gestartet"
+				},
+				"tools": {
+					"open_project": "Projekt öffnen",
+					"review_due": "Fällige Aufgaben prüfen"
+				},
+				"values": {
+					"workload_heavy": "Hoch",
+					"workload_light": "Leicht",
+					"workload_medium": "Mittel"
+				}
+			},
+			"toasts": {
+				"action_error": "Action failed",
+				"action_success": "Action completed",
+				"created": "Resource created",
+				"deleted": "Record deleted",
+				"force_deleted": "Record permanently deleted",
+				"replicated": "Record replicated",
+				"restored": "Record restored",
+				"save_error": "Failed to save resource",
+				"updated": "Resource updated"
+			},
+			"trashed": {
+				"only": "Only Trashed",
+				"with": "With Trashed",
+				"without": "Without Trashed"
+			},
+			"values": {
+				"enabled": "Enabled",
+				"masked": "••••••••",
+				"no": "No",
+				"none": "Keine",
+				"pairs_count": "{count} Paare",
+				"selected_count": "{count} ausgewählt",
+				"yes": "Yes"
+			}
+		},
+		"settings": {
+			"add_email": "E-Mail hinzufügen",
+			"add_email_dialog_desc": "E-Mail-Adresse für Admin-Benachrichtigungen hinzufügen",
+			"add_email_dialog_title": "Benutzerdefinierte E-Mail hinzufügen",
+			"add_email_placeholder": "email@example.com",
+			"column_email": "E-Mail",
+			"column_name": "Name",
+			"column_new_signups": "Neue Anmeldungen",
+			"column_new_tickets": "Neue Tickets",
+			"column_type": "Typ",
+			"column_user_replies": "Benutzerantworten",
+			"default_support_email": "Standard-Support-E-Mail",
+			"default_support_email_help": "Leer lassen, um Benachrichtigungen an alle Admin-Benutzer zu senden.",
+			"default_support_email_placeholder": "support@example.com",
+			"delete_email": "Entfernen",
+			"delete_email_confirm": "{email} aus den Benachrichtigungsempfängern entfernen?",
+			"delete_email_description": "{email} aus den Benachrichtigungsempfängern entfernen?",
+			"delete_email_title": "E-Mail entfernen",
+			"description": "Admin-Panel-Einstellungen und Benachrichtigungen konfigurieren.",
+			"email_add_failed": "E-Mail konnte nicht hinzugefügt werden",
+			"email_added": "E-Mail hinzugefügt",
+			"email_exists": "Diese E-Mail existiert bereits",
+			"email_removed": "E-Mail entfernt",
+			"field_new_signups": "Benachrichtigungen für neue Anmeldungen",
+			"field_new_tickets": "Benachrichtigungen für neue Tickets",
+			"field_user_replies": "Benachrichtigungen für Benutzerantworten",
+			"filter": {
+				"admin_only": "Nur Admins",
+				"all_types": "Alle Typen",
+				"clear": "Löschen",
+				"custom_only": "Nur Benutzerdefiniert"
+			},
+			"founder_welcome": {
+				"became_contact": "Sie sind jetzt der Ansprechpartner für Willkommens-E-Mails",
+				"cancel": "Abbrechen",
+				"click_to_edit": "Klicken zum Bearbeiten",
+				"config_body_label": "E-Mail-Text",
+				"config_name_label": "Ihr Name",
+				"config_reply_to_description": "Wohin Antworten gehen. Standardmäßig Ihre Konto-E-Mail, wenn leer.",
+				"config_reply_to_label": "Antwort-E-Mail",
+				"config_reply_to_placeholder": "z.B. hallo@ihrfirma.de",
+				"config_subject_label": "E-Mail-Betreff",
+				"config_title_label": "Ihr Titel",
+				"config_variables_hint": "Verfügbare Variablen: '{{userFirstName}}', '{{userLastName}}', '{{founderName}}', '{{founderTitle}}'",
+				"contact_person": "Ansprechpartner",
+				"contact_person_info": "{name} ({email})",
+				"description": "Automatisch eine persönliche Willkommens-E-Mail von einem Teammitglied an neue Nutzer nach der Registrierung senden. Wird als reiner Text für Authentizität gesendet.",
+				"edit_button": "Bearbeiten",
+				"email_legend": "E-Mail-Inhalt",
+				"error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+				"not_configured": "Kein Ansprechpartner konfiguriert. Richten Sie ein Teammitglied ein, das Willkommens-E-Mails an neue Nutzer sendet.",
+				"preview_subject": "Betreff",
+				"preview_title": "Vorschau",
+				"save": "Änderungen speichern",
+				"saved": "Willkommens-E-Mail-Konfiguration gespeichert",
+				"sender_legend": "Absender-Info",
+				"setup_button": "Ansprechpartner werden",
+				"setup_confirm": "Einrichten",
+				"setup_title_label": "Ihr Titel",
+				"setup_title_placeholder": "z.B. Gründer von Co-Pilot",
+				"step_down": "Zurücktreten",
+				"step_down_confirm": "Als Ansprechpartner zurücktreten? Willkommens-E-Mails werden nicht mehr gesendet.",
+				"stepped_down": "Sie sind nicht mehr der Ansprechpartner",
+				"take_over": "Übernehmen",
+				"take_over_confirm": "Als Ansprechpartner übernehmen? Die bestehende E-Mail-Vorlage bleibt erhalten.",
+				"title": "Gründer-Willkommens-E-Mail",
+				"took_over": "Sie haben als Ansprechpartner übernommen",
+				"variables_label": "Variablen:"
+			},
+			"invalid_email": "Ungültige E-Mail-Adresse",
+			"no_recipients": "Keine Benachrichtigungsempfänger konfiguriert",
+			"notification_recipients": "Benachrichtigungsempfänger",
+			"notification_recipients_desc": "Konfigurieren Sie, wer Admin-Benachrichtigungen erhält. Admin-Benutzer werden automatisch einbezogen.",
+			"preference_disabled": "{field} deaktiviert",
+			"preference_disabling": "{field} wird deaktiviert...",
+			"preference_enabled": "{field} aktiviert",
+			"preference_enabling": "{field} wird aktiviert...",
+			"preference_update_failed": "Einstellung konnte nicht aktualisiert werden",
+			"recipient_count": "{count, plural, other {# Empfänger}}",
+			"save": "Einstellungen speichern",
+			"saved": "Einstellungen gespeichert",
+			"saving": "Speichern...",
+			"selected": "{selected} von {total} ausgewählt",
+			"support_notifications": "Support-Benachrichtigungen",
+			"support_notifications_desc": "E-Mail-Benachrichtigungen für neue und nicht zugewiesene wiedereröffnete Support-Tickets konfigurieren.",
+			"tabs": {
+				"notifications": "Benachrichtigungen",
+				"recipients": "Empfänger"
+			},
+			"title": "Admin-Einstellungen",
+			"type_admin": "Admin",
+			"type_custom": "Benutzerdefiniert"
+		},
+		"showcase": {
+			"badges": {
+				"baseline_incomplete": "Reset nötig",
+				"baseline_ready": "Baseline bereit",
+				"demo_available": "Demo vorhanden",
+				"managed_by_reset": "Per Reset verwaltet",
+				"reference_surface": "Referenzoberfläche",
+				"tool_only": "Nur Tool"
+			},
+			"controls": {
+				"clear_demo_data": "Demo-Daten leeren",
+				"clear_help": "Entfernt die reset-verwalteten Showcase-Daten und alle laufenden Showcase-Jobs. Verwenden Sie dies, um Empty States zu prüfen.",
+				"description": "Diese Steuerelemente betreffen nur den deterministischen Admin-v2-Showcase-Datensatz. Bestehende Support- oder Einstellungsdaten bleiben unberührt.",
+				"queue_help": "{count} Showcase-Hintergrundjobs sind derzeit aktiv.",
+				"reset_baseline": "Auf Baseline zurücksetzen",
+				"reset_help": "Starten Sie die manuelle QA immer mit der bekannten Baseline. Dabei werden Projekte, Tags, Mitglieder, Assets und Tasks neu angelegt.",
+				"title": "Datensteuerung"
+			},
+			"description": "Ein zentraler Ort, um jede Nova-ähnliche Admin-v2-Funktionsfamilie mit deterministischen Daten und klaren Routen manuell zu prüfen.",
+			"features": {
+				"audit": "Audit-Verläufe",
+				"auth_managed": "Auth-verwaltete Ressourcen",
+				"batch_actions": "Batch-Aktionen",
+				"crud": "Generisches CRUD",
+				"derived": "Abgeleitete Ressourcen",
+				"file_fields": "Datei- und Bildfelder",
+				"filters": "Filter",
+				"lenses": "Erstklassige Lenses",
+				"metrics": "Metriken",
+				"pivot_fields": "Pivot-Metadaten",
+				"preview": "Vorschaurouten",
+				"queued_actions": "Queue-Aktionen",
+				"relations": "Relations-Workflows",
+				"replicate": "Duplizieren",
+				"rich_fields": "Markdown, Code und JSON",
+				"row_actions": "Zeilenaktionen",
+				"soft_delete": "Soft Delete und Wiederherstellung"
+			},
+			"flow": {
+				"step_1": "Setzen Sie das Showcase auf den Baseline-Datensatz zurück.",
+				"step_2": "Prüfen Sie, dass die Ressourcenkarten unten die erwarteten Seed-Zahlen anzeigen.",
+				"step_3": "Verwenden Sie die Feature-Matrix, um direkt zur gewünschten Oberfläche zu springen.",
+				"step_4": "Nutzen Sie die Tool-Links nur für Workflows, die bewusst außerhalb des generischen Frameworks bleiben."
+			},
+			"links": {
+				"archived_lens": "Archiv-Lens",
+				"trashed_lens": "Papierkorb-Lens"
+			},
+			"non_demo": {
+				"dashboard_description": "Das Dashboard bleibt eine zusammengesetzte Operator-Oberfläche. Das Showcase verlinkt hinein, aber das Dashboard selbst ist keine generische Ressourcendemo.",
+				"dashboard_title": "Dashboard-Komposition",
+				"settings_description": "Einstellungen bleiben ein kuratiertes Admin-Tool. Die generische Ressourcenseite dafür ist Benachrichtigungsempfänger.",
+				"settings_title": "Kuratiere Einstellungen",
+				"support_description": "Support verwendet bewusst einen benutzerdefinierten Multi-Panel-Workflow und wird nicht in eine generische Ressource gepresst.",
+				"support_title": "Support-Workflow",
+				"users_description": "Die alte Benutzertabelle existiert noch, aber die Auth-Managed-Parität wird auf Verwaltete Benutzer geprüft.",
+				"users_title": "Legacy-Benutzertabelle"
+			},
+			"sections": {
+				"feature_matrix": "Feature-Abdeckung",
+				"no_dedicated_demo": "Keine eigene generische Demo",
+				"no_dedicated_demo_desc": "Diese Oberflächen sind weiterhin wichtig, bleiben aber bewusst bespoke oder legacy.",
+				"recommended_flow": "Empfohlener QA-Ablauf",
+				"resources": "Demo-Oberflächen"
+			},
+			"summary": {
+				"baseline_state": "Baseline-Status",
+				"baseline_state_desc": "Ob die reset-verwalteten Showcase-Ressourcen wieder auf ihrer Seed-Baseline sind.",
+				"relation_records": "Relations-Datensätze",
+				"relation_records_desc": "Tags und Projektmitgliedschaften zum Prüfen von Attach/Detach- und Pivot-Workflows.",
+				"seeded_resources": "Seed-Ressourcen",
+				"seeded_resources_desc": "Aktuell vorhandene, per Reset verwaltete Showcase-Ressourcen.",
+				"uploads": "Assets mit Uploads",
+				"uploads_desc": "Demo-Assets, die derzeit Datei- oder Bild-Uploads enthalten."
+			},
+			"title": "Admin-v2-Showcase",
+			"toasts": {
+				"clear_complete": "Die Admin-v2-Showcase-Daten wurden geleert.",
+				"reset_complete": "Das Admin-v2-Showcase wurde auf den Baseline-Datensatz zurückgesetzt."
+			}
+		},
+		"sidebar": {
+			"back_to_app": "Zurück zur App",
+			"dashboard": "Dashboard",
+			"sections": {
+				"communications": "Kommunikation",
+				"framework": "Framework",
+				"identity": "Identität",
+				"security": "Sicherheit"
+			},
+			"settings": "Einstellungen",
+			"showcase": "Showcase",
+			"support": "Support",
+			"users": "Benutzer"
+		},
+		"support": {
+			"all_statuses": "Alle Status",
+			"anonymous": "Anonym",
+			"assignee": {
+				"not_assigned": "Nicht zugewiesen",
+				"unassigned": "Nicht zugewiesen"
+			},
+			"chat": {
+				"placeholder": "Antwort an Kunde...",
+				"send_error": "Antwort konnte nicht gesendet werden. Bitte erneut versuchen."
+			},
+			"details": {
+				"assignee": "Zugewiesen an",
+				"close_panel": "Details-Panel schließen",
+				"notes": "Interne Notizen",
+				"open_panel": "Details-Panel öffnen",
+				"page_url": "Seiten-URL",
+				"priority": "Priorität",
+				"status": "Status",
+				"title": "Details",
+				"user_notes": "Benutzernotizen",
+				"user_notes_description": "Notizen werden auf Benutzerebene gespeichert und erscheinen in allen Support-Threads des Benutzers"
+			},
+			"email": {
+				"label": "Benachrichtigungs-E-Mail"
+			},
+			"fallback": {
+				"admin": "Admin",
+				"no_user": "Kein Benutzer mit diesem Thread verknüpft"
+			},
+			"filter": {
+				"all": "Alle",
+				"my_inbox": "Posteingang",
+				"unassigned": "Nicht zugewiesen"
+			},
+			"filter_showing_completed": "Zeigt abgeschlossene Threads, klicken um offene anzuzeigen",
+			"filter_showing_open": "Zeigt offene Threads, klicken um abgeschlossene anzuzeigen",
+			"no_chats": "Keine Chats gefunden",
+			"no_done_chats": "Keine abgeschlossenen Chats",
+			"no_email": "Keine E-Mail",
+			"no_open_chats": "Keine offenen Chats",
+			"note": {
+				"add": "Notiz hinzufügen",
+				"adding": "Wird hinzugefügt...",
+				"placeholder": "Interne Notiz hinzufügen..."
+			},
+			"priority": {
+				"high": "Hoch",
+				"low": "Niedrig",
+				"medium": "Mittel",
+				"none": "Keine"
+			},
+			"search": {
+				"placeholder": "Chats suchen..."
+			},
+			"select_chat": "Wählen Sie einen Chat, um die Unterhaltung anzuzeigen",
+			"select_chat_for_details": "Wählen Sie einen Chat, um Details anzuzeigen",
+			"status": {
+				"done": "Erledigt",
+				"in_progress": "In Bearbeitung",
+				"open": "Offen",
+				"resolved": "Gelöst"
+			},
+			"thread": {
+				"badge": {
+					"new": "Neu"
+				},
+				"load_failed": "Laden fehlgeschlagen",
+				"loading": "Lädt mehr...",
+				"no_messages": "Keine Nachrichten",
+				"retry": "Erneut versuchen"
+			},
+			"threads_title": "Support-Threads",
+			"title": "Support-Chats"
+		},
+		"title": "Admin-Bereich",
+		"users": {
+			"actions_column": "Aktionen",
+			"ban_reason": {
+				"default": "Verstoß gegen die Nutzungsbedingungen"
+			},
+			"banned": "Gesperrt",
+			"created": "Erstellt",
+			"email": "E-Mail",
+			"filter": {
+				"all_providers": "Alle Anbieter",
+				"all_roles": "Alle Rollen",
+				"all_status": "Alle Status",
+				"clear": "Zurücksetzen",
+				"provider_email": "E-Mail",
+				"provider_github": "GitHub",
+				"provider_google": "Google",
+				"provider_passkey": "Passkey",
+				"role_admin": "Admin",
+				"role_user": "Benutzer",
+				"status_banned": "Gesperrt",
+				"status_unverified": "Nicht verifiziert",
+				"status_verified": "Verifiziert"
+			},
+			"loading": "Benutzer werden geladen...",
+			"menu_open": "Menü öffnen",
+			"name": "Name",
+			"no_results": "Keine Ergebnisse.",
+			"page_indicator": "Seite {current} von {total}",
+			"pagination": {
+				"first": "Zur ersten Seite",
+				"last": "Zur letzten Seite",
+				"next": "Zur nächsten Seite",
+				"previous": "Zur vorherigen Seite"
+			},
+			"provider": "Anbieter",
+			"provider_email": "E-Mail",
+			"provider_github": "GitHub",
+			"provider_google": "Google",
+			"provider_passkey": "Passkey",
+			"role": "Rolle",
+			"rows_per_page": "Zeilen pro Seite",
+			"search_placeholder": "Benutzer suchen...",
+			"select_all": "Alle auswählen",
+			"select_row": "Zeile auswählen",
+			"selected": "{selected} von {total} Benutzer ausgewählt",
+			"status": "Status",
+			"title": "Benutzerverwaltung",
+			"toast": {
+				"assignment_failed": "Zuweisung konnte nicht aktualisiert werden: {message}",
+				"assignment_updated": "Zuweisung aktualisiert",
+				"ban_failed": "Benutzer konnte nicht gesperrt werden: {message}",
+				"banned": "Benutzer wurde gesperrt",
+				"impersonate_failed": "Identitätswechsel fehlgeschlagen: {message}",
+				"impersonation_started": "Identitätswechsel gestartet",
+				"note_added": "Notiz hinzugefügt",
+				"note_failed": "Notiz konnte nicht hinzugefügt werden: {message}",
+				"priority_failed": "Priorität konnte nicht aktualisiert werden: {message}",
+				"priority_updated": "Priorität aktualisiert",
+				"revoke_failed": "Sitzungen konnten nicht widerrufen werden: {message}",
+				"revoked": "Alle Sitzungen wurden widerrufen",
+				"role_failed": "Rolle konnte nicht geändert werden: {message}",
+				"role_updated": "Benutzerrolle auf {role} geändert",
+				"status_failed": "Status konnte nicht aktualisiert werden: {message}",
+				"status_updated": "Status aktualisiert",
+				"unban_failed": "Sperre konnte nicht aufgehoben werden: {message}",
+				"unbanned": "Benutzersperre wurde aufgehoben"
+			},
+			"total": "Benutzer",
+			"unnamed": "Unbenannt",
+			"unverified": "Nicht verifiziert",
+			"verified": "Verifiziert"
+		}
+	},
+	"ai_chat": {
+		"alerts": {
+			"limit_reached": "Sie haben alle Ihre KI-Chat-Nachrichten diesen Monat aufgebraucht. Upgraden Sie auf Pro für mehr.",
+			"limit_reached_free": "Upgraden Sie auf Pro für mehr KI-Chat-Nachrichten pro Monat.",
+			"limit_reached_pro": "Sie haben alle Ihre KI-Chat-Nachrichten diesen Monat aufgebraucht. Sie werden nächsten Monat zurückgesetzt.",
+			"low_messages": "{remaining} von {total} KI-Chat-Nachricht verbleibend diesen Monat.",
+			"low_messages_plural": "{remaining} von {total} KI-Chat-Nachrichten verbleibend diesen Monat."
+		},
+		"delete_thread": "Unterhaltung löschen",
+		"delete_thread_confirm": "Sind Sie sicher, dass Sie diese Unterhaltung löschen möchten?",
+		"description": "Chatten Sie mit unserem KI-Assistenten",
+		"empty": {
+			"description": "Stellen Sie eine Frage und erhalten Sie sofort KI-gestützte Antworten.",
+			"title": "Unterhaltung starten"
+		},
+		"input": {
+			"placeholder": "Nachricht eingeben..."
+		},
+		"new_chat": "Neuer Chat",
+		"pro_required": {
+			"description": "Upgraden Sie auf Pro für 30 KI-Chat-Nachrichten pro Monat. Testen Sie kostenlos mit der Testkarte 4242 4242 4242 4242.",
+			"title": "Pro-Funktion"
+		},
+		"select_chat": "Wählen Sie eine Unterhaltung oder starten Sie einen neuen Chat",
+		"suggestion": {
+			"explain": "Erkläre etwas",
+			"help": "Hilfe erhalten",
+			"understand": "Hilf mir zu verstehen",
+			"weather": "Wie ist das Wetter in Tokio?"
+		},
+		"thread": {
+			"loading": "Wird geladen...",
+			"no_messages": "Neue Unterhaltung"
+		},
+		"title": "KI-Chat"
+	},
+	"app": {
+		"dashboard": {
+			"subtitle": "Dies ist Ihre Zentrale. Echtzeit-Metriken und Aktivitäten werden hier angezeigt, während Sie Ihre App aufbauen.",
+			"title": "Willkommen in Ihrem Dashboard"
+		},
+		"name": "Co-Pilot",
+		"sidebar": {
+			"admin_panel": "Admin-Bereich",
+			"ai_chat": "KI-Chat",
+			"community_chat": "Community-Chat",
+			"dashboard": "Dashboard",
+			"docs": "Dokumentation",
+			"home": "Start",
+			"show_less": "Weniger anzeigen",
+			"show_more": "Mehr anzeigen"
+		},
+		"user_menu": {
+			"account": "Konto",
+			"billing": "Abrechnung",
+			"impersonating_banner": "Sie agieren als dieser Benutzer",
+			"impersonation_stop_failed": "Identitätswechsel konnte nicht beendet werden",
+			"impersonation_stopped": "Identitätswechsel beendet",
+			"logout": "Abmelden",
+			"notifications": "Benachrichtigungen",
+			"pro_badge": "Pro",
+			"settings": "Einstellungen",
+			"stop_impersonating": "Identitätswechsel beenden",
+			"upgrade_pro": "Auf Pro upgraden"
+		}
+	},
+	"aria": {
+		"actions": "Aktionen",
+		"breadcrumb": "Brotkrümel",
+		"change_language": "Sprache ändern",
+		"close": "Schließen",
+		"confirmation": "Bestätigung",
+		"copied": "Kopiert",
+		"copy": "Kopieren",
+		"copy_failed": "Kopieren fehlgeschlagen",
+		"drag_to_reorder": "Zum Neuanordnen ziehen",
+		"feedback_close": "Feedback schließen",
+		"feedback_open": "Feedback öffnen",
+		"github_repository": "GitHub-Repository",
+		"go_back": "Zurück",
+		"hide_password": "Passwort ausblenden",
+		"home": "Startseite",
+		"interactive_pointer_tracking_area": "Interaktiver Bereich zur Zeigerverfolgung",
+		"limit": "Limit",
+		"loading": "Wird geladen",
+		"login_with_apple": "Mit Apple anmelden",
+		"login_with_google": "Mit Google anmelden",
+		"login_with_meta": "Mit Meta anmelden",
+		"logout": "Abmelden",
+		"menu_close": "Menü schließen",
+		"menu_open": "Menü öffnen",
+		"mobile_sidebar_description": "Zeigt die mobile Seitenleiste an.",
+		"more": "Mehr",
+		"notification_toggle_for_email": "{field} für {email}",
+		"pagination_first": "Erste Seite",
+		"pagination_last": "Letzte Seite",
+		"pagination_next": "Nächste Seite",
+		"pagination_previous": "Vorherige Seite",
+		"remove_attachment": "Anhang entfernen",
+		"reviewer": "Prüfer",
+		"scroll_to_bottom": "Nach unten scrollen",
+		"select_all": "Alle auswählen",
+		"select_row": "Zeile auswählen",
+		"select_value": "Wert auswählen",
+		"show_password": "Passwort anzeigen",
+		"sidebar": "Seitenleiste",
+		"target": "Ziel",
+		"toggle_sidebar": "Seitenleiste umschalten",
+		"toggle_theme": "Design umschalten",
+		"view": "Ansicht"
+	},
+	"auth": {
+		"back_to_home": "Zurück zur Startseite",
+		"errors": {
+			"confirm_password_required": "Bitte bestätigen Sie Ihr Passwort",
+			"current_password_required": "Aktuelles Passwort ist erforderlich",
+			"invalid_credentials": "Ungültige E-Mail oder Passwort",
+			"invalid_email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+			"invalid_secret": "Ungültiges Geheimnis",
+			"name_required": "Name ist erforderlich",
+			"oauth_failed": "Soziale Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+			"passkey_failed": "Passkey-Authentifizierung fehlgeschlagen",
+			"password_lowercase": "Passwort muss mindestens einen Kleinbuchstaben enthalten",
+			"password_min_length": "Passwort muss mindestens {minLength} Zeichen lang sein",
+			"password_number": "Passwort muss mindestens eine Zahl enthalten",
+			"password_required": "Passwort ist erforderlich",
+			"password_uppercase": "Passwort muss mindestens einen Großbuchstaben enthalten",
+			"passwords_do_not_match": "Passwörter stimmen nicht überein",
+			"signup_failed": "Konto konnte nicht erstellt werden. E-Mail wird möglicherweise bereits verwendet.",
+			"verification_invalid": "Ungültiger oder abgelaufener Verifizierungscode. Bitte versuchen Sie es erneut."
+		},
+		"forgot_password": {
+			"back_to_signin": "Zurück zur Anmeldung",
+			"button_loading": "Wird gesendet...",
+			"button_submit": "Link senden",
+			"description": "Wir senden Ihnen einen Link zum Zurücksetzen",
+			"title": "Passwort vergessen"
+		},
+		"login": "Anmelden",
+		"logout": "Abmelden",
+		"messages": {
+			"auth_cancelled": "Authentifizierung abgebrochen",
+			"credential_account_not_found": "Kein Passwortkonto gefunden. Versuchen Sie die Anmeldung mit Ihrem sozialen Anbieter.",
+			"email_change_failed": "E-Mail konnte nicht geändert werden",
+			"email_not_verified": "Bitte bestätigen Sie Ihre E-Mail-Adresse",
+			"email_same_as_current": "Neue E-Mail muss sich von der aktuellen E-Mail unterscheiden",
+			"email_updated": "E-Mail erfolgreich aktualisiert",
+			"email_verification_sent": "Bestätigungs-E-Mail wurde an Ihre aktuelle Adresse gesendet. Bitte prüfen Sie Ihren Posteingang, um die Änderung zu bestätigen.",
+			"generic_error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+			"invalid_credentials": "Ungültige E-Mail oder Passwort",
+			"invalid_token": "Ungültiger oder abgelaufener Token",
+			"missing_reset_token": "Fehlender oder ungültiger Reset-Token",
+			"oauth_failed": "Soziale Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+			"passkey_add_failed": "Passkey konnte nicht hinzugefügt werden",
+			"passkey_added": "Passkey erfolgreich hinzugefügt",
+			"passkey_cancelled": "Passkey-Anmeldung wurde abgebrochen",
+			"passkey_delete_failed": "Passkey konnte nicht gelöscht werden",
+			"passkey_deleted": "Passkey gelöscht",
+			"passkey_failed": "Passkey-Authentifizierung fehlgeschlagen",
+			"passkey_load_failed": "Passkeys konnten nicht geladen werden",
+			"password_change_failed": "Passwort konnte nicht geändert werden",
+			"password_changed": "Passwort erfolgreich geändert",
+			"password_compromised": "Dieses Passwort wurde kompromittiert",
+			"password_reset_success": "Ihr Passwort wurde erfolgreich zurückgesetzt.",
+			"password_too_long": "Passwort ist zu lang",
+			"password_too_short": "Passwort ist zu kurz",
+			"rate_limited": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
+			"request_reset_failed": "Passwort-Reset konnte nicht angefordert werden",
+			"reset_failed": "Passwort konnte nicht zurückgesetzt werden",
+			"reset_link_sent": "Bitte prüfen Sie Ihre E-Mail für den Reset-Link.",
+			"signup_disabled": "Registrierung ist deaktiviert",
+			"signup_failed": "Konto konnte nicht erstellt werden",
+			"too_many_attempts": "Zu viele Versuche. Bitte versuchen Sie es später erneut.",
+			"user_already_exists": "Ein Konto mit dieser E-Mail existiert bereits"
+		},
+		"reset_password": {
+			"back_to_signin": "Zurück zur Anmeldung",
+			"button_loading": "Wird zurückgesetzt...",
+			"button_submit": "Passwort zurücksetzen",
+			"confirm_password_label": "Neues Passwort bestätigen",
+			"description": "Geben Sie Ihr neues Passwort ein",
+			"new_password_label": "Neues Passwort",
+			"sign_in_link": "Anmelden",
+			"success": "Ihr Passwort wurde zurückgesetzt.",
+			"title": "Passwort zurücksetzen"
+		},
+		"signin": {
+			"button_signin": "Anmelden",
+			"button_signin_loading": "Wird angemeldet...",
+			"button_signup": "Registrieren",
+			"button_signup_loading": "Konto wird erstellt...",
+			"cancel": "Abbrechen",
+			"description": "Melden Sie sich bei Ihrem Konto an oder erstellen Sie ein neues",
+			"email_label": "E-Mail",
+			"email_placeholder": "du@beispiel.de",
+			"forgot_password": "Passwort vergessen?",
+			"link_signup": "Registrieren",
+			"name_label": "Name",
+			"no_account": "Noch kein Konto?",
+			"oauth_github": "GitHub",
+			"oauth_google": "Google",
+			"or_continue_with": "Oder fortfahren mit",
+			"passkey_button": "Mit Passkey anmelden",
+			"password_label": "Passwort",
+			"password_placeholder": "••••••••",
+			"tab_signin": "Anmelden",
+			"tab_signup": "Registrieren",
+			"test_secret_button": "Mit Geheimnis anmelden",
+			"test_secret_label": "Nur Test: Mit Geheimnis anmelden",
+			"test_secret_placeholder": "Geheimnis-Wert",
+			"title": "Willkommen zurück"
+		},
+		"signup": "Registrieren",
+		"signup.description": "Geben Sie Ihre Daten ein, um loszulegen",
+		"signup.has_account": "Bereits ein Konto?",
+		"signup.link_signin": "Anmelden",
+		"signup.password_hint": "Mindestens 10 Zeichen mit Groß-, Kleinbuchstaben und Zahl",
+		"signup.title": "Konto erstellen",
+		"terms": {
+			"agreement": "Mit dem Fortfahren akzeptieren Sie unsere",
+			"and": "und",
+			"privacy_policy": "Datenschutzrichtlinie",
+			"terms_of_service": "Nutzungsbedingungen"
+		},
+		"verification": {
+			"button_back": "Zurück zur Anmeldung",
+			"button_cancel": "Abbrechen",
+			"button_verify": "E-Mail verifizieren",
+			"button_verify_loading": "Wird verifiziert...",
+			"check_email": "Bitte überprüfen Sie Ihre E-Mail und klicken Sie auf den Verifizierungslink, um Ihre Registrierung abzuschließen.",
+			"code_label": "Verifizierungscode",
+			"code_placeholder": "12345678",
+			"description": "Wir haben Ihnen einen Verifizierungslink gesendet",
+			"sent_to": "Wir haben eine Verifizierungs-E-Mail an",
+			"title": "E-Mail-Verifizierung",
+			"verified_description": "Ihre E-Mail wurde verifiziert. Sie werden angemeldet...",
+			"verified_title": "E-Mail verifiziert"
+		}
+	},
+	"backend": {
+		"files": {
+			"fetch_failed": "Die hochgeladene Datei konnte nicht abgerufen werden. Bitte versuchen Sie es erneut.",
+			"file_too_large": "Datei zu groß: {size} überschreitet das Maximum von {max}",
+			"type_not_allowed": "Dateityp nicht erlaubt. Unterstützt: PNG, JPEG, WebP, GIF, PDF"
+		},
+		"support": {
+			"handoff": {
+				"response": "Natürlich! Ich verbinde Sie jetzt. Bitte geben Sie unten Ihre E-Mail-Adresse ein und wir benachrichtigen Sie, wenn unser Support-Team geantwortet hat. In der Zwischenzeit können Sie gerne weitere Details hinzufügen, die uns helfen könnten."
+			},
+			"rate_limit": {
+				"global": "Ich habe gerade eine hohe Auslastung. Bitte versuchen Sie es in einem Moment erneut.",
+				"user": "Zu viele Nachrichten. Bitte warten Sie, bevor Sie eine weitere senden."
+			},
+			"summary": {
+				"default": "Neues Support-Gespräch"
+			},
+			"title": {
+				"default": "Kundensupport"
+			}
+		}
+	},
+	"billing": {
+		"checkout_failed": "Bezahlvorgang fehlgeschlagen. Bitte versuchen Sie es erneut.",
+		"portal_failed": "Abrechnungsportal konnte nicht geöffnet werden. Bitte versuchen Sie es erneut."
+	},
+	"chat": {
+		"action": {
+			"talk_to_human": "Mit Experte sprechen"
+		},
+		"alerts": {
+			"limit_reached": {
+				"description": "Sie haben alle {total} kostenlosen Nachrichten für diesen Monat verbraucht.",
+				"title": "Nachrichtenlimit erreicht"
+			},
+			"low_messages": {
+				"description": "Sie haben noch {remaining} von {total} Nachricht für diesen Monat.",
+				"description_plural": "Sie haben noch {remaining} von {total} Nachrichten für diesen Monat.",
+				"title": "Wenig Nachrichten übrig"
+			}
+		},
+		"aria": {
+			"remove_attachment": "{filename} entfernen",
+			"send": "Senden"
+		},
+		"attachment": {
+			"dialog_title": "Anhang",
+			"file_fallback": "Datei",
+			"generic_fallback": "Anhang",
+			"image_fallback": "Bild"
+		},
+		"avatar": {
+			"team_member": "Teammitglied"
+		},
+		"buttons": {
+			"processing": "Wird verarbeitet...",
+			"upgrade": "Auf Pro upgraden"
+		},
+		"description": "Öffnen Sie diese App in mehreren Browser-Fenstern, um die Echtzeit-Datenbank in Aktion zu sehen",
+		"email": {
+			"placeholder": "Email",
+			"save_failed": "E-Mail konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+			"saved_success": "E-Mail gespeichert! Wir benachrichtigen Sie, wenn wir antworten.",
+			"subscribe_button": "Abonnieren",
+			"unsubscribe_failed": "Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+			"unsubscribe_tooltip": "Abbestellen",
+			"unsubscribed": "E-Mail-Benachrichtigungen abbestellt."
+		},
+		"error": {
+			"file_max_size": "Maximale Größe ist {maxSize}",
+			"file_too_large": "Datei zu groß: \"{filename}\"",
+			"max_attachments": "Maximal {max} Anhänge erlaubt",
+			"pasted_file_too_large": "Eingefügte Datei zu groß"
+		},
+		"greeting": "Wie können wir helfen?",
+		"greeting_hi": "Hallo",
+		"header": {
+			"messages_left": "({remaining}/{total} Nachricht übrig)",
+			"messages_left_plural": "({remaining}/{total} Nachrichten übrig)",
+			"pro_unlimited": "(Pro - Unbegrenzt)",
+			"subtitle": "Echtzeit-Chat",
+			"title": "Chat"
+		},
+		"input": {
+			"placeholder": "Nachricht eingeben...",
+			"placeholder_disabled": "Nachrichtenlimit erreicht",
+			"send_tooltip": "Nachricht senden",
+			"upgrade_tooltip": "Auf Pro upgraden für unbegrenzte Nachrichten"
+		},
+		"messages": {
+			"send_failed": "Nachricht konnte nicht gesendet werden",
+			"sent_success": "Nachricht gesendet!"
+		},
+		"reasoning": {
+			"connecting": "Verbinde...",
+			"thinking": "Denke nach...",
+			"thought_for_few_seconds": "Nachgedacht für einige Sekunden",
+			"thought_for_seconds": "Nachgedacht für {duration} Sekunde",
+			"thought_for_seconds_plural": "Nachgedacht für {duration} Sekunden"
+		},
+		"suggestion": {
+			"help_label": "Hilfe erhalten",
+			"help_text": "Können Sie mir helfen mit...",
+			"issue_label": "Problem melden",
+			"issue_text": "Ich habe ein Problem gefunden mit...",
+			"question_label": "Frage stellen",
+			"question_text": "Ich habe eine Frage zu..."
+		},
+		"title": "Community Chat",
+		"tooltip": {
+			"attach_files": "Dateien anhängen",
+			"mark_bug": "Fehler markieren"
+		}
+	},
+	"common": {
+		"adding": "Wird hinzugefügt...",
+		"cancel": "Abbrechen",
+		"confirm": "Bestätigen",
+		"save": "Speichern"
+	},
+	"email": {
+		"body": {
+			"no_messages": "Keine Nachrichten",
+			"ticket_message": "{userName} hat eine neue Nachricht zu einem zuvor geschlossenen Ticket gesendet",
+			"ticket_new": "Neues Support-Ticket",
+			"ticket_reopened": "Support-Ticket wiedereröffnet",
+			"ticket_started": "{userName} hat ein neues Support-Gespräch gestartet"
+		},
+		"subject": {
+			"reset_password": "Passwort zurücksetzen",
+			"support_reply": "Neue Antwort auf Ihre Support-Anfrage",
+			"ticket_new": "Neues Support-Ticket von {userName}",
+			"ticket_reopened": "Support-Ticket wiedereröffnet von {userName}",
+			"verify": "E-Mail-Adresse bestätigen"
+		}
+	},
+	"error_page": {
+		"back_home": "Zurück zur Startseite",
+		"generic_description": "Beim Laden dieser Seite ist ein unerwarteter Fehler aufgetreten.",
+		"generic_title": "Etwas ist schiefgelaufen",
+		"need_help": "Brauchen Sie Hilfe?",
+		"not_found_description": "Die gesuchte Seite existiert nicht. Versuchen Sie unten nach dem zu suchen, was Sie brauchen.",
+		"not_found_title": "404 - Seite nicht gefunden",
+		"search_placeholder": "Versuchen Sie, nach Seiten zu suchen..."
+	},
+	"footer": {
+		"copyright": "© {year} Co-Pilot",
+		"impressum": "Impressum",
+		"privacy": "Datenschutz",
+		"terms": "Nutzungsbedingungen"
+	},
+	"hero": {
+		"companies_text": "Vertrauen der besten Teams",
+		"cta": "Jetzt starten",
+		"cta_demo": "Demo anfordern",
+		"description": "Erwecke dein SaaS zum Leben in Minuten, nicht in Monaten. Open-Source Template mit einem Tech-Stack, der dich schnell shippen lässt.",
+		"section_label": "Start",
+		"tagline": "Mit Produktfokus\nschneller zum Ziel",
+		"title": "Co-Pilot für HP Metal Jet S100"
+	},
+	"impersonation": {
+		"banner_text": "Sie sehen die Ansicht eines anderen Benutzers",
+		"stop_button": "Identitätswechsel beenden"
+	},
+	"integrations": {
+		"cards": {
+			"autumn_stripe": {
+				"button": "Zu Autumn",
+				"description": "Autumn übernimmt Abrechnung, Feature-Gates und Nutzungsverfolgung - ohne Webhook-Komplexität. Stripe für die Zahlungsabwicklung.",
+				"secondary_button": "Zu Stripe",
+				"secondary_title": "Stripe",
+				"title": "Autumn + Stripe"
+			},
+			"better_auth": {
+				"button": "Zu Better Auth",
+				"description": "Die umfassendste Authentifizierungsbibliothek für TypeScript. Sessions, OAuth, Passkeys und Multi-Tenancy sofort einsatzbereit.",
+				"title": "Better Auth"
+			},
+			"convex": {
+				"button": "Zu Convex",
+				"description": "Die Open-Source-Alternative zu Firebase. Basierend auf PostgreSQL - der weltweit fortschrittlichsten relationalen Datenbank.",
+				"title": "Convex"
+			},
+			"posthog": {
+				"button": "Zu PostHog",
+				"description": "PostHog ist eine Open-Source-Produktanalyseplattform zur Verfolgung von Nutzerverhalten und Messung von Conversions.",
+				"title": "PostHog"
+			},
+			"resend": {
+				"button": "Zu Resend",
+				"description": "Die E-Mail-API für Entwickler. Erstelle und versende transaktionale E-Mails mit einer modernen, zuverlässigen API für Skalierung.",
+				"title": "Resend"
+			},
+			"sentry": {
+				"button": "Zu Sentry",
+				"description": "Anwendungsüberwachung und Fehlerverfolgung. Erkenne Probleme bevor deine Nutzer es tun mit Echtzeit-Alerts und detaillierten Stack-Traces.",
+				"title": "Sentry"
+			},
+			"shadcn_svblocks": {
+				"button": "Zu Shadcn Svelte",
+				"description": "Eine Sammlung wunderschön gestalteter, barrierefreier Komponenten, gebaut mit Tailwind CSS v4 und Bits UI.",
+				"secondary_button": "SVBlocks",
+				"secondary_title": "SVBlocks",
+				"title": "Shadcn Svelte + SVBlocks"
+			},
+			"svelte": {
+				"button": "Zu Svelte 5",
+				"description": "Das beliebteste Frontend-Framework. Eine einfache, leistungsstarke und zukunftssichere Art, Ihre Web-App zu erstellen.",
+				"title": "Svelte 5"
+			},
+			"tolgee": {
+				"button": "Zu Tolgee",
+				"description": "Internationalisierung richtig gemacht. In-Context-Editing und ML-gestützte Übersetzung für einen nahtlosen Lokalisierungs-Workflow.",
+				"title": "Tolgee"
+			}
+		},
+		"description": "Superschnelle Lösungen, die tatsächlich Spaß beim Entwickeln machen",
+		"title": "Echte {year} Developer Experience"
+	},
+	"meta": {
+		"about": {
+			"description": "Lernen Sie das talentierte Team hinter unserem Produkt kennen",
+			"title": "Über uns - Lernen Sie unser Team kennen"
+		},
+		"admin": {
+			"dashboard": {
+				"description": "Überwachen Sie Plattformmetriken und externe Dienste.",
+				"title": "Admin-Dashboard"
+			},
+			"home": {
+				"description": "Weiterleitung zum Admin-Dashboard.",
+				"title": "Admin"
+			},
+			"resource_create": {
+				"description": "Create a new {resource} record.",
+				"title": "Create {resource}"
+			},
+			"resource_detail": {
+				"description": "Review {resource} details and actions.",
+				"title": "{resource} Details"
+			},
+			"resource_edit": {
+				"description": "Edit a {resource} record.",
+				"title": "Edit {resource}"
+			},
+			"resource_index": {
+				"description": "Browse and manage {resource}.",
+				"title": "{resource}"
+			},
+			"settings": {
+				"description": "Konfigurieren Sie Admin-Benachrichtigungen und Einstellungen.",
+				"title": "Admin-Einstellungen"
+			},
+			"showcase": {
+				"description": "Prüfen Sie den vollständigen Admin-v2-Demo-Spielplatz mit rücksetzbaren Baseline-Daten manuell.",
+				"title": "Admin-v2-Showcase"
+			},
+			"support": {
+				"description": "Prüfen und beantworten Sie Support-Anfragen von Nutzern.",
+				"title": "Support-Postfach"
+			},
+			"users": {
+				"description": "Verwalten Sie Nutzer, Rollen und Kontostatus.",
+				"title": "Nutzerverwaltung"
+			}
+		},
+		"app": {
+			"ai_chat": {
+				"description": "Chatten Sie mit unserem KI-Assistenten.",
+				"title": "KI-Chat"
+			},
+			"community_chat": {
+				"description": "Chatten Sie in Echtzeit mit der Community.",
+				"title": "Community-Chat"
+			},
+			"dashboard": {
+				"description": "Sehen Sie wichtige Kennzahlen und aktuelle Aktivitäten.",
+				"title": "Dashboard"
+			},
+			"home": {
+				"description": "Weiterleitung zu Ihrem Workspace-Dashboard.",
+				"title": "App-Start"
+			},
+			"settings": {
+				"description": "Verwalten Sie Ihre Kontoeinstellungen und Präferenzen.",
+				"title": "Einstellungen"
+			}
+		},
+		"auth": {
+			"email_verified": {
+				"description": "Ihre E-Mail-Adresse wurde bestätigt. Sie können nun mit Ihrem Konto fortfahren.",
+				"title": "E-Mail bestätigt"
+			},
+			"forgot_password": {
+				"description": "Fordern Sie einen Link zum Zurücksetzen des Passworts an.",
+				"title": "Passwort vergessen"
+			},
+			"reset_password": {
+				"description": "Legen Sie ein neues Passwort für Ihr Konto fest.",
+				"title": "Passwort zurücksetzen"
+			},
+			"signin": {
+				"description": "Melden Sie sich bei Ihrem Konto an.",
+				"title": "Anmelden"
+			},
+			"signup": {
+				"description": "Erstellen Sie ein neues Konto.",
+				"title": "Registrieren"
+			}
+		},
+		"emails": {
+			"preview": {
+				"description": "Vorschau von E-Mail-Templates und gerendertem Inhalt.",
+				"title": "E-Mail-Vorschau"
+			}
+		},
+		"home": {
+			"description": "SaaS-Starter für SvelteKit mit Auth, Billing, E-Mail und Analytics.",
+			"title": "Schneller entwickeln und veröffentlichen"
+		},
+		"impressum": {
+			"description": "Anbieterkennzeichnung und Kontaktdaten.",
+			"title": "Impressum"
+		},
+		"pricing": {
+			"description": "Wählen Sie einen Plan und testen Sie den integrierten Abrechnungsablauf.",
+			"title": "Preise"
+		},
+		"privacy": {
+			"description": "Wie wir Ihre Daten erheben, nutzen und schützen.",
+			"title": "Datenschutzerklärung"
+		},
+		"shadcn_demo": {
+			"description": "Vorschau der in diesem Projekt verwendeten UI-Komponenten.",
+			"title": "Shadcn-Demo"
+		},
+		"terms": {
+			"description": "Die Bedingungen für die Nutzung unseres Dienstes.",
+			"title": "Nutzungsbedingungen"
+		}
+	},
+	"nav": {
+		"about": "Über uns",
+		"dashboard": "Dashboard",
+		"features": "Funktionen",
+		"get_started": "Jetzt starten",
+		"home": "Start",
+		"login": "Anmelden",
+		"pricing": "Pläne",
+		"signup": "Registrieren",
+		"solution": "Lösung"
+	},
+	"pricing": {
+		"buttons": {
+			"loading": "Lädt...",
+			"manage_subscription": "Abonnement verwalten"
+		},
+		"current_plan": "Aktueller Plan",
+		"current_plan_badge": "(Aktueller Plan)",
+		"description": "Diese SaaS-Starter-Vorlage ist vollständig kostenlos und Open Source. Testen Sie den Zahlungsablauf mit der Testkartennummer 4242 4242 4242 4242 und einem beliebigen zukünftigen Ablaufdatum.",
+		"description_autumn": "Testen Sie das integrierte Zahlungssystem powered by Autumn - eine Open-Source-Abrechnungsplattform, die Abonnements, Nutzungslimits und Stripe-Webhooks automatisch verwaltet.",
+		"features": {
+			"enterprise": {
+				"0": "Individuelle Nachrichtenlimits",
+				"1": "Dedizierter Account Manager",
+				"2": "SLA-Garantien",
+				"3": "Erweiterte Sicherheitsfunktionen"
+			},
+			"enterprise[0]": "Individuelle Nachrichtenlimits",
+			"enterprise[1]": "Dedizierter Account Manager",
+			"enterprise[2]": "SLA-Garantien",
+			"enterprise[3]": "Erweiterte Sicherheitsfunktionen",
+			"enterprise[4]": "Benutzerdefinierte Integrationen",
+			"enterprise[5]": "White-Label-Optionen",
+			"free": {
+				"0": "10 Nachrichten pro Monat",
+				"1": "Vollständiger Quellcode-Zugriff",
+				"2": "Alle Funktionen enthalten",
+				"3": "MIT-Lizenz"
+			},
+			"free[0]": "10 Nachrichten pro Monat",
+			"free[1]": "Vollständiger Quellcode-Zugriff",
+			"free[2]": "Alle Funktionen enthalten",
+			"free[3]": "MIT-Lizenz",
+			"pro": {
+				"0": "Unbegrenzte Nachrichten",
+				"1": "Vollständiger Quellcode-Zugriff",
+				"2": "Alle Funktionen enthalten",
+				"3": "Priority-Support"
+			},
+			"pro[0]": "Unbegrenzte Nachrichten",
+			"pro[1]": "Vollständiger Quellcode-Zugriff",
+			"pro[2]": "Alle Funktionen enthalten",
+			"pro[3]": "Priority-Support"
+		},
+		"popular_badge": "Beliebt",
+		"section_label": "Preise",
+		"tiers": {
+			"enterprise": {
+				"button": "Vertrieb kontaktieren",
+				"description": "Für Organisationen mit speziellen Anforderungen",
+				"name": "Enterprise",
+				"price": "Individuell"
+			},
+			"free": {
+				"button": "Für immer kostenlos",
+				"button_manage": "Abonnement verwalten",
+				"description": "Perfekt für den Einstieg",
+				"name": "Kostenlos",
+				"price": "0€ / Monat"
+			},
+			"pro": {
+				"button": "Auf Pro upgraden",
+				"button_loading": "Wird verarbeitet...",
+				"button_manage": "Abonnement verwalten",
+				"description": "Unbegrenzte Nachrichten und Priority-Support",
+				"name": "Pro",
+				"price": "10€ / Monat"
+			}
+		},
+		"title": "Preise, die mit Ihnen wachsen"
+	},
+	"search": {
+		"command": {
+			"dialog_description": "Suche nach einer Seite, zu der du navigieren möchtest.",
+			"dialog_title": "Seiten suchen",
+			"footer": {
+				"go_to_page": "Zur Seite wechseln",
+				"open_new_tab": "Klick, um in neuem Tab zu öffnen"
+			},
+			"groups": {
+				"admin": "Admin",
+				"app": "App",
+				"authentication": "Authentifizierung",
+				"public": "Öffentlich"
+			},
+			"input_placeholder": "Seiten suchen...",
+			"no_results": "Keine Ergebnisse gefunden.",
+			"trigger_aria_label": "Suche öffnen",
+			"trigger_desktop": "Seiten suchen...",
+			"trigger_mobile": "Suchen..."
+		}
+	},
+	"settings": {
+		"account": {
+			"avatar": {
+				"alt": "Profilvorschau",
+				"ready": "Bild bereit zum Speichern",
+				"removed": "Bild entfernt - klicken Sie auf Speichern zur Bestätigung",
+				"select_error": "Bitte wählen Sie eine Bilddatei aus",
+				"size_error": "Bild muss kleiner als {size} sein",
+				"upload_failed": "Bild konnte nicht hochgeladen werden"
+			},
+			"description": "Aktualisieren Sie hier Ihre Kontoinformationen.",
+			"error": "Profil konnte nicht aktualisiert werden",
+			"file_helper": "PNG, JPG oder GIF bis zu 2MB.",
+			"link_from_url": "Link von URL",
+			"name": {
+				"placeholder": "Ihr Name"
+			},
+			"name_helper": "Dies ist Ihr öffentlich angezeigter Name.",
+			"name_label": "Name",
+			"no_image": "Kein Bild",
+			"or": "oder",
+			"profile_picture": "Profilbild",
+			"profile_picture_helper": "Laden Sie ein Bild hoch oder fügen Sie einen Link ein. Wir empfehlen ein quadratisches Bild unter 2MB.",
+			"remove_button": "Entfernen",
+			"save_button": "Änderungen speichern",
+			"saving": "Speichern...",
+			"success": "Profil erfolgreich aktualisiert",
+			"title": "Kontoinformationen",
+			"upload_file": "Datei hochladen",
+			"url_helper": "Fügen Sie einen Bildlink ein, anstatt hochzuladen.",
+			"url_placeholder": "https://example.com/avatar.jpg"
+		},
+		"description": "Verwalten Sie Ihre Kontoeinstellungen und Präferenzen.",
+		"email": {
+			"current_email_label": "Aktuelle E-Mail",
+			"description": "Aktualisieren Sie Ihre E-Mail-Adresse für Kontobenachrichtigungen und Anmeldung.",
+			"error_title": "Fehler",
+			"new_email_label": "Neue E-Mail-Adresse",
+			"not_verified_description": "Ihre aktuelle E-Mail ist nicht verifiziert. Die neue E-Mail wird sofort ohne Verifizierung aktualisiert.",
+			"not_verified_title": "E-Mail nicht verifiziert",
+			"placeholder": "Neue E-Mail-Adresse eingeben",
+			"title": "E-Mail-Adresse",
+			"unverified_badge": "Nicht verifiziert",
+			"update_button": "E-Mail aktualisieren",
+			"updating": "Aktualisieren...",
+			"verification_required_description": "Eine Bestätigungs-E-Mail wird an Ihre aktuelle E-Mail-Adresse gesendet. Sie müssen die Änderung genehmigen, bevor Ihre neue E-Mail aktiv wird.",
+			"verification_required_title": "Verifizierung erforderlich",
+			"verified_badge": "Verifiziert"
+		},
+		"password": {
+			"confirm_password_label": "Neues Passwort bestätigen",
+			"current_password_label": "Aktuelles Passwort",
+			"description": "Aktualisieren Sie Ihr Passwort, um Ihr Konto sicher zu halten.",
+			"error_title": "Fehler",
+			"new_password_label": "Neues Passwort",
+			"password_helper": "Muss mindestens 8 Zeichen lang sein.",
+			"placeholder": {
+				"confirm": "Neues Passwort bestätigen",
+				"current": "Aktuelles Passwort eingeben",
+				"new": "Neues Passwort eingeben"
+			},
+			"revoke_sessions_label": "Von allen anderen Geräten abmelden",
+			"security_notice_description": "Wenn aktiviert, werden Sie durch das Ändern Ihres Passworts auf allen anderen Geräten abgemeldet.",
+			"security_notice_title": "Sicherheitshinweis",
+			"title": "Passwort ändern",
+			"update_button": "Passwort aktualisieren",
+			"updating": "Aktualisieren..."
+		},
+		"security": {
+			"add_button": "Passkey hinzufügen",
+			"add_passkey_helper": "Geben Sie Ihrem Passkey einen Namen, um zu identifizieren, auf welchem Gerät er registriert ist.",
+			"add_passkey_title": "Passkey hinzufügen",
+			"adding": "Wird hinzugefügt...",
+			"created_at": "Erstellt am ",
+			"delete_passkey": "Passkey löschen",
+			"description": "Verwalten Sie Ihre Passkeys und Sicherheitseinstellungen.",
+			"error_title": "Fehler",
+			"loading": "Passkeys werden geladen...",
+			"no_passkeys": "Sie haben noch keine Passkeys registriert.",
+			"passkey": {
+				"placeholder": "Passkey-Name",
+				"unnamed": "Unbenannter Passkey"
+			},
+			"passkey_delete_failed": "Passkey konnte nicht gelöscht werden",
+			"passkey_deleted": "Passkey entfernt",
+			"passkey_info_description": "Passkeys sind eine sichere, passwortlose Anmeldemethode. Sie verwenden Biometrie oder Geräte-PIN und werden sicher auf Ihren Geräten gespeichert.",
+			"passkey_info_title": "Was sind Passkeys?",
+			"passkey_name_label": "Passkey-Name",
+			"passkey_undo": "Rückgängig",
+			"title": "Sicherheit",
+			"your_passkeys_title": "Ihre Passkeys"
+		},
+		"tabs": {
+			"account": "Konto",
+			"email": "E-Mail",
+			"password": "Passwort",
+			"security": "Sicherheit"
+		},
+		"title": "Einstellungen"
+	},
+	"support": {
+		"avatar": {
+			"team_member": "Teammitglied"
+		},
+		"button": {
+			"start_new_conversation": "Neue Unterhaltung starten"
+		},
+		"chatbar": {
+			"placeholder": "Frag mich alles..."
+		},
+		"greeting": {
+			"hi": "Hey",
+			"how_can_we_help": "Wie können wir Ihnen heute helfen?"
+		},
+		"header": {
+			"support_team": "Support-Team"
+		},
+		"message": {
+			"role_kai": "Kai",
+			"role_support": "Support",
+			"role_you": "Sie"
+		},
+		"screenshot": {
+			"action": {
+				"cancel": "Abbrechen (Esc)",
+				"redo": "Wiederholen (Strg+Umschalt+Z)",
+				"undo": "Rückgängig (Strg+Z)"
+			},
+			"aria_label": "Screenshot-Editor",
+			"capture_failed": "Screenshot fehlgeschlagen. Überprüfen Sie die Konsole für Details.",
+			"capturing": "Wird aufgenommen...",
+			"next": "Bug Markiert",
+			"tool": {
+				"arrow": "Pfeil (A)",
+				"circle": "Kreis (C)",
+				"color": "Farbe ändern",
+				"pen": "Stift (P)",
+				"rectangle": "Rechteck (R)"
+			}
+		},
+		"suggestion": {
+			"bug_report_label": "Problem melden",
+			"bug_report_text": "Ich habe einen Fehler gefunden!",
+			"feature_request_label": "Feature anfragen",
+			"feature_request_text": "Ich würde mir wünschen",
+			"help_label": "Hilfe bei...",
+			"help_text": "Helfen Sie mir bei der Einrichtung.",
+			"question_label": "Frage stellen",
+			"question_text": "Warum Co-Pilot?"
+		},
+		"thread": {
+			"new_conversation": "Neue Unterhaltung"
+		},
+		"time": {
+			"days_ago": "vor {days} Tagen",
+			"few_seconds_ago": "vor wenigen Sekunden",
+			"hours_ago": "vor {hours} Stunden",
+			"just_now": "gerade eben",
+			"minutes_ago": "vor {minutes} Minuten",
+			"one_hour_ago": "vor 1 Stunde",
+			"one_minute_ago": "vor 1 Minute",
+			"yesterday": "gestern"
+		},
+		"widget": {
+			"error": {
+				"rate_limit": "Langsamer! Bitte warten Sie {seconds}s, bevor Sie eine weitere Nachricht senden.",
+				"send_failed": "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+			},
+			"header": {
+				"bot_response": "Unser Bot antwortet sofort",
+				"messages": "Nachrichten",
+				"with_team": "Ihre Anfrage ist bei unserem Team"
+			},
+			"input": {
+				"placeholder": "Nachricht eingeben oder Vorschlag anklicken...",
+				"placeholder_no_suggestions": "Nachricht eingeben..."
+			}
+		}
+	},
+	"team": {
+		"description": "Während des Arbeitsprozesses führen wir regelmäßige Anpassungen mit dem Kunden durch, denn er ist die einzige Person, die spüren kann, ob ein neuer Anzug passt oder nicht.",
+		"linktree": "Linktree",
+		"roles": {
+			"cofounder_cto": "Mitgründer - CTO",
+			"founder_ceo": "Gründer - CEO",
+			"interaction_designer": "Interaction Designer",
+			"sales_manager": "Vertriebsleiter",
+			"ux_engineer": "UX Engineer",
+			"visual_designer": "Visual Designer"
+		},
+		"section_label": "Team",
+		"title": "Unser Traumteam"
+	},
+	"validation": {
+		"confirm_password": {
+			"mismatch": "Passwörter stimmen nicht überein.",
+			"required": "Bitte bestätigen Sie Ihr Passwort."
+		},
+		"email": {
+			"invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+			"required": "Bitte geben Sie Ihre E-Mail-Adresse ein."
+		},
+		"name": {
+			"required": "Bitte geben Sie Ihren Namen ein."
+		},
+		"password": {
+			"lowercase": "Passwort muss mindestens einen Kleinbuchstaben enthalten.",
+			"min_length": "Passwort muss mindestens {count, number} Zeichen lang sein.",
+			"number": "Passwort muss mindestens eine Zahl enthalten.",
+			"required": "Bitte geben Sie Ihr Passwort ein.",
+			"uppercase": "Passwort muss mindestens einen Großbuchstaben enthalten."
+		}
+	}
+}

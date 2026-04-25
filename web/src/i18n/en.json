@@ -1,0 +1,2183 @@
+{
+	"a11y": {
+		"skip_to_content": "Skip to content"
+	},
+	"admin": {
+		"actions": {
+			"ban": "Ban User",
+			"impersonate": "Impersonate",
+			"revoke_sessions": "Revoke Sessions",
+			"set_role": "Set Role",
+			"unban": "Unban User"
+		},
+		"dashboard": {
+			"database_backend": "Database & backend",
+			"email_service": "Email delivery service",
+			"external_services": "External Services",
+			"hosting_deployment": "Hosting & deployment",
+			"no_framework_activity": "No framework actions have been recorded yet.",
+			"playground": "QA Playground",
+			"playground_description": "Open the deterministic demo playground and reset the admin-v2 showcase to a known baseline.",
+			"recent_framework_activity": "Recent Framework Activity",
+			"resource_overview": "Resource Overview",
+			"resource_records": "{count} records",
+			"title": "Admin Dashboard"
+		},
+		"dialog": {
+			"ban_description": "Are you sure you want to ban {email}? They will be unable to access the app.",
+			"ban_reason_placeholder": "Ban reason (optional)",
+			"ban_title": "Ban User",
+			"impersonation_active_description": "Please reload the page to be logged in as the impersonated user.",
+			"impersonation_active_title": "Impersonation Active",
+			"reload_page": "Reload Page",
+			"revoke_description": "Are you sure you want to revoke all sessions for {email}? They will be logged out everywhere.",
+			"revoke_title": "Revoke Sessions",
+			"set_role_description": "Are you sure you want to change the role of {email} to {role}?",
+			"set_role_title": "Change User Role",
+			"unban_description": "Are you sure you want to unban {email}? They will regain access to the app.",
+			"unban_title": "Unban User"
+		},
+		"metrics": {
+			"active_sessions": "Active (24h)",
+			"active_sessions_desc": "Active in the last 24 hours",
+			"admin_users": "Managing the platform",
+			"admins": "Admins",
+			"admins_desc": "Users with admin privileges",
+			"banned_users": "Banned Users",
+			"banned_users_desc": "Access restricted",
+			"currently_active": "Daily activity",
+			"last_7_days": "Last 7 days",
+			"recent_signups": "Recent Signups",
+			"recent_signups_desc": "New user growth",
+			"registered_users": "Platform user base",
+			"total_users": "Total Users",
+			"total_users_desc": "All registered accounts",
+			"users_banned": "Accounts need review"
+		},
+		"navigation": {
+			"app": "App",
+			"home": "Home",
+			"website": "Website"
+		},
+		"notifications": {
+			"bell_label": "Notifications",
+			"close": "Close",
+			"delete": "Delete",
+			"mark_all_read": "Mark all as read",
+			"mark_read": "Mark as read",
+			"mark_unread": "Mark as unread",
+			"new_notification": "You have a new notification",
+			"no_notifications": "No notifications",
+			"no_notifications_description": "You're all caught up.",
+			"queued_action_failure": "Background action \"{action}\" finished with {failures} failures on {resource}",
+			"queued_action_success": "Background action \"{action}\" completed on {count} {resource} records",
+			"title": "Notifications"
+		},
+		"resources": {
+			"actions": {
+				"associate": "Associate",
+				"attach": "Attach",
+				"create": "Create",
+				"create_resource": "Create {resource}",
+				"delete": "Delete",
+				"detach": "Detach",
+				"dissociate": "Dissociate",
+				"edit": "Edit",
+				"force_delete": "Force Delete",
+				"preview": "Preview",
+				"replicate": "Replicate",
+				"restore": "Restore",
+				"select_exactly_one": "Please select exactly one record.",
+				"status_completed": "Completed",
+				"status_failed": "Failed",
+				"status_pending": "Pending",
+				"status_running": "Running",
+				"update_resource": "Update {resource}",
+				"view": "View"
+			},
+			"actions_column": "Actions",
+			"activity": {
+				"audit_trail": "Audit Trail",
+				"no_actions": "No actions have run for this record yet.",
+				"no_audit_events": "No audit events have been recorded for this record yet.",
+				"recent_actions": "Recent Actions"
+			},
+			"admin_audit_logs": {
+				"columns": {
+					"action": "Action",
+					"admin_user_id": "Admin User",
+					"metadata": "Metadata",
+					"target_user_id": "Target User",
+					"timestamp": "Occurred At"
+				},
+				"dashboard_description": "Legacy operator audit trail",
+				"empty_description": "No audit log entries match the current search or filter.",
+				"empty_title": "No audit log entries",
+				"fields": {
+					"action": "Action",
+					"admin_user_id": "Admin User",
+					"metadata_json": "Metadata JSON",
+					"target_user_id": "Target User",
+					"timestamp": "Occurred At"
+				},
+				"filters": {
+					"action": "Action",
+					"all_actions": "All actions"
+				},
+				"lenses": {
+					"all": "All Activity",
+					"bans": "Ban Actions",
+					"impersonation": "Impersonation",
+					"role_changes": "Role Changes"
+				},
+				"options": {
+					"ban_user": "Ban User",
+					"impersonate": "Impersonate",
+					"revoke_sessions": "Revoke Sessions",
+					"set_role": "Set Role",
+					"stop_impersonation": "Stop Impersonation",
+					"unban_user": "Unban User"
+				},
+				"plural_label": "Admin Audit Logs",
+				"search_placeholder": "Search audit logs...",
+				"singular_label": "Admin Audit Log"
+			},
+			"aria": {
+				"select_all": "Select all rows",
+				"select_row": "Select row"
+			},
+			"articles": {
+				"actions": {
+					"publish": "Publish",
+					"unpublish": "Unpublish"
+				},
+				"buttons": {
+					"publish_article": "Publish Article"
+				},
+				"fields": {
+					"api_key": "API Key",
+					"author_avatar": "Author Avatar",
+					"author_name": "Author Name",
+					"body": "Body",
+					"body_help": "Write the article content. Supports plain text.",
+					"body_placeholder": "Start writing your article...",
+					"category": "Category",
+					"internal_ref": "Internal Reference",
+					"is_published": "Published",
+					"metadata": "Metadata",
+					"permissions": "Permissions",
+					"price": "Price",
+					"priority": "Priority",
+					"published_at": "Published At",
+					"settings_heading": "Settings",
+					"slug": "Slug",
+					"status": "Status",
+					"tags": "Tags",
+					"title": "Title",
+					"website_url": "Website URL"
+				},
+				"groups": {
+					"settings": "Settings"
+				},
+				"lenses": {
+					"drafts": "Draft Articles",
+					"published": "Published Articles"
+				},
+				"metrics": {
+					"published_rate": "Published Rate",
+					"total": "Total Articles",
+					"total_desc": "All registered articles",
+					"total_subtitle": "Article portfolio"
+				},
+				"nav_title": "Demo Articles",
+				"options": {
+					"category_business": "Business",
+					"category_design": "Design",
+					"category_science": "Science",
+					"category_tech": "Technology",
+					"perm_admin": "Can Admin",
+					"perm_delete": "Can Delete",
+					"perm_read": "Can Read",
+					"perm_write": "Can Write",
+					"priority_critical": "Critical",
+					"priority_high": "High",
+					"priority_low": "Low",
+					"priority_medium": "Medium",
+					"status_archived": "Archived",
+					"status_draft": "Draft",
+					"status_published": "Published",
+					"tag_editorial": "Editorial",
+					"tag_featured": "Featured",
+					"tag_sponsored": "Sponsored",
+					"tag_trending": "Trending"
+				}
+			},
+			"auth_users": {
+				"dashboard_description": "Better Auth-backed admin user directory",
+				"empty_description": "No managed users match the current search or filters.",
+				"empty_title": "No managed users",
+				"fields": {
+					"ban_reason": "Ban Reason"
+				},
+				"filters": {
+					"provider": "Provider",
+					"role": "Role",
+					"status": "Status"
+				},
+				"lenses": {
+					"admins": "Admins",
+					"all": "All Users",
+					"banned": "Banned Users",
+					"recent": "Recent Signups"
+				},
+				"metrics": {
+					"admins": "Admins",
+					"banned": "Banned Users",
+					"total": "Total Users",
+					"unverified": "Unverified"
+				},
+				"plural_label": "Managed Users",
+				"search_placeholder": "Search managed users...",
+				"singular_label": "Managed User"
+			},
+			"bulk": {
+				"action_cancelled": "Cancelled. {processed} of {total} processed.",
+				"action_partial_failure": "{failed} of {total} failed.",
+				"chunks_failed": "{count} chunk(s) failed",
+				"delete": "Bulk Delete",
+				"delete_description": "Delete {count} selected records?",
+				"force_delete": "Bulk Force Delete",
+				"force_delete_description": "Permanently delete {count} selected records?",
+				"partial_delete_error": "{failed} of {total} deletions failed.",
+				"processing_chunks": "Processing {current} of {total}...",
+				"restore": "Bulk Restore"
+			},
+			"columns": {
+				"actions": "Actions"
+			},
+			"comments": {
+				"actions": {
+					"mark_reviewed": "Mark Reviewed"
+				},
+				"fields": {
+					"author_email": "Author Email",
+					"target": "Target",
+					"text": "Text",
+					"text_aria": "Comment text input"
+				},
+				"filters": {
+					"target_kind": "Target Kind"
+				},
+				"lenses": {
+					"project": "Project Comments",
+					"task": "Task Comments"
+				},
+				"metrics": {
+					"project": "Project Comments",
+					"target_distribution": "By Target",
+					"task": "Task Comments",
+					"total": "Total Comments",
+					"total_desc": "All comments across targets",
+					"total_subtitle": "Comment activity"
+				},
+				"nav_title": "Demo Comments",
+				"options": {
+					"project": "Project",
+					"task": "Task"
+				}
+			},
+			"confirm": {
+				"delete_description": "This action cannot be undone.",
+				"force_delete_description": "This permanently removes the record and related data.",
+				"inline_edit_description": "Save this inline change now?",
+				"inline_edit_title": "Confirm inline edit"
+			},
+			"conflicts": {
+				"description": "{count} field conflicts need review.",
+				"discard": "Discard my changes",
+				"keep_mine": "Keep mine",
+				"local_value": "My value",
+				"remote_value": "Remote value",
+				"review": "Review conflicts",
+				"title": "This record was updated",
+				"use_theirs": "Use theirs"
+			},
+			"copy": {
+				"copied_tooltip": "Copied!",
+				"tooltip": "Copy to clipboard"
+			},
+			"demo_assets": {
+				"actions": {
+					"delete_description": "Delete the demo asset “{name}”? Uploaded files will be removed as well.",
+					"delete_title": "Delete Demo Asset",
+					"seed_data": "Seed Demo Assets"
+				},
+				"dashboard_description": "Media and rich-field showcase for uploads, markdown, code, and JSON.",
+				"empty_description": "Create a demo asset or seed the showcase data to verify rich field rendering.",
+				"empty_title": "No demo assets",
+				"fields": {
+					"attachment": "Attachment",
+					"attachment_help": "Upload a downloadable file to verify generic file lifecycle handling.",
+					"code_snippet": "Code Snippet",
+					"content_summary": "Content Summary",
+					"content_summary_help": "Computed preview of the current markdown and upload coverage.",
+					"coverage": "Coverage",
+					"hero_image": "Hero Image",
+					"hero_image_help": "Upload an image to verify preview rendering and asset persistence.",
+					"markdown_body": "Markdown Body",
+					"name": "Name",
+					"price": "Price (USD)",
+					"published_at": "Published At",
+					"release_date": "Release Date",
+					"settings_json": "Settings JSON",
+					"slug": "Slug",
+					"slug_help": "Lowercase letters, numbers, and hyphens only."
+				},
+				"groups": {
+					"content": "Content",
+					"media": "Media"
+				},
+				"metrics": {
+					"total": "Total Assets",
+					"total_desc": "All demo asset records",
+					"with_attachments": "With Attachments",
+					"with_attachments_desc": "Assets that include a downloadable file",
+					"with_images": "With Images",
+					"with_images_desc": "Assets that include a hero image"
+				},
+				"plural_label": "Demo Assets",
+				"search_placeholder": "Search demo assets...",
+				"singular_label": "Demo Asset",
+				"toasts": {
+					"deleted": "Demo asset deleted",
+					"seeded": "Demo assets seeded"
+				},
+				"validation": {
+					"invalid_json": "Settings JSON must be valid JSON.",
+					"invalid_price": "Price must be zero or greater.",
+					"invalid_published_at": "Published at must be a valid date and time.",
+					"invalid_release_date": "Release date must be a valid date.",
+					"invalid_slug": "Slug must use lowercase letters, numbers, and hyphens."
+				},
+				"values": {
+					"coverage_missing": "Missing uploads",
+					"coverage_partial": "Partially ready",
+					"coverage_ready": "Ready"
+				}
+			},
+			"detail_missing_description": "This record no longer exists or is not visible to the current admin session.",
+			"detail_missing_title": "Record not found",
+			"email_events": {
+				"columns": {
+					"email_id": "Email ID",
+					"event_type": "Event",
+					"payload": "Payload Preview",
+					"timestamp": "Occurred At"
+				},
+				"dashboard_description": "Resend webhook delivery stream",
+				"detail_missing_description": "This event no longer exists or is not visible to the current admin session.",
+				"detail_missing_title": "Email event not found",
+				"empty_description": "No email events match the current search.",
+				"empty_title": "No email events",
+				"fields": {
+					"created_at": "Stored At",
+					"email_id": "Email ID",
+					"event_type": "Event Type",
+					"payload_json": "Payload JSON",
+					"timestamp": "Occurred At"
+				},
+				"plural_label": "Email Events",
+				"search_placeholder": "Search email events...",
+				"singular_label": "Email Event"
+			},
+			"empty": "No records found.",
+			"export": {
+				"csv": "Export CSV",
+				"json": "Export JSON",
+				"limit_error": "Export is limited to {limit} records.",
+				"success_csv": "CSV export started",
+				"success_json": "JSON export started"
+			},
+			"fields": {
+				"created_at": "Created At",
+				"updated_at": "Updated At"
+			},
+			"filters": {
+				"all": "All",
+				"clear": "Clear",
+				"created_range": "Created Range",
+				"no": "No",
+				"select_placeholder": "Select option",
+				"yes": "Yes"
+			},
+			"form": {
+				"add_pair": "Add pair",
+				"auto_generate": "Auto-generate",
+				"characters_count": "{count} / {limit}",
+				"fix_errors": "Please fix the highlighted fields.",
+				"hide_content": "Hide content",
+				"image_required": "Please upload an image file.",
+				"invalid": "Invalid field value",
+				"key_placeholder": "Key",
+				"local_override_notice": "You changed this field locally. Incoming live updates will not overwrite it.",
+				"markdown_placeholder": "## Markdown content",
+				"max_file_size": "File exceeds the maximum size of {size} MB.",
+				"maxlength_exceeded": "Exceeds maximum length of {limit} characters",
+				"no_relation_options": "No options available",
+				"no_suggestions": "No suggestions",
+				"remove_pair": "Remove pair",
+				"required": "This field is required",
+				"show_content": "Show content",
+				"slug_preview": "Slug preview",
+				"suggestions_input": "Type to search suggestions",
+				"suggestions_loading": "Loading suggestions…",
+				"upload": "Upload file",
+				"upload_ready": "Upload complete",
+				"uploading_progress": "Uploading… {progress}%",
+				"value_placeholder": "Value"
+			},
+			"framework_activity": {
+				"dashboard_description": "Recent V2 action and audit feed",
+				"empty_description": "No framework activity matches the current search or filters.",
+				"empty_title": "No framework activity",
+				"fields": {
+					"actor": "Actor",
+					"created_at": "Created At",
+					"detail": "Detail",
+					"label": "Label",
+					"record": "Record",
+					"resource": "Resource",
+					"source": "Source",
+					"status": "Status",
+					"summary": "Summary"
+				},
+				"filters": {
+					"all_resources": "All Resources",
+					"all_sources": "All Sources",
+					"resource": "Resource",
+					"source": "Source"
+				},
+				"lenses": {
+					"actions": "Actions",
+					"all": "All Activity",
+					"audits": "Audits",
+					"failed": "Failed Actions"
+				},
+				"metrics": {
+					"actions": "Action Runs",
+					"audits": "Audit Events",
+					"failed_actions": "Failed Actions",
+					"total": "Total Activity"
+				},
+				"options": {
+					"action": "Action",
+					"audit": "Audit"
+				},
+				"plural_label": "Framework Activity",
+				"search_placeholder": "Search framework activity...",
+				"singular_label": "Framework Activity Entry"
+			},
+			"groups": {
+				"access": "Access",
+				"assignment": "Assignment",
+				"content": "Content",
+				"context": "Context",
+				"demo_data": "Demo Resources",
+				"detail": "Detail",
+				"event": "Event",
+				"identity": "Identity",
+				"main": "Main",
+				"media": "Media",
+				"metadata": "Metadata",
+				"notifications": "Notifications",
+				"other": "Other",
+				"overview": "Overview",
+				"payload": "Payload",
+				"recipient": "Recipient",
+				"related": "Related",
+				"relations": "Relations",
+				"system": "System",
+				"timestamps": "Timestamps"
+			},
+			"internal_user_notes": {
+				"dashboard_description": "Operator-authored notes tied to managed users",
+				"empty_description": "No internal notes match the current search.",
+				"empty_title": "No internal notes",
+				"fields": {
+					"admin_user": "Admin Author",
+					"content": "Note",
+					"user_id": "Managed User"
+				},
+				"plural_label": "Internal User Notes",
+				"search_placeholder": "Search internal notes...",
+				"singular_label": "Internal User Note"
+			},
+			"lenses": {
+				"all": "All Lenses"
+			},
+			"loading": "Loading resources...",
+			"notification_recipients": {
+				"actions": {
+					"delete_custom": "Delete Custom Recipient",
+					"delete_selected_custom": "Delete Selected Custom Recipients",
+					"disable_all": "Disable All Notifications",
+					"disable_selected": "Disable Selected Notifications",
+					"enable_all": "Enable All Notifications",
+					"enable_selected": "Enable Selected Notifications",
+					"sync_admins": "Sync Admin Recipients"
+				},
+				"columns": {
+					"email": "Email",
+					"name": "Name",
+					"new_signups": "New Signups",
+					"new_tickets": "New Tickets",
+					"type": "Type",
+					"user_replies": "User Replies"
+				},
+				"dashboard_description": "Admin notification routing records",
+				"delete_description": "Delete {email} from the custom notification recipient list?",
+				"delete_selected_description": "Delete {count} selected custom notification recipients?",
+				"delete_selected_title": "Delete Selected Notification Recipients",
+				"delete_title": "Delete Notification Recipient",
+				"empty_description": "No notification recipients match the current search.",
+				"empty_title": "No notification recipients",
+				"fields": {
+					"email": "Email",
+					"name": "Name",
+					"new_signups": "New Signups",
+					"new_tickets": "New Tickets",
+					"type": "Type",
+					"user_replies": "User Replies"
+				},
+				"metrics": {
+					"admin": "Admin Recipients",
+					"custom": "Custom Recipients",
+					"fully_enabled": "Fully Enabled",
+					"total": "Total Recipients"
+				},
+				"options": {
+					"admin": "Admin",
+					"custom": "Custom",
+					"disabled": "Disabled",
+					"enabled": "Enabled",
+					"off": "Off",
+					"on": "On"
+				},
+				"plural_label": "Notification Recipients",
+				"search_placeholder": "Search notification recipients...",
+				"singular_label": "Notification Recipient",
+				"toasts": {
+					"deleted": "Notification recipient deleted",
+					"disable_all": "All notification toggles disabled",
+					"enable_all": "All notification toggles enabled",
+					"sync_started": "Admin recipient sync started"
+				},
+				"validation": {
+					"email_locked": "Admin-managed recipient emails cannot be changed."
+				}
+			},
+			"peek": {
+				"empty": "Nothing to show here.",
+				"loading": "Loading..."
+			},
+			"project_members": {
+				"associate_project_description": "Associate this pivot record with a demo project.",
+				"associate_project_empty_description": "Seed demo data or refine the search to find a project to associate.",
+				"associate_project_empty_title": "No projects available",
+				"associate_project_search_placeholder": "Search projects...",
+				"associate_user_description": "Associate this pivot record with a managed user.",
+				"associate_user_empty_description": "Refine the search to find a managed user to associate.",
+				"associate_user_empty_title": "No managed users available",
+				"associate_user_search_placeholder": "Search managed users...",
+				"dashboard_description": "Pivot-style membership records used to verify associate and dissociate workflows.",
+				"delete_description": "Delete this project member record with role {role}?",
+				"delete_title": "Delete Project Member",
+				"dissociate_project_description": "Remove {name} from this project member record?",
+				"dissociate_project_title": "Dissociate Project",
+				"dissociate_user_description": "Remove {name} from this project member record?",
+				"dissociate_user_title": "Dissociate User",
+				"empty_description": "Create a demo project member or adjust the search to view pivot records.",
+				"empty_title": "No project members",
+				"fields": {
+					"allocation_percent": "Allocation",
+					"allocation_percent_help": "Percentage of this member's effort allocated to the associated project.",
+					"joined_at": "Joined At",
+					"project": "Project",
+					"role": "Role",
+					"user": "Managed User",
+					"user_email": "User Email"
+				},
+				"groups": {
+					"assignment": "Assignment",
+					"membership": "Membership"
+				},
+				"metrics": {
+					"total": "Total Members",
+					"total_desc": "All pivot records",
+					"with_project": "Linked Projects",
+					"with_project_desc": "Records already associated with a project",
+					"with_user": "Linked Users",
+					"with_user_desc": "Records already associated with a managed user"
+				},
+				"options": {
+					"role_contributor": "Contributor",
+					"role_lead": "Lead",
+					"role_reviewer": "Reviewer"
+				},
+				"plural_label": "Demo Project Members",
+				"search_placeholder": "Search demo project members...",
+				"singular_label": "Demo Project Member",
+				"toasts": {
+					"deleted": "Project member deleted",
+					"project_associated": "Project associated",
+					"project_dissociated": "Project dissociated",
+					"user_associated": "Managed user associated",
+					"user_dissociated": "Managed user dissociated"
+				},
+				"validation": {
+					"invalid_allocation_percent": "Allocation must be between 0 and 100."
+				},
+				"values": {
+					"unassigned": "Unassigned"
+				}
+			},
+			"projects": {
+				"actions": {
+					"archive": "Archive",
+					"attach_tag": "Attach Tag",
+					"export_csv": "Export CSV",
+					"feature": "Mark Featured",
+					"force_delete": "Force Delete",
+					"purge": "Purge",
+					"purge_cancel_btn": "Cancel",
+					"purge_confirm": "This will permanently delete the selected projects and all related data. This action cannot be undone.",
+					"purge_confirm_btn": "Yes, Purge",
+					"restore_archived": "Restore Archived Projects",
+					"restore_trashed": "Restore Trashed Projects",
+					"seed_data": "Seed Data",
+					"soft_delete": "Move to Trash"
+				},
+				"dashboard_description": "Parity playground for richer admin-v2 resource workflows.",
+				"empty_active_description": "Restore a trashed project or seed projects to verify the active-project lens.",
+				"empty_active_title": "No active projects",
+				"empty_archived_description": "Archive a project or seed demo data to verify archived recovery flows.",
+				"empty_archived_title": "No archived projects",
+				"empty_description": "Seed demo data or adjust filters to see project records.",
+				"empty_featured_description": "Mark a project as featured or seed demo data to verify featured-project flows.",
+				"empty_featured_title": "No featured projects",
+				"empty_title": "No projects found",
+				"empty_trashed_description": "Move a project to trash or seed demo data to verify trashed recovery flows.",
+				"empty_trashed_title": "No trashed projects",
+				"fields": {
+					"brand_color": "Brand Color",
+					"brand_color_help": "Primary accent color used across previews and operator QA.",
+					"brand_color_placeholder": "#6586E5",
+					"budget": "Budget",
+					"code_snippet": "Code Snippet",
+					"cover_image": "Cover Image URL",
+					"deleted_at": "Deleted At",
+					"description": "Description",
+					"description_help": "Supports Markdown formatting.",
+					"featured": "Featured",
+					"name": "Name",
+					"owner_email": "Owner Email",
+					"owner_email_placeholder": "owner@example.com",
+					"settings_json": "Settings JSON",
+					"slug": "Slug",
+					"spec_sheet": "Spec Sheet URL",
+					"status": "Status",
+					"tag": "Tag",
+					"tags": "Tags",
+					"tasks": "Tasks"
+				},
+				"filters": {
+					"featured": "Featured",
+					"featured_only": "Featured Only",
+					"owner_1": "Owner 1",
+					"owner_2": "Owner 2",
+					"regular_only": "Regular Only",
+					"status": "Status",
+					"trashed": "Trashed"
+				},
+				"lenses": {
+					"active": "Active Projects",
+					"archived": "Archived Projects",
+					"featured": "Featured Projects",
+					"trashed": "Trashed Projects"
+				},
+				"metrics": {
+					"active": "Active Projects",
+					"active_desc": "Currently active projects",
+					"active_subtitle": "Status: active",
+					"budget": "Active Budget",
+					"budget_desc": "Total budget of active projects",
+					"budget_subtitle": "Across all active projects",
+					"completion": "Completion",
+					"error_rate": "Error Rate",
+					"featured": "Featured Projects",
+					"featured_desc": "Projects marked as featured",
+					"featured_subtitle": "Highlighted projects",
+					"total": "Total Projects",
+					"total_desc": "All registered projects",
+					"total_subtitle": "Project portfolio"
+				},
+				"nav_title": "Demo Projects",
+				"options": {
+					"status_active": "Active",
+					"status_archived": "Archived",
+					"status_draft": "Draft",
+					"status_trashed": "Trashed"
+				},
+				"plural_label": "Demo Projects",
+				"search_placeholder": "Search demo projects...",
+				"search_placeholder_active": "Search active projects...",
+				"search_placeholder_archived": "Search archived projects...",
+				"search_placeholder_featured": "Search featured projects...",
+				"search_placeholder_trashed": "Search trashed projects...",
+				"singular_label": "Demo Project",
+				"validation": {
+					"invalid_brand_color": "Brand color must be a valid hex color.",
+					"invalid_json": "Settings JSON must be valid JSON."
+				}
+			},
+			"queued_actions": {
+				"cancel_job": "Cancel",
+				"enqueued": "Action queued for background processing",
+				"fields": {
+					"action": "Action",
+					"status": "Status",
+					"summary": "Summary",
+					"updated": "Updated"
+				},
+				"no_active_jobs": "No active background jobs",
+				"panel_title": "Background Jobs",
+				"progress": "{processed} of {total} processed",
+				"status_cancelled": "Cancelled",
+				"status_completed": "Completed",
+				"status_failed": "Failed",
+				"status_pending": "Pending",
+				"status_running": "Running",
+				"will_run_in_background": "This action will run in the background"
+			},
+			"relations": {
+				"actor_user": "Actor User",
+				"actor_user_description": "Managed user resolved from the actor attached to this framework event.",
+				"admin_actor": "Admin Actor",
+				"admin_actor_description": "Admin user associated with this audit or note entry.",
+				"associated_project": "Associated Project",
+				"associated_project_description": "Demo project currently linked to this pivot record.",
+				"associated_user": "Associated User",
+				"associated_user_description": "Managed user currently linked to this pivot record.",
+				"duplicates_allowed": "Duplicates are allowed for this relation. Reusing the same record will create another assignment instead of replacing the existing one.",
+				"internal_notes": "Internal Notes",
+				"internal_notes_description": "Operator-authored notes connected to this managed user.",
+				"managed_user": "Managed User",
+				"managed_user_description": "Managed user linked to this notification recipient.",
+				"project_tags": "Project Tags",
+				"project_tags_description": "Reusable demo tags attached to this project through the generic relation workflow.",
+				"project_tasks": "Project Tasks",
+				"project_tasks_description": "Collapsible task relation used to QA inline create, row actions, and contextual task workflows.",
+				"related_record": "Related Record",
+				"related_record_description": "Framework record referenced by this activity entry.",
+				"related_record_unavailable": "The related record is not currently available.",
+				"related_user": "Related User",
+				"related_user_description": "Managed user linked to this note.",
+				"target_user": "Target User",
+				"target_user_description": "Managed user targeted by this audit event."
+			},
+			"rows_per_page": "Rows per page",
+			"search_placeholder": "Search resources...",
+			"sections": {
+				"details": "Details",
+				"preview": "Preview"
+			},
+			"selected": "{selected} of {total} selected",
+			"tags": {
+				"attach_description": "Attach an existing demo tag to this project.",
+				"attach_empty_description": "Create a new tag or refine the search to find attachable tags.",
+				"attach_empty_title": "No attachable tags",
+				"attach_search_placeholder": "Search attachable tags...",
+				"dashboard_description": "Reusable demo tags for relation attach and detach QA.",
+				"delete_description": "Delete the tag “{name}”? Tags attached to projects cannot be deleted.",
+				"delete_title": "Delete Demo Tag",
+				"empty_description": "No demo tags match the current search.",
+				"empty_relation_description": "Attach an existing tag or create a new one from this panel.",
+				"empty_relation_title": "No tags attached",
+				"empty_title": "No demo tags",
+				"fields": {
+					"color": "Color",
+					"name": "Name",
+					"usage_count": "Usage Count"
+				},
+				"metrics": {
+					"total": "Total Tags",
+					"total_desc": "All available tags",
+					"total_subtitle": "Tag library"
+				},
+				"nav_title": "Demo Tags",
+				"plural_label": "Demo Tags",
+				"search_placeholder": "Search demo tags...",
+				"singular_label": "Demo Tag",
+				"toasts": {
+					"attached": "Tag attached",
+					"detached": "Tag detached"
+				},
+				"validation": {
+					"invalid_color": "Tag color must be a valid hex color."
+				}
+			},
+			"tasks": {
+				"actions": {
+					"assign_to_me": "Assign to Me",
+					"inline_create": "Add Task Inline",
+					"mark_done": "Mark Done",
+					"mark_in_progress": "Mark In Progress",
+					"queued_bulk_process": "Queued Bulk Process",
+					"quick_done": "Quick Done",
+					"seed_data": "Seed Demo Tasks",
+					"update_status": "Update Status"
+				},
+				"dashboard_description": "Action-form, queued-job, preview-route, and inline-create showcase tasks.",
+				"delete_description": "Permanently remove {title} from the demo task surface?",
+				"delete_title": "Delete Demo Task",
+				"empty_completed_description": "No completed demo tasks match the current search.",
+				"empty_completed_title": "No completed demo tasks",
+				"empty_description": "No demo tasks match the current search.",
+				"empty_due_description": "No upcoming demo tasks are due soon.",
+				"empty_due_title": "No tasks due soon",
+				"empty_relation_description": "Create a task inline from the project detail page or open the full task resource.",
+				"empty_relation_title": "No tasks linked yet",
+				"empty_title": "No demo tasks",
+				"fields": {
+					"assignee_email": "Assignee Email",
+					"due_at": "Due At",
+					"estimate_hours": "Estimate Hours",
+					"note": "Operator Note",
+					"priority": "Priority",
+					"project": "Project",
+					"status": "Status",
+					"title": "Title",
+					"workload": "Workload"
+				},
+				"filters": {
+					"all_priorities": "All priorities",
+					"all_statuses": "All statuses",
+					"priority": "Priority",
+					"status": "Status"
+				},
+				"groups": {
+					"delivery": "Delivery",
+					"schedule": "Schedule"
+				},
+				"lenses": {
+					"completed": "Completed Tasks",
+					"due": "Due Tasks"
+				},
+				"metrics": {
+					"completion_rate": "Completion Rate",
+					"completion_rate_desc": "Done vs total tasks",
+					"completion_rate_subtitle": "Overall progress",
+					"done": "Done",
+					"done_desc": "Tasks marked as complete",
+					"done_subtitle": "Finished work",
+					"estimate": "Estimated Hours",
+					"estimate_by_status": "Estimate by Status",
+					"estimate_desc": "Total estimated work hours",
+					"estimate_subtitle": "Across all tasks",
+					"in_progress": "In Progress",
+					"in_progress_desc": "Tasks currently being worked on",
+					"in_progress_subtitle": "Active work",
+					"priority_split": "Priority Split",
+					"status_trend": "Status Trend",
+					"todo": "Todo",
+					"todo_desc": "Tasks awaiting start",
+					"todo_subtitle": "Backlog items",
+					"total": "Total Tasks",
+					"total_desc": "All demo tasks in the showcase set"
+				},
+				"nav_title": "Demo Tasks",
+				"options": {
+					"done": "Done",
+					"high": "High",
+					"in_progress": "In Progress",
+					"low": "Low",
+					"medium": "Medium",
+					"todo": "Todo"
+				},
+				"plural_label": "Demo Tasks",
+				"search_placeholder": "Search demo tasks...",
+				"search_placeholder_completed": "Search completed tasks...",
+				"search_placeholder_due": "Search due tasks...",
+				"singular_label": "Demo Task",
+				"toasts": {
+					"bulk_started": "Queued bulk task update started"
+				},
+				"tools": {
+					"open_project": "Open Project",
+					"review_due": "Review Due Tasks"
+				},
+				"values": {
+					"workload_heavy": "Heavy",
+					"workload_light": "Light",
+					"workload_medium": "Medium"
+				}
+			},
+			"toasts": {
+				"action_error": "Action failed",
+				"action_success": "Action completed",
+				"created": "Resource created",
+				"deleted": "Record deleted",
+				"force_deleted": "Record permanently deleted",
+				"replicated": "Record replicated",
+				"restored": "Record restored",
+				"save_error": "Failed to save resource",
+				"updated": "Resource updated"
+			},
+			"trashed": {
+				"only": "Only Trashed",
+				"with": "With Trashed",
+				"without": "Without Trashed"
+			},
+			"values": {
+				"enabled": "Enabled",
+				"masked": "••••••••",
+				"no": "No",
+				"none": "None",
+				"pairs_count": "{count} pairs",
+				"selected_count": "{count} selected",
+				"yes": "Yes"
+			}
+		},
+		"settings": {
+			"add_email": "Add Email",
+			"add_email_dialog_desc": "Add an email address to receive admin notifications",
+			"add_email_dialog_title": "Add Custom Email",
+			"add_email_placeholder": "email@example.com",
+			"column_email": "Email",
+			"column_name": "Name",
+			"column_new_signups": "New Signups",
+			"column_new_tickets": "New Tickets",
+			"column_type": "Type",
+			"column_user_replies": "User Replies",
+			"default_support_email": "Default Support Email",
+			"default_support_email_help": "Leave empty to send notifications to all admin users.",
+			"default_support_email_placeholder": "support@example.com",
+			"delete_email": "Remove",
+			"delete_email_confirm": "Remove {email} from notification recipients?",
+			"delete_email_description": "Remove {email} from notification recipients?",
+			"delete_email_title": "Remove Email",
+			"description": "Configure admin panel settings and notifications.",
+			"email_add_failed": "Failed to add email",
+			"email_added": "Email added",
+			"email_exists": "This email already exists",
+			"email_removed": "Email removed",
+			"field_new_signups": "New signup notifications",
+			"field_new_tickets": "New ticket notifications",
+			"field_user_replies": "User reply notifications",
+			"filter": {
+				"admin_only": "Admin Only",
+				"all_types": "All Types",
+				"clear": "Clear",
+				"custom_only": "Custom Only"
+			},
+			"founder_welcome": {
+				"became_contact": "You are now the contact person for welcome emails",
+				"cancel": "Cancel",
+				"click_to_edit": "Click to edit",
+				"config_body_label": "Email Body",
+				"config_name_label": "Your Name",
+				"config_reply_to_description": "Where replies go. Defaults to your account email if left empty.",
+				"config_reply_to_label": "Reply-To Email",
+				"config_reply_to_placeholder": "e.g. hello@yourcompany.com",
+				"config_subject_label": "Email Subject",
+				"config_title_label": "Your Title",
+				"config_variables_hint": "Available variables: '{{userFirstName}}', '{{userLastName}}', '{{founderName}}', '{{founderTitle}}'",
+				"contact_person": "Contact Person",
+				"contact_person_info": "{name} ({email})",
+				"description": "Automatically send a personal welcome email from a team member to new users after signup. Sent as plain text for authenticity.",
+				"edit_button": "Edit",
+				"email_legend": "Email Content",
+				"error": "Something went wrong. Please try again.",
+				"not_configured": "No contact person is configured. Set up a team member to send welcome emails to new users.",
+				"preview_subject": "Subject",
+				"preview_title": "Preview",
+				"save": "Save Changes",
+				"saved": "Welcome email config saved",
+				"sender_legend": "Sender Info",
+				"setup_button": "Become Contact Person",
+				"setup_confirm": "Set Up",
+				"setup_title_label": "Your Title",
+				"setup_title_placeholder": "e.g. Founder of Co-Pilot",
+				"step_down": "Step Down",
+				"step_down_confirm": "Step down as contact person? Welcome emails will stop being sent.",
+				"stepped_down": "You are no longer the contact person",
+				"take_over": "Take Over",
+				"take_over_confirm": "Take over as contact person? The existing email template will be preserved.",
+				"title": "Founder Welcome Email",
+				"took_over": "You have taken over as contact person",
+				"variables_label": "Variables:"
+			},
+			"invalid_email": "Invalid email address",
+			"no_recipients": "No notification recipients configured",
+			"notification_recipients": "Notification Recipients",
+			"notification_recipients_desc": "Configure who receives admin notifications. Admin users are automatically included.",
+			"preference_disabled": "{field} disabled",
+			"preference_disabling": "Disabling {field}...",
+			"preference_enabled": "{field} enabled",
+			"preference_enabling": "Enabling {field}...",
+			"preference_update_failed": "Failed to update preference",
+			"recipient_count": "{count, plural, one {# recipient} other {# recipients}}",
+			"save": "Save Settings",
+			"saved": "Settings saved",
+			"saving": "Saving...",
+			"selected": "{selected} of {total} selected",
+			"support_notifications": "Support Notifications",
+			"support_notifications_desc": "Configure email notifications for new and unassigned reopened support tickets.",
+			"tabs": {
+				"notifications": "Notifications",
+				"recipients": "Recipients"
+			},
+			"title": "Admin Settings",
+			"type_admin": "Admin",
+			"type_custom": "Custom"
+		},
+		"showcase": {
+			"badges": {
+				"baseline_incomplete": "Needs reset",
+				"baseline_ready": "Baseline ready",
+				"demo_available": "Demo available",
+				"managed_by_reset": "Reset-managed",
+				"reference_surface": "Reference surface",
+				"tool_only": "Tool only"
+			},
+			"controls": {
+				"clear_demo_data": "Clear demo data",
+				"clear_help": "This removes the reset-managed showcase data and any queued showcase jobs. Use it to verify empty states.",
+				"description": "These controls only touch the deterministic admin-v2 showcase dataset. They do not modify bespoke support/settings data.",
+				"queue_help": "{count} queued showcase jobs are currently active.",
+				"reset_baseline": "Reset to baseline",
+				"reset_help": "Start manual QA by resetting to the known baseline. This reseeds projects, tags, members, assets, and tasks.",
+				"title": "Data Controls"
+			},
+			"description": "One place to manually QA every Nova-like admin-v2 feature family against deterministic data and explicit route coverage.",
+			"features": {
+				"audit": "Audit trails",
+				"auth_managed": "Auth-managed resources",
+				"batch_actions": "Batch actions",
+				"crud": "Generic CRUD",
+				"derived": "Derived resources",
+				"file_fields": "File and image fields",
+				"filters": "Filters",
+				"lenses": "First-class lenses",
+				"metrics": "Metrics",
+				"pivot_fields": "Pivot metadata",
+				"preview": "Preview routes",
+				"queued_actions": "Queued actions",
+				"relations": "Relation workflows",
+				"replicate": "Replicate",
+				"rich_fields": "Markdown, code, and JSON",
+				"row_actions": "Row actions",
+				"soft_delete": "Soft delete and restore"
+			},
+			"flow": {
+				"step_1": "Reset the showcase to the baseline dataset.",
+				"step_2": "Verify the resource cards below all show the expected seeded counts.",
+				"step_3": "Use the feature matrix to jump to the exact surface you want to inspect.",
+				"step_4": "Use the bespoke tool links only for workflows that intentionally stay outside the generic framework."
+			},
+			"links": {
+				"archived_lens": "Archived Lens",
+				"trashed_lens": "Trashed Lens"
+			},
+			"non_demo": {
+				"dashboard_description": "The dashboard remains a composed operator surface. The playground links into it, but the dashboard itself is not a generic resource demo.",
+				"dashboard_title": "Dashboard composition",
+				"settings_description": "Settings stays a curated admin tool. Notification Recipients is the generic resource-backed slice to QA instead.",
+				"settings_title": "Settings curation",
+				"support_description": "Support uses a custom multi-pane operator workflow and intentionally does not collapse into a generic resource.",
+				"support_title": "Support workflow",
+				"users_description": "The legacy users table still exists, but auth-managed parity is verified on Managed Users.",
+				"users_title": "Legacy users table"
+			},
+			"sections": {
+				"feature_matrix": "Feature Coverage",
+				"no_dedicated_demo": "No Dedicated Generic Demo",
+				"no_dedicated_demo_desc": "These surfaces are still important, but they stay bespoke or legacy by design.",
+				"recommended_flow": "Recommended QA Flow",
+				"resources": "Demo Surfaces"
+			},
+			"summary": {
+				"baseline_state": "Baseline State",
+				"baseline_state_desc": "Whether the reset-managed showcase resources are back at their seeded baseline.",
+				"relation_records": "Relation Records",
+				"relation_records_desc": "Tags and project-membership rows proving attach/detach and pivot workflows.",
+				"seeded_resources": "Seeded Resources",
+				"seeded_resources_desc": "Reset-managed showcase resources currently present.",
+				"uploads": "Assets With Uploads",
+				"uploads_desc": "Demo assets currently storing file or image uploads."
+			},
+			"title": "Admin-v2 Showcase",
+			"toasts": {
+				"clear_complete": "Cleared the admin-v2 showcase data.",
+				"reset_complete": "Reset the admin-v2 showcase to the baseline dataset."
+			}
+		},
+		"sidebar": {
+			"back_to_app": "Back to App",
+			"dashboard": "Dashboard",
+			"sections": {
+				"communications": "Communications",
+				"framework": "Framework",
+				"identity": "Identity",
+				"security": "Security"
+			},
+			"settings": "Settings",
+			"showcase": "Showcase",
+			"support": "Support",
+			"users": "Users"
+		},
+		"support": {
+			"all_statuses": "All statuses",
+			"anonymous": "Anonymous",
+			"assignee": {
+				"not_assigned": "Not assigned",
+				"unassigned": "Unassigned"
+			},
+			"chat": {
+				"placeholder": "Reply to customer...",
+				"send_error": "Failed to send reply. Please try again."
+			},
+			"details": {
+				"assignee": "Assignee",
+				"close_panel": "Close details panel",
+				"notes": "Internal Notes",
+				"open_panel": "Open details panel",
+				"page_url": "Page URL",
+				"priority": "Priority",
+				"status": "Status",
+				"title": "Details",
+				"user_notes": "User Notes",
+				"user_notes_description": "Notes are saved at the user level and appear across all their support threads"
+			},
+			"email": {
+				"label": "Notification Email"
+			},
+			"fallback": {
+				"admin": "Admin",
+				"no_user": "No user associated with this thread"
+			},
+			"filter": {
+				"all": "All",
+				"my_inbox": "Inbox",
+				"unassigned": "Unassigned"
+			},
+			"filter_showing_completed": "Showing completed threads, click to show open",
+			"filter_showing_open": "Showing open threads, click to show completed",
+			"no_chats": "No chats found",
+			"no_done_chats": "No completed chats",
+			"no_email": "No email",
+			"no_open_chats": "No open chats",
+			"note": {
+				"add": "Add Note",
+				"adding": "Adding...",
+				"placeholder": "Add an internal note..."
+			},
+			"priority": {
+				"high": "High",
+				"low": "Low",
+				"medium": "Medium",
+				"none": "None"
+			},
+			"search": {
+				"placeholder": "Search chats..."
+			},
+			"select_chat": "Select a chat to view conversation",
+			"select_chat_for_details": "Select a chat to view details",
+			"status": {
+				"done": "Done",
+				"in_progress": "In Progress",
+				"open": "Open",
+				"resolved": "Resolved"
+			},
+			"thread": {
+				"badge": {
+					"new": "New"
+				},
+				"load_failed": "Failed to load more",
+				"loading": "Loading more...",
+				"no_messages": "No messages",
+				"retry": "Retry"
+			},
+			"threads_title": "Support Threads",
+			"title": "Support Chats"
+		},
+		"title": "Admin Panel",
+		"users": {
+			"actions_column": "Actions",
+			"ban_reason": {
+				"default": "Violated terms of service"
+			},
+			"banned": "Banned",
+			"created": "Created",
+			"email": "Email",
+			"filter": {
+				"all_providers": "All Providers",
+				"all_roles": "All Roles",
+				"all_status": "All Status",
+				"clear": "Clear",
+				"provider_email": "Email",
+				"provider_github": "GitHub",
+				"provider_google": "Google",
+				"provider_passkey": "Passkey",
+				"role_admin": "Admin",
+				"role_user": "User",
+				"status_banned": "Banned",
+				"status_unverified": "Unverified",
+				"status_verified": "Verified"
+			},
+			"loading": "Loading users...",
+			"menu_open": "Open menu",
+			"name": "Name",
+			"no_results": "No results.",
+			"page_indicator": "Page {current} of {total}",
+			"pagination": {
+				"first": "Go to first page",
+				"last": "Go to last page",
+				"next": "Go to next page",
+				"previous": "Go to previous page"
+			},
+			"provider": "Provider",
+			"provider_email": "Email",
+			"provider_github": "GitHub",
+			"provider_google": "Google",
+			"provider_passkey": "Passkey",
+			"role": "Role",
+			"rows_per_page": "Rows per page",
+			"search_placeholder": "Search users...",
+			"select_all": "Select all",
+			"select_row": "Select row",
+			"selected": "{selected} of {total} users selected",
+			"status": "Status",
+			"title": "User Management",
+			"toast": {
+				"assignment_failed": "Failed to update assignment: {message}",
+				"assignment_updated": "Assignment updated",
+				"ban_failed": "Failed to ban user: {message}",
+				"banned": "User has been banned",
+				"impersonate_failed": "Failed to impersonate user: {message}",
+				"impersonation_started": "Now impersonating user",
+				"note_added": "Note added",
+				"note_failed": "Failed to add note: {message}",
+				"priority_failed": "Failed to update priority: {message}",
+				"priority_updated": "Priority updated",
+				"revoke_failed": "Failed to revoke sessions: {message}",
+				"revoked": "All sessions have been revoked",
+				"role_failed": "Failed to set role: {message}",
+				"role_updated": "User role updated to {role}",
+				"status_failed": "Failed to update status: {message}",
+				"status_updated": "Status updated",
+				"unban_failed": "Failed to unban user: {message}",
+				"unbanned": "User has been unbanned"
+			},
+			"total": "users",
+			"unnamed": "Unnamed",
+			"unverified": "Unverified",
+			"verified": "Verified"
+		}
+	},
+	"ai_chat": {
+		"alerts": {
+			"limit_reached": "You've used all your AI chat messages this month. Upgrade to Pro for more.",
+			"limit_reached_free": "Upgrade to Pro for more AI chat messages per month.",
+			"limit_reached_pro": "You've used all your AI chat messages this month. They reset next month.",
+			"low_messages": "{remaining} of {total} AI chat message remaining this month.",
+			"low_messages_plural": "{remaining} of {total} AI chat messages remaining this month."
+		},
+		"delete_thread": "Delete conversation",
+		"delete_thread_confirm": "Are you sure you want to delete this conversation?",
+		"description": "Chat with our AI assistant",
+		"empty": {
+			"description": "Ask anything and get instant AI-powered answers.",
+			"title": "Start a conversation"
+		},
+		"input": {
+			"placeholder": "Type a message..."
+		},
+		"new_chat": "New Chat",
+		"pro_required": {
+			"description": "Upgrade to Pro for 30 AI chat messages per month. Try it free with test card 4242 4242 4242 4242.",
+			"title": "Pro Feature"
+		},
+		"select_chat": "Select a conversation or start a new chat",
+		"suggestion": {
+			"explain": "Explain something",
+			"help": "Get help",
+			"understand": "Help me understand",
+			"weather": "What's the weather like in Tokyo?"
+		},
+		"thread": {
+			"loading": "Loading...",
+			"no_messages": "New conversation"
+		},
+		"title": "AI Chat"
+	},
+	"app": {
+		"dashboard": {
+			"subtitle": "This is your home base. Real-time metrics and activity will appear here as you build out your app.",
+			"title": "Welcome to your dashboard"
+		},
+		"name": "Co-Pilot",
+		"sidebar": {
+			"admin_panel": "Admin Panel",
+			"ai_chat": "AI Chat",
+			"community_chat": "Community Chat",
+			"dashboard": "Dashboard",
+			"docs": "Docs",
+			"home": "Home",
+			"show_less": "Show less",
+			"show_more": "Show more"
+		},
+		"user_menu": {
+			"account": "Account",
+			"billing": "Billing",
+			"impersonating_banner": "You are impersonating this user",
+			"impersonation_stop_failed": "Failed to stop impersonation",
+			"impersonation_stopped": "Stopped impersonating",
+			"logout": "Log out",
+			"notifications": "Notifications",
+			"pro_badge": "Pro",
+			"settings": "Settings",
+			"stop_impersonating": "Stop Impersonating",
+			"upgrade_pro": "Upgrade to Pro"
+		}
+	},
+	"aria": {
+		"actions": "Actions",
+		"breadcrumb": "breadcrumb",
+		"change_language": "Change language",
+		"close": "Close",
+		"confirmation": "Confirmation",
+		"copied": "Copied",
+		"copy": "Copy",
+		"copy_failed": "Failed to copy",
+		"drag_to_reorder": "Drag to reorder",
+		"feedback_close": "Close feedback",
+		"feedback_open": "Open feedback",
+		"github_repository": "GitHub repository",
+		"go_back": "Go back",
+		"hide_password": "Hide password",
+		"home": "home",
+		"interactive_pointer_tracking_area": "Interactive pointer tracking area",
+		"limit": "Limit",
+		"loading": "Loading",
+		"login_with_apple": "Login with Apple",
+		"login_with_google": "Login with Google",
+		"login_with_meta": "Login with Meta",
+		"logout": "Log out",
+		"menu_close": "Close Menu",
+		"menu_open": "Open Menu",
+		"mobile_sidebar_description": "Displays the mobile sidebar.",
+		"more": "More",
+		"notification_toggle_for_email": "{field} for {email}",
+		"pagination_first": "First page",
+		"pagination_last": "Last page",
+		"pagination_next": "Next page",
+		"pagination_previous": "Previous page",
+		"remove_attachment": "Remove attachment",
+		"reviewer": "Reviewer",
+		"scroll_to_bottom": "Scroll to bottom",
+		"select_all": "Select all",
+		"select_row": "Select row",
+		"select_value": "Select a value",
+		"show_password": "Show password",
+		"sidebar": "Sidebar",
+		"target": "Target",
+		"toggle_sidebar": "Toggle Sidebar",
+		"toggle_theme": "Toggle theme",
+		"view": "View"
+	},
+	"auth": {
+		"back_to_home": "Back to home",
+		"errors": {
+			"confirm_password_required": "Please confirm your password",
+			"current_password_required": "Current password is required",
+			"invalid_credentials": "Invalid email or password",
+			"invalid_email": "Please enter a valid email",
+			"invalid_secret": "Invalid secret",
+			"name_required": "Name is required",
+			"oauth_failed": "Social sign-in failed. Please try again.",
+			"passkey_failed": "Passkey authentication failed",
+			"password_lowercase": "Password must contain at least one lowercase letter",
+			"password_min_length": "Password must be at least {minLength} characters",
+			"password_number": "Password must contain at least one number",
+			"password_required": "Password is required",
+			"password_uppercase": "Password must contain at least one uppercase letter",
+			"passwords_do_not_match": "Passwords do not match",
+			"signup_failed": "Failed to create account. Email may already be in use.",
+			"verification_invalid": "Invalid or expired verification code. Please try again."
+		},
+		"forgot_password": {
+			"back_to_signin": "Back to sign in",
+			"button_loading": "Sending...",
+			"button_submit": "Send reset link",
+			"description": "We will email you a reset link",
+			"title": "Forgot password"
+		},
+		"login": "Login",
+		"logout": "Logout",
+		"messages": {
+			"auth_cancelled": "Authentication was cancelled",
+			"credential_account_not_found": "No password account found. Try signing in with your social provider.",
+			"email_change_failed": "Failed to change email",
+			"email_not_verified": "Please verify your email address",
+			"email_same_as_current": "New email must be different from current email",
+			"email_updated": "Email updated successfully",
+			"email_verification_sent": "Verification email sent to your current address. Please check your inbox to approve the change.",
+			"generic_error": "An error occurred. Please try again.",
+			"invalid_credentials": "Invalid email or password",
+			"invalid_token": "Invalid or expired token",
+			"missing_reset_token": "Missing or invalid reset token",
+			"oauth_failed": "Social sign-in failed. Please try again.",
+			"passkey_add_failed": "Failed to add passkey",
+			"passkey_added": "Passkey added successfully",
+			"passkey_cancelled": "Passkey sign-in was cancelled",
+			"passkey_delete_failed": "Failed to delete passkey",
+			"passkey_deleted": "Passkey deleted",
+			"passkey_failed": "Passkey authentication failed",
+			"passkey_load_failed": "Failed to load passkeys",
+			"password_change_failed": "Failed to change password",
+			"password_changed": "Password changed successfully",
+			"password_compromised": "This password has been compromised",
+			"password_reset_success": "Your password has been reset successfully.",
+			"password_too_long": "Password is too long",
+			"password_too_short": "Password is too short",
+			"rate_limited": "Too many requests. Please try again later.",
+			"request_reset_failed": "Failed to request password reset",
+			"reset_failed": "Failed to reset password",
+			"reset_link_sent": "Check your email for a reset link.",
+			"signup_disabled": "Sign up is disabled",
+			"signup_failed": "Failed to create account",
+			"too_many_attempts": "Too many attempts. Please try again later.",
+			"user_already_exists": "An account with this email already exists"
+		},
+		"reset_password": {
+			"back_to_signin": "Back to sign in",
+			"button_loading": "Resetting...",
+			"button_submit": "Reset password",
+			"confirm_password_label": "Confirm new password",
+			"description": "Enter your new password",
+			"new_password_label": "New password",
+			"sign_in_link": "Sign in",
+			"success": "Your password has been reset.",
+			"title": "Reset password"
+		},
+		"signin": {
+			"button_signin": "Sign In",
+			"button_signin_loading": "Signing in...",
+			"button_signup": "Sign Up",
+			"button_signup_loading": "Creating account...",
+			"cancel": "Cancel",
+			"description": "Sign in to your account or create a new one",
+			"email_label": "Email",
+			"email_placeholder": "you@example.com",
+			"forgot_password": "Forgot password?",
+			"link_signup": "Sign up",
+			"name_label": "Name",
+			"no_account": "Don't have an account?",
+			"oauth_github": "GitHub",
+			"oauth_google": "Google",
+			"or_continue_with": "Or continue with",
+			"passkey_button": "Sign in with Passkey",
+			"password_label": "Password",
+			"password_placeholder": "••••••••",
+			"tab_signin": "Sign In",
+			"tab_signup": "Sign Up",
+			"test_secret_button": "Sign in with secret",
+			"test_secret_label": "Test only: Sign in with a secret",
+			"test_secret_placeholder": "secret value",
+			"title": "Welcome back"
+		},
+		"signup": "Sign Up",
+		"signup.description": "Enter your details to get started",
+		"signup.has_account": "Already have an account?",
+		"signup.link_signin": "Sign in",
+		"signup.password_hint": "Minimum 10 characters with uppercase, lowercase, and number",
+		"signup.title": "Create an account",
+		"terms": {
+			"agreement": "By clicking continue, you agree to our",
+			"and": "and",
+			"privacy_policy": "Privacy Policy",
+			"terms_of_service": "Terms of Service"
+		},
+		"verification": {
+			"button_back": "Back to login",
+			"button_cancel": "Cancel",
+			"button_verify": "Verify Email",
+			"button_verify_loading": "Verifying...",
+			"check_email": "Please check your email and click the verification link to complete your registration.",
+			"code_label": "Verification Code",
+			"code_placeholder": "12345678",
+			"description": "We've sent you a verification link",
+			"sent_to": "We've sent a verification email to",
+			"title": "Email Verification",
+			"verified_description": "Your email has been verified. Signing you in...",
+			"verified_title": "Email Verified"
+		}
+	},
+	"backend": {
+		"files": {
+			"fetch_failed": "Failed to retrieve uploaded file. Please try uploading again.",
+			"file_too_large": "File too large: {size} exceeds maximum of {max}",
+			"type_not_allowed": "File type not allowed. Supported: PNG, JPEG, WebP, GIF, PDF"
+		},
+		"support": {
+			"handoff": {
+				"response": "Sure! I will connect you now. Please enter your email below and we'll notify you when our support team has responded. In the meantime, feel free to add any additional details that might help us assist you better."
+			},
+			"rate_limit": {
+				"global": "I'm currently experiencing high demand. Please try sending your message again in a moment.",
+				"user": "Too many messages. Please wait before sending another."
+			},
+			"summary": {
+				"default": "New support conversation"
+			},
+			"title": {
+				"default": "Customer Support"
+			}
+		}
+	},
+	"billing": {
+		"checkout_failed": "Checkout failed. Please try again.",
+		"portal_failed": "Could not open billing portal. Please try again."
+	},
+	"chat": {
+		"action": {
+			"talk_to_human": "Talk to a human"
+		},
+		"alerts": {
+			"limit_reached": {
+				"description": "You've used all {total} of your free messages this month.",
+				"title": "Message Limit Reached"
+			},
+			"low_messages": {
+				"description": "You have {remaining} of {total} message remaining this month.",
+				"description_plural": "You have {remaining} of {total} messages remaining this month.",
+				"title": "Low on Messages"
+			}
+		},
+		"aria": {
+			"remove_attachment": "Remove {filename}",
+			"send": "Send"
+		},
+		"attachment": {
+			"dialog_title": "Attachment",
+			"file_fallback": "File",
+			"generic_fallback": "Attachment",
+			"image_fallback": "Image"
+		},
+		"avatar": {
+			"team_member": "Team member"
+		},
+		"buttons": {
+			"processing": "Processing...",
+			"upgrade": "Upgrade to Pro"
+		},
+		"description": "Open this app in multiple browser windows to see the real-time database in action",
+		"email": {
+			"placeholder": "Email",
+			"save_failed": "Failed to save email. Please try again.",
+			"saved_success": "Email saved! We'll notify you when we respond.",
+			"subscribe_button": "Subscribe",
+			"unsubscribe_failed": "Failed to unsubscribe. Please try again.",
+			"unsubscribe_tooltip": "Unsubscribe",
+			"unsubscribed": "Unsubscribed from email notifications."
+		},
+		"error": {
+			"file_max_size": "Maximum size is {maxSize}",
+			"file_too_large": "File too large: \"{filename}\"",
+			"max_attachments": "Maximum {max} attachments allowed",
+			"pasted_file_too_large": "Pasted file too large"
+		},
+		"greeting": "How can we help?",
+		"greeting_hi": "Hi",
+		"header": {
+			"messages_left": "({remaining}/{total} message left)",
+			"messages_left_plural": "({remaining}/{total} messages left)",
+			"pro_unlimited": "(Pro - Unlimited)",
+			"subtitle": "Real-time chat",
+			"title": "Chat"
+		},
+		"input": {
+			"placeholder": "Type a message...",
+			"placeholder_disabled": "Message limit reached",
+			"send_tooltip": "Send message",
+			"upgrade_tooltip": "Upgrade to Pro for unlimited messages"
+		},
+		"messages": {
+			"send_failed": "Failed to send message",
+			"sent_success": "Message sent!"
+		},
+		"reasoning": {
+			"connecting": "Connecting...",
+			"thinking": "Thinking...",
+			"thought_for_few_seconds": "Thought for a few seconds",
+			"thought_for_seconds": "Thought for {duration} second",
+			"thought_for_seconds_plural": "Thought for {duration} seconds"
+		},
+		"suggestion": {
+			"help_label": "Get help",
+			"help_text": "Can you help me with...",
+			"issue_label": "Report an issue",
+			"issue_text": "I found an issue with...",
+			"question_label": "Ask a question",
+			"question_text": "I have a question about..."
+		},
+		"title": "Community Chat",
+		"tooltip": {
+			"attach_files": "Attach files",
+			"mark_bug": "Mark the bug"
+		}
+	},
+	"common": {
+		"adding": "Adding...",
+		"cancel": "Cancel",
+		"confirm": "Confirm",
+		"save": "Save"
+	},
+	"email": {
+		"body": {
+			"no_messages": "No messages",
+			"ticket_message": "{userName} has sent a new message to a previously closed ticket",
+			"ticket_new": "New support ticket",
+			"ticket_reopened": "Support ticket reopened",
+			"ticket_started": "{userName} has started a new support conversation"
+		},
+		"subject": {
+			"reset_password": "Reset your password",
+			"support_reply": "New reply to your support request",
+			"ticket_new": "New support ticket from {userName}",
+			"ticket_reopened": "Support ticket reopened by {userName}",
+			"verify": "Verify your email"
+		}
+	},
+	"error_page": {
+		"back_home": "Take me home",
+		"generic_description": "An unexpected error occurred while loading this page.",
+		"generic_title": "Something went wrong",
+		"need_help": "Need help?",
+		"not_found_description": "The page you're looking for doesn't exist. Try searching for what you need below.",
+		"not_found_title": "404 - Page Not Found",
+		"search_placeholder": "Try searching for pages..."
+	},
+	"footer": {
+		"copyright": "© {year} Co-Pilot",
+		"impressum": "Legal Notice",
+		"privacy": "Privacy Policy",
+		"terms": "Terms of Service"
+	},
+	"hero": {
+		"companies_text": "Powering the best teams",
+		"cta": "Start Building",
+		"cta_demo": "Request a demo",
+		"description": "SaaS starter with SvelteKit, auth, billing, and analytics.",
+		"section_label": "Home",
+		"tagline": "Focus on your product.\nShip faster.",
+		"title": "Co-Pilot for HP Metal Jet S100"
+	},
+	"impersonation": {
+		"banner_text": "You are currently viewing as another user",
+		"stop_button": "Stop Impersonating"
+	},
+	"integrations": {
+		"cards": {
+			"autumn_stripe": {
+				"button": "Visit Autumn",
+				"description": "Autumn handles billing, feature gates, and usage tracking—no webhook complexity. Stripe for payment processing.",
+				"secondary_button": "Visit Stripe",
+				"secondary_title": "Stripe",
+				"title": "Autumn + Stripe"
+			},
+			"better_auth": {
+				"button": "Visit Better Auth",
+				"description": "The most comprehensive authentication library for TypeScript. Sessions, OAuth, passkeys, and multi-tenancy out of the box.",
+				"title": "Better Auth"
+			},
+			"convex": {
+				"button": "Visit Convex",
+				"description": "The open source Firebase alternative. Built on PostgreSQL - world's most advanced relational database.",
+				"title": "Convex"
+			},
+			"posthog": {
+				"button": "Visit PostHog",
+				"description": "PostHog is an open-source product analytics platform to track user behavior and measure conversions.",
+				"title": "PostHog"
+			},
+			"resend": {
+				"button": "Visit Resend",
+				"description": "The email API for developers. Build and send transactional emails with a modern, reliable API built for scale.",
+				"title": "Resend"
+			},
+			"sentry": {
+				"button": "Visit Sentry",
+				"description": "Application monitoring and error tracking. Identify issues before your users do with real-time alerts and detailed stack traces.",
+				"title": "Sentry"
+			},
+			"shadcn_svblocks": {
+				"button": "Visit Shadcn Svelte",
+				"description": "A set of beautifully-designed, accessible components built with Tailwind CSS v4 and Bits UI.",
+				"secondary_button": "SVBlocks",
+				"secondary_title": "SVBlocks",
+				"title": "Shadcn Svelte + SVBlocks"
+			},
+			"svelte": {
+				"button": "Visit Svelte 5",
+				"description": "The most lovved frontend framework. A simple, performant, and future-proof way to build your web app.",
+				"title": "Svelte 5"
+			},
+			"tolgee": {
+				"button": "Visit Tolgee",
+				"description": "Internationalization done right. In-context editing and ML-powered translation for a seamless localization workflow.",
+				"title": "Tolgee"
+			}
+		},
+		"description": "Super fast solutions that are actually fun to build with",
+		"title": "Real {year} Developer Experience"
+	},
+	"meta": {
+		"about": {
+			"description": "Meet the talented team behind our product",
+			"title": "About Us - Meet Our Team"
+		},
+		"admin": {
+			"dashboard": {
+				"description": "Monitor platform metrics and external services.",
+				"title": "Admin Dashboard"
+			},
+			"home": {
+				"description": "Redirecting to the admin dashboard.",
+				"title": "Admin"
+			},
+			"resource_create": {
+				"description": "Create a new {resource} record.",
+				"title": "Create {resource}"
+			},
+			"resource_detail": {
+				"description": "Review {resource} details and actions.",
+				"title": "{resource} Details"
+			},
+			"resource_edit": {
+				"description": "Edit a {resource} record.",
+				"title": "Edit {resource}"
+			},
+			"resource_index": {
+				"description": "Browse and manage {resource}.",
+				"title": "{resource}"
+			},
+			"settings": {
+				"description": "Configure admin notification recipients and preferences.",
+				"title": "Admin Settings"
+			},
+			"showcase": {
+				"description": "Manually QA the complete admin-v2 demo playground and resettable baseline data.",
+				"title": "Admin-v2 Showcase"
+			},
+			"support": {
+				"description": "Review and respond to customer support threads.",
+				"title": "Support Inbox"
+			},
+			"users": {
+				"description": "Manage users, roles, and account status.",
+				"title": "User Management"
+			}
+		},
+		"app": {
+			"ai_chat": {
+				"description": "Chat with our AI assistant for instant help.",
+				"title": "AI Chat"
+			},
+			"community_chat": {
+				"description": "Chat with the community in real time.",
+				"title": "Community Chat"
+			},
+			"dashboard": {
+				"description": "View key metrics and recent activity.",
+				"title": "Dashboard"
+			},
+			"home": {
+				"description": "Redirecting to your workspace dashboard.",
+				"title": "App Home"
+			},
+			"settings": {
+				"description": "Manage your account settings and preferences.",
+				"title": "Settings"
+			}
+		},
+		"auth": {
+			"email_verified": {
+				"description": "Your email address has been verified. You can continue to your account.",
+				"title": "Email Verified"
+			},
+			"forgot_password": {
+				"description": "Request a password reset link to regain access to your account.",
+				"title": "Forgot Password"
+			},
+			"reset_password": {
+				"description": "Set a new password for your account.",
+				"title": "Reset Password"
+			},
+			"signin": {
+				"description": "Sign in to your account.",
+				"title": "Sign In"
+			},
+			"signup": {
+				"description": "Create a new account to get started.",
+				"title": "Sign Up"
+			}
+		},
+		"emails": {
+			"preview": {
+				"description": "Preview email templates and rendered output.",
+				"title": "Email Preview"
+			}
+		},
+		"home": {
+			"description": "SaaS starter for SvelteKit with auth, billing, email, and analytics.",
+			"title": "Build & Ship Your Product Faster"
+		},
+		"impressum": {
+			"description": "Provider identification and contact details.",
+			"title": "Impressum"
+		},
+		"pricing": {
+			"description": "Choose a plan and test the integrated billing flow.",
+			"title": "Pricing"
+		},
+		"privacy": {
+			"description": "How we collect, use, and protect your personal data.",
+			"title": "Privacy Policy"
+		},
+		"shadcn_demo": {
+			"description": "Preview the UI components used in this project.",
+			"title": "Shadcn Demo"
+		},
+		"terms": {
+			"description": "The terms and conditions for using our service.",
+			"title": "Terms of Service"
+		}
+	},
+	"nav": {
+		"about": "About",
+		"dashboard": "Dashboard",
+		"features": "Features",
+		"get_started": "Get Started",
+		"home": "Home",
+		"login": "Login",
+		"pricing": "Pricing",
+		"signup": "Sign up",
+		"solution": "Solution"
+	},
+	"pricing": {
+		"buttons": {
+			"loading": "Loading...",
+			"manage_subscription": "Manage Subscription"
+		},
+		"current_plan": "Current Plan",
+		"current_plan_badge": "(Current Plan)",
+		"description": "This SaaS starter template is completely free and open source. Try the payment flow using the test card number 4242 4242 4242 4242 with any future expiry date.",
+		"description_autumn": "Test the integrated payment system powered by Autumn - an open-source billing platform that handles subscriptions, usage limits, and Stripe webhooks automatically.",
+		"features": {
+			"enterprise": {
+				"0": "Custom message limits",
+				"1": "Dedicated account manager",
+				"2": "SLA guarantees",
+				"3": "Advanced security features"
+			},
+			"enterprise[0]": "Custom message limits",
+			"enterprise[1]": "Dedicated account manager",
+			"enterprise[2]": "SLA guarantees",
+			"enterprise[3]": "Advanced security features",
+			"enterprise[4]": "Custom integrations",
+			"enterprise[5]": "White-label options",
+			"free": {
+				"0": "10 messages per month",
+				"1": "Full source code access",
+				"2": "All features included",
+				"3": "MIT License"
+			},
+			"free[0]": "10 messages per month",
+			"free[1]": "Full source code access",
+			"free[2]": "All features included",
+			"free[3]": "MIT License",
+			"pro": {
+				"0": "Unlimited messages",
+				"1": "Full source code access",
+				"2": "All features included",
+				"3": "Priority support"
+			},
+			"pro[0]": "Unlimited messages",
+			"pro[1]": "Full source code access",
+			"pro[2]": "All features included",
+			"pro[3]": "Priority support"
+		},
+		"popular_badge": "Popular",
+		"section_label": "Pricing",
+		"tiers": {
+			"enterprise": {
+				"button": "Contact Sales",
+				"description": "For organizations with specific requirements",
+				"name": "Enterprise",
+				"price": "Custom"
+			},
+			"free": {
+				"button": "Free Forever",
+				"button_manage": "Manage Subscription",
+				"description": "Perfect for getting started",
+				"name": "Free",
+				"price": "$0 / month"
+			},
+			"pro": {
+				"button": "Upgrade to Pro",
+				"button_loading": "Processing...",
+				"button_manage": "Manage Subscription",
+				"description": "Unlimited messages and priority support",
+				"name": "Pro",
+				"price": "$10 / month"
+			}
+		},
+		"title": "Pricing that Scales with You"
+	},
+	"search": {
+		"command": {
+			"dialog_description": "Search for a page to navigate to.",
+			"dialog_title": "Search pages",
+			"footer": {
+				"go_to_page": "Go to page",
+				"open_new_tab": "Click to open in new tab"
+			},
+			"groups": {
+				"admin": "Admin",
+				"app": "App",
+				"authentication": "Authentication",
+				"public": "Public"
+			},
+			"input_placeholder": "Search pages...",
+			"no_results": "No results found.",
+			"trigger_aria_label": "Open search",
+			"trigger_desktop": "Search pages...",
+			"trigger_mobile": "Search..."
+		}
+	},
+	"settings": {
+		"account": {
+			"avatar": {
+				"alt": "Profile preview",
+				"ready": "Image ready to save",
+				"removed": "Image removed - click Save to confirm",
+				"select_error": "Please select an image file",
+				"size_error": "Image must be less than {size}",
+				"upload_failed": "Failed to upload image"
+			},
+			"description": "Update your account information here.",
+			"error": "Failed to update profile",
+			"file_helper": "PNG, JPG, or GIF up to 2MB.",
+			"link_from_url": "Link from URL",
+			"name": {
+				"placeholder": "Your name"
+			},
+			"name_helper": "This is your public display name.",
+			"name_label": "Name",
+			"no_image": "No image",
+			"or": "or",
+			"profile_picture": "Profile picture",
+			"profile_picture_helper": "Upload an image or paste a link. We recommend a square image under 2MB.",
+			"remove_button": "Remove",
+			"save_button": "Save Changes",
+			"saving": "Saving...",
+			"success": "Profile updated successfully",
+			"title": "Account Information",
+			"upload_file": "Upload a file",
+			"url_helper": "Paste an image link instead of uploading.",
+			"url_placeholder": "https://example.com/avatar.jpg"
+		},
+		"description": "Manage your account settings and preferences.",
+		"email": {
+			"current_email_label": "Current Email",
+			"description": "Update your email address for account notifications and login.",
+			"error_title": "Error",
+			"new_email_label": "New Email Address",
+			"not_verified_description": "Your current email is not verified. The new email will be updated immediately without verification.",
+			"not_verified_title": "Email Not Verified",
+			"placeholder": "Enter new email address",
+			"title": "Email Address",
+			"unverified_badge": "Unverified",
+			"update_button": "Update Email",
+			"updating": "Updating...",
+			"verification_required_description": "A verification email will be sent to your current email address. You must approve the change before your new email becomes active.",
+			"verification_required_title": "Verification Required",
+			"verified_badge": "Verified"
+		},
+		"password": {
+			"confirm_password_label": "Confirm New Password",
+			"current_password_label": "Current Password",
+			"description": "Update your password to keep your account secure.",
+			"error_title": "Error",
+			"new_password_label": "New Password",
+			"password_helper": "Must be at least 10 characters long.",
+			"placeholder": {
+				"confirm": "Confirm new password",
+				"current": "Enter current password",
+				"new": "Enter new password"
+			},
+			"revoke_sessions_label": "Sign out of all other devices",
+			"security_notice_description": "If enabled, changing your password signs you out on all other devices.",
+			"security_notice_title": "Security Notice",
+			"title": "Change Password",
+			"update_button": "Update Password",
+			"updating": "Updating..."
+		},
+		"security": {
+			"add_button": "Add Passkey",
+			"add_passkey_helper": "Give your passkey a name to identify which device it's registered on.",
+			"add_passkey_title": "Add a Passkey",
+			"adding": "Adding...",
+			"created_at": "Created ",
+			"delete_passkey": "Delete passkey",
+			"description": "Manage your passkeys and security settings.",
+			"error_title": "Error",
+			"loading": "Loading passkeys...",
+			"no_passkeys": "You haven't registered any passkeys yet.",
+			"passkey": {
+				"placeholder": "Passkey name",
+				"unnamed": "Unnamed Passkey"
+			},
+			"passkey_delete_failed": "Failed to delete passkey",
+			"passkey_deleted": "Passkey removed",
+			"passkey_info_description": "Passkeys are a secure, passwordless way to sign in. They use biometrics or device PIN and are stored securely on your devices.",
+			"passkey_info_title": "What are Passkeys?",
+			"passkey_name_label": "Passkey name",
+			"passkey_undo": "Undo",
+			"title": "Security",
+			"your_passkeys_title": "Your Passkeys"
+		},
+		"tabs": {
+			"account": "Account",
+			"email": "Email",
+			"password": "Password",
+			"security": "Security"
+		},
+		"title": "Settings"
+	},
+	"support": {
+		"avatar": {
+			"team_member": "Team member"
+		},
+		"button": {
+			"start_new_conversation": "Start a new conversation"
+		},
+		"chatbar": {
+			"placeholder": "Ask me anything..."
+		},
+		"greeting": {
+			"hi": "Hi",
+			"how_can_we_help": "How can we help you today?"
+		},
+		"header": {
+			"support_team": "Support Team"
+		},
+		"message": {
+			"role_kai": "Kai",
+			"role_support": "Support",
+			"role_you": "You"
+		},
+		"screenshot": {
+			"action": {
+				"cancel": "Cancel (Esc)",
+				"redo": "Redo (Ctrl+Shift+Z)",
+				"undo": "Undo (Ctrl+Z)"
+			},
+			"aria_label": "Screenshot editor",
+			"capture_failed": "Failed to capture screenshot. Check console for details.",
+			"capturing": "Capturing...",
+			"next": "Bug Marked",
+			"tool": {
+				"arrow": "Arrow (A)",
+				"circle": "Circle (C)",
+				"color": "Change Color",
+				"pen": "Pen (P)",
+				"rectangle": "Rectangle (R)"
+			}
+		},
+		"suggestion": {
+			"bug_report_label": "Report an issue",
+			"bug_report_text": "I found a bug!",
+			"feature_request_label": "Request a feature",
+			"feature_request_text": "I would love to see",
+			"help_label": "Help me with...",
+			"help_text": "Help me set up the project.",
+			"question_label": "Ask a question",
+			"question_text": "Why Co-Pilot?"
+		},
+		"thread": {
+			"new_conversation": "New conversation"
+		},
+		"time": {
+			"days_ago": "{days} days ago",
+			"few_seconds_ago": "a few seconds ago",
+			"hours_ago": "{hours} hours ago",
+			"just_now": "just now",
+			"minutes_ago": "{minutes} minutes ago",
+			"one_hour_ago": "1 hour ago",
+			"one_minute_ago": "1 minute ago",
+			"yesterday": "yesterday"
+		},
+		"widget": {
+			"error": {
+				"rate_limit": "Slow down! Please wait {seconds}s before sending another message.",
+				"send_failed": "Failed to send message. Please try again."
+			},
+			"header": {
+				"bot_response": "Our bot will reply instantly",
+				"messages": "Messages",
+				"with_team": "Your request is with our team"
+			},
+			"input": {
+				"placeholder": "Type a message or click a suggestion...",
+				"placeholder_no_suggestions": "Type a message..."
+			}
+		}
+	},
+	"team": {
+		"description": "During the working process, we perform regular fitting with the client because he is the only person who can feel whether a new suit fits or not.",
+		"linktree": "Linktree",
+		"roles": {
+			"cofounder_cto": "Co-Founder - CTO",
+			"founder_ceo": "Founder - CEO",
+			"interaction_designer": "Interaction Designer",
+			"sales_manager": "Sales Manager",
+			"ux_engineer": "UX Engineer",
+			"visual_designer": "Visual Designer"
+		},
+		"section_label": "Team",
+		"title": "Our dream team"
+	},
+	"validation": {
+		"confirm_password": {
+			"mismatch": "Passwords do not match.",
+			"required": "Please confirm your password."
+		},
+		"email": {
+			"invalid": "Please enter a valid email address.",
+			"required": "Please enter your email address."
+		},
+		"name": {
+			"required": "Please enter your name."
+		},
+		"password": {
+			"lowercase": "Password must contain at least one lowercase letter.",
+			"min_length": "Password must be at least {count, number} characters.",
+			"number": "Password must contain at least one number.",
+			"required": "Please enter your password.",
+			"uppercase": "Password must contain at least one uppercase letter."
+		}
+	}
+}
