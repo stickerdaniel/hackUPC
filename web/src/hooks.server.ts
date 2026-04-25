@@ -88,6 +88,19 @@ export function shouldBypassLanguageRedirect(pathname: string): boolean {
 }
 
 /**
+ * Redirect www.hpcp.work (and any future www.*) to the apex hostname.
+ * Runs first so all downstream hooks see the canonical host.
+ */
+const handleWwwRedirect: Handle = async function handleWwwRedirect({ event, resolve }) {
+	if (event.url.host.startsWith('www.')) {
+		const target = new URL(event.url.href);
+		target.host = event.url.host.slice(4);
+		redirect(301, target.href);
+	}
+	return resolve(event);
+};
+
+/**
  * Block access to dev-only routes in production
  */
 const handleDevOnlyRoutes: Handle = async function handleDevOnlyRoutes({ event, resolve }) {
@@ -249,6 +262,7 @@ const handleSecurityHeaders: Handle = async function handleSecurityHeaders({ eve
 
 export const handle = sequence(
 	...(PUBLIC_SENTRY_DSN ? [Sentry.sentryHandle()] : []),
+	handleWwwRedirect,
 	handleDevOnlyRoutes,
 	handleAuth,
 	handleMarketingMarkdown,

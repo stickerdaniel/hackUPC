@@ -6,7 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 minify = true
 
 routes = [
-  { pattern = "hpcp.work", custom_domain = true }
+  { pattern = "hpcp.work", custom_domain = true },
+  { pattern = "www.hpcp.work", custom_domain = true }
 ]
 
 [assets]

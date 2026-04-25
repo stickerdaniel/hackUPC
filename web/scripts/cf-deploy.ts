@@ -23,4 +23,36 @@ if (isPreview && branch) {
 }
 
 const result = spawnSync('bunx', args, { stdio: 'inherit' });
+
+// On successful production deploys, purge the CF cache so the custom domain
+// doesn't serve stale HTML. Skipped for previews and when env is not configured.
+if (result.status === 0 && !isPreview) {
+	const zoneId = process.env.CF_ZONE_ID;
+	const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+	if (zoneId && apiToken) {
+		console.log('Purging Cloudflare cache...');
+		const purge = spawnSync(
+			'curl',
+			[
+				'-fsS',
+				'-X',
+				'POST',
+				`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`,
+				'-H',
+				`Authorization: Bearer ${apiToken}`,
+				'-H',
+				'Content-Type: application/json',
+				'-d',
+				'{"purge_everything":true}'
+			],
+			{ stdio: 'inherit' }
+		);
+		if (purge.status !== 0) {
+			console.warn('Cache purge failed (non-fatal, deploy already succeeded)');
+		}
+	} else {
+		console.warn('Skipping cache purge: CF_ZONE_ID or CLOUDFLARE_API_TOKEN not set');
+	}
+}
+
 process.exit(result.status ?? 1);
