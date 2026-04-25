@@ -1,8 +1,8 @@
 <div align="center">
-  <h1>hackUPC — When AI meets reality</h1>
+  <h1>A digital twin for the HP Metal Jet S100.</h1>
 
   <p>
-    A deterministic, coupled digital twin of the <strong>HP Metal Jet S100</strong> — six components across three subsystems, sensors that fail too, and an AI maintenance agent that learns to tell sensor faults from component faults. Live weather, a stochastic chaos layer, and an ML surrogate for the heater are wired in as bonus levers.
+    Deterministic and coupled — six components across three subsystems, sensors that fail too, and an AI maintenance agent that learns to tell sensor faults from component faults. Live weather, a stochastic chaos layer, and an ML surrogate for the heater are wired in as bonus levers.
   </p>
 
   <p>
