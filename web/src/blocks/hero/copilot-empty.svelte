@@ -4,9 +4,10 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
-	import { useConvexClient } from 'convex-svelte';
+	import { useConvexClient, useQuery } from 'convex-svelte';
 	import { toast } from 'svelte-sonner';
 	import { VoiceInput } from '$lib/chat/voice/use-voice-input.svelte';
+	import { api } from '$lib/convex/_generated/api';
 
 	const { t } = getTranslate();
 	const auth = useAuth();
@@ -22,38 +23,156 @@
 		CRITICAL: 'critical',
 		FAILED: 'failed'
 	} as const;
+	type StatusKey = keyof typeof STATUS_LABELS;
 
-	const scenario = {
+	// Mockup fallback — used for unauthenticated visitors (most marketing
+	// traffic). The moment a viewer is signed in AND has at least one run
+	// in the historian, the LIVE eyebrow + the KPI pill row are overwritten
+	// with real data; the decorative printer-illustration card on the right
+	// keeps the mockup so the hero stays visually stable for all visitors.
+	const MOCKUP_SCENARIO = {
 		label: 'Phoenix',
 		duty: 0.62,
-		overall: 'CRITICAL' as keyof typeof STATUS_LABELS,
+		overall: 'CRITICAL' as StatusKey,
 		components: {
-			recoater_blade: { health: 0.62, status: 'DEGRADED' },
-			linear_rail: { health: 0.78, status: 'FUNCTIONAL' },
-			nozzle_plate: { health: 0.31, status: 'CRITICAL' },
-			cleaning_interface: { health: 0.69, status: 'DEGRADED' },
-			heating_elements: { health: 0.48, status: 'CRITICAL' },
-			temp_sensor: { health: 0.83, status: 'FUNCTIONAL' }
+			recoater_blade: { health: 0.62, status: 'DEGRADED' as StatusKey },
+			linear_rail: { health: 0.78, status: 'FUNCTIONAL' as StatusKey },
+			nozzle_plate: { health: 0.31, status: 'CRITICAL' as StatusKey },
+			cleaning_interface: { health: 0.69, status: 'DEGRADED' as StatusKey },
+			heating_elements: { health: 0.48, status: 'CRITICAL' as StatusKey },
+			temp_sensor: { health: 0.83, status: 'FUNCTIONAL' as StatusKey }
 		}
 	} as const;
+	// Alias the right-side printer-illustration card to the mockup. That
+	// element is decorative; making it live too would force layout shifts
+	// every tick and add no information beyond the KPI pills below.
+	const scenario = MOCKUP_SCENARIO;
 
-	const subsystems = [
+	// ──────────────────────────────────────────────────────────────────────
+	// Live wall-clock — replaces the hardcoded TICK 14:08:32 string so the
+	// "LIVE" eyebrow is at minimum a real ticking clock for every visitor,
+	// not a fake timestamp.
+	// ──────────────────────────────────────────────────────────────────────
+	let now = $state(new Date());
+	$effect(() => {
+		const id = setInterval(() => {
+			now = new Date();
+		}, 1000);
+		return () => clearInterval(id);
+	});
+	const wallClock = $derived(
+		`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+	);
+
+	// ──────────────────────────────────────────────────────────────────────
+	// Real run data — only fired for authenticated visitors. `useQuery` is
+	// safe on prerendered marketing pages: it stays in a loading state on
+	// the SSR pass and resubscribes after hydration once the auth cookie
+	// is read by the Convex client.
+	// ──────────────────────────────────────────────────────────────────────
+	const runsQuery = useQuery(api.sim.queries.listMyRuns, () =>
+		auth.isAuthenticated ? { limit: 1 } : 'skip'
+	);
+	const latestRun = $derived(runsQuery.data?.[0] ?? null);
+	const stateQuery = useQuery(api.sim.queries.getStateAtTick, () =>
+		latestRun && latestRun.lastTick !== undefined && latestRun.lastTick !== null
+			? { runId: latestRun._id, tick: latestRun.lastTick }
+			: 'skip'
+	);
+	const liveState = $derived(stateQuery.data);
+
+	function statusFromHealth(h: number): StatusKey {
+		if (h >= 0.75) return 'FUNCTIONAL';
+		if (h >= 0.4) return 'DEGRADED';
+		if (h >= 0.15) return 'CRITICAL';
+		return 'FAILED';
+	}
+	const STATUS_RANK: Record<StatusKey, number> = {
+		FUNCTIONAL: 0,
+		DEGRADED: 1,
+		CRITICAL: 2,
+		FAILED: 3
+	};
+	function worstOf(parts: { health: number; status: StatusKey }[]): {
+		health: number;
+		status: StatusKey;
+	} {
+		let worst = parts[0]!;
+		for (const p of parts) {
+			if (STATUS_RANK[p.status] > STATUS_RANK[worst.status]) worst = p;
+		}
+		return worst;
+	}
+
+	const realScenario = $derived.by(() => {
+		if (!latestRun || !liveState) return null;
+		const byId: Record<string, { health: number; status: StatusKey }> = {};
+		for (const c of liveState.components) {
+			const status = (c.status in STATUS_LABELS ? c.status : 'FUNCTIONAL') as StatusKey;
+			byId[c.componentId] = { health: c.healthIndex, status };
+		}
+		const blade = byId.blade ?? { health: 1, status: 'FUNCTIONAL' };
+		const rail = byId.rail ?? { health: 1, status: 'FUNCTIONAL' };
+		const nozzle = byId.nozzle ?? { health: 1, status: 'FUNCTIONAL' };
+		const cleaning = byId.cleaning ?? { health: 1, status: 'FUNCTIONAL' };
+		const heater = byId.heater ?? { health: 1, status: 'FUNCTIONAL' };
+		const sensor = byId.sensor ?? { health: 1, status: 'FUNCTIONAL' };
+		const subsystemMap = {
+			recoating: worstOf([blade, rail]),
+			printhead: worstOf([nozzle, cleaning]),
+			thermal: worstOf([heater, sensor])
+		};
+		const overall = worstOf([
+			subsystemMap.recoating,
+			subsystemMap.printhead,
+			subsystemMap.thermal
+		]).status;
+		return {
+			label: latestRun.scenarioName,
+			overall,
+			subsystems: subsystemMap
+		};
+	});
+
+	// Effective values — real when available, mockup otherwise.
+	const overall = $derived<StatusKey>(realScenario?.overall ?? MOCKUP_SCENARIO.overall);
+	const scenarioLabel = $derived(realScenario?.label ?? MOCKUP_SCENARIO.label);
+	const subsystems = $derived([
 		{
 			id: 'recoating',
 			label: 'Recoating',
-			worst: scenario.components.recoater_blade
+			worst: realScenario?.subsystems.recoating ?? {
+				health: MOCKUP_SCENARIO.components.recoater_blade.health,
+				status: MOCKUP_SCENARIO.components.recoater_blade.status
+			}
 		},
 		{
 			id: 'printhead',
 			label: 'Printhead',
-			worst: scenario.components.nozzle_plate
+			worst: realScenario?.subsystems.printhead ?? {
+				health: MOCKUP_SCENARIO.components.nozzle_plate.health,
+				status: MOCKUP_SCENARIO.components.nozzle_plate.status
+			}
 		},
 		{
 			id: 'thermal',
 			label: 'Thermal',
-			worst: scenario.components.heating_elements
+			worst: realScenario?.subsystems.thermal ?? {
+				health: MOCKUP_SCENARIO.components.heating_elements.health,
+				status: MOCKUP_SCENARIO.components.heating_elements.status
+			}
 		}
-	];
+	]);
+
+	// Tick line — real `TICK N/HORIZON` when we have a live run, wall-clock
+	// otherwise. Either way, never a hardcoded string.
+	const tickLabel = $derived.by(() => {
+		if (latestRun && latestRun.lastTick !== undefined && latestRun.lastTick !== null) {
+			const horizon = latestRun.horizonTicks ?? '?';
+			return `TICK ${latestRun.lastTick}/${horizon}`;
+		}
+		return wallClock;
+	});
 
 	const suggestedPromptKeys = [
 		'hero.prompt_suggestion_1',
@@ -122,14 +241,14 @@
 			<div class="empty-left">
 				<div class="eyebrow-clean mono">
 					<span class="eyebrow-tick"></span>
-					<span>DIGITAL TWIN · LIVE · TICK 14:08:32</span>
+					<span>DIGITAL TWIN · LIVE · {tickLabel}</span>
 				</div>
 
 				<h1 class="hero-title-clean">
 					<span class="hero-title-line"
 						>{$t('hero.printer_is_prefix')}
-						<span class="hero-title-status" data-sev={scenario.overall}
-							>{printerStatusLabel(scenario.overall)}</span
+						<span class="hero-title-status" data-sev={overall}
+							>{printerStatusLabel(overall)}</span
 						>.</span
 					>
 					<span class="hero-title-line hero-title-soft">{$t('hero.ask_why')}</span>
@@ -235,8 +354,8 @@
 					<div class="kpi-pill">
 						<span class="kpi-label">Printer</span>
 						<span class="kpi-val">S100-01</span>
-						<span class="kpi-dot" data-sev={scenario.overall}></span>
-						<span class="kpi-val kpi-val-strong">{scenario.overall}</span>
+						<span class="kpi-dot" data-sev={overall}></span>
+						<span class="kpi-val kpi-val-strong">{overall}</span>
 					</div>
 					{#each subsystems as ss (ss.id)}
 						<div class="kpi-pill">
@@ -247,7 +366,7 @@
 					{/each}
 					<div class="kpi-pill">
 						<span class="kpi-label">Scenario</span>
-						<span class="kpi-val">{scenario.label}</span>
+						<span class="kpi-val">{scenarioLabel}</span>
 					</div>
 				</div>
 			</div>
