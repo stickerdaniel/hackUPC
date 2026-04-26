@@ -1,20 +1,26 @@
 <script lang="ts">
 	import { scaleLinear } from 'd3-scale';
 	import { line as d3Line } from 'd3-shape';
+	import { useQuery } from 'convex-svelte';
+	import { useTimeWindow } from '$lib/dashboard/time-window.svelte';
+	import { api } from '$lib/convex/_generated/api';
+	import type { Id } from '$lib/convex/_generated/dataModel';
+
+	const { runId = null }: { runId?: Id<'simRuns'> | null } = $props();
 
 	// ──────────────────────────────────────────────────────────────────────
 	// SHARED — palette, constants
 	// ──────────────────────────────────────────────────────────────────────
 	const STATUS_COLORS = {
 		FUNCTIONAL: '#ECECEC',
-		DEGRADED: '#B8C2F5',
+		DEGRADED: '#6B7FE5',
 		CRITICAL: '#024AD8',
 		FAILED: '#0A0A0A'
 	} as const;
 	type Status = keyof typeof STATUS_COLORS;
 
-	const HORIZON = 200; // tick count for driver streams
-	const NOW_TICK = 145; // operational load goes flat after this tick
+	const HORIZON = 260; // tick count — matches health-timeline so the shared TimeWindow aligns
+	const NOW_TICK = 200; // operational load goes flat after this tick
 
 	// Deterministic pseudo-random
 	function noise(seed: number): number {
@@ -72,47 +78,38 @@
 		return out;
 	}
 
-	const driverData = DRIVERS.map((d) => ({ ...d, data: genDriver(d) }));
+	const syntheticDriverData = DRIVERS.map((d) => ({ ...d, data: genDriver(d) }));
 
-	// ──────────────────────────────────────────────────────────────────────
-	// Phase 2 time-window — shared by Driver streams + Proactive alerts.
-	// Mirrors the Streamlit panel-1 control (sim/.../streamlit_app.py:386-418)
-	// so the two surfaces speak the same vocabulary (6mo / 1y / 3y / all).
-	// Sizes are weekly ticks (dt = 1 week) per the latest sim contract.
-	// ──────────────────────────────────────────────────────────────────────
-	type WindowLabel = '6mo' | '1y' | '3y' | 'all';
-	const WINDOW_OPTIONS: { label: WindowLabel; size: number }[] = [
-		{ label: '6mo', size: 26 },
-		{ label: '1y', size: 52 },
-		{ label: '3y', size: 156 },
-		{ label: 'all', size: HORIZON }
-	];
-	const labelToSize = (l: WindowLabel) =>
-		WINDOW_OPTIONS.find((w) => w.label === l)?.size ?? HORIZON;
-
-	let windowLabel = $state<WindowLabel>('1y');
-	let startTick = $state(0);
-
-	const windowSize = $derived(labelToSize(windowLabel));
-	const upperStart = $derived(Math.max(0, HORIZON - windowSize));
-	// Clamp the start tick whenever the window resizes (e.g. zooming out
-	// past the right edge after the user picked "all").
-	$effect(() => {
-		if (startTick > upperStart) startTick = upperStart;
+	// Real driver streams from the historian. One query, returns 4 series in
+	// a single payload — cheaper than 4 separate queries per component.
+	const driversTSQuery = useQuery(api.sim.queries.getDriversTimeseries, () =>
+		runId ? { runId } : 'skip'
+	);
+	const realDriverData = $derived.by(() => {
+		const rows = driversTSQuery.data;
+		if (!runId || !rows || rows.length === 0) return null;
+		const map: Record<Driver['id'], Point[]> = {
+			temperature_stress: rows.map((r) => ({ tick: r.tick, v: r.temperatureStress })),
+			humidity_contamination: rows.map((r) => ({ tick: r.tick, v: r.humidityContamination })),
+			operational_load: rows.map((r) => ({ tick: r.tick, v: r.operationalLoad })),
+			maintenance_level: rows.map((r) => ({ tick: r.tick, v: r.maintenanceLevel }))
+		};
+		return DRIVERS.map((d) => ({ ...d, data: map[d.id] }));
 	});
-	const endTick = $derived(Math.min(HORIZON, startTick + windowSize));
-	const panStep = $derived(Math.max(1, Math.floor(windowSize / 2)));
-	const atLeft = $derived(startTick <= 0);
-	const atRight = $derived(startTick >= upperStart);
 
-	function panPrev() {
-		if (atLeft) return;
-		startTick = Math.max(0, startTick - panStep);
-	}
-	function panNext() {
-		if (atRight) return;
-		startTick = Math.min(upperStart, startTick + panStep);
-	}
+	const driverData = $derived(realDriverData ?? syntheticDriverData);
+
+	// ──────────────────────────────────────────────────────────────────────
+	// Phase 2 time-window — provided by the dashboard so the same selector
+	// drives Component health over time AND the driver/alerts block.
+	// Falls back to a local instance when this block is rendered standalone.
+	// Mirrors the Streamlit panel-1 control (sim/.../streamlit_app.py:386-418).
+	// ──────────────────────────────────────────────────────────────────────
+	const tw = useTimeWindow(HORIZON);
+
+	const startTick = $derived(tw.startTick);
+	const endTick = $derived(tw.endTick);
+	const windowLabel = $derived(tw.windowLabel);
 
 	// Filter driver and alerts data to the selected window.
 	const visibleDriverData = $derived(
@@ -265,18 +262,38 @@
 	];
 
 	const SEVERITY_COLOR: Record<AlertSeverity, string> = {
-		CRITICAL: '#024AD8',
-		FAILED: '#024AD8',
-		DEGRADED: '#E0A93B'
+		CRITICAL: STATUS_COLORS.CRITICAL,
+		FAILED: STATUS_COLORS.FAILED,
+		DEGRADED: STATUS_COLORS.DEGRADED
 	};
 
 	function fmtDriverValue(v: number): string {
 		return v.toFixed(3);
 	}
 
-	const visibleAlerts = $derived(
-		PROACTIVE_ALERTS.filter((a) => a.tick >= startTick && a.tick < endTick)
+	// Real status transitions from the historian. The Convex query also joins
+	// in the dominant coupling factor at each transition tick so the alert
+	// row can show "top driver = X" without a second round-trip.
+	const transitionsQuery = useQuery(api.sim.queries.getStatusTransitionsWithDrivers, () =>
+		runId ? { runId } : 'skip'
 	);
+	const realAlerts = $derived.by((): ProactiveAlert[] | null => {
+		const rows = transitionsQuery.data;
+		if (!runId || !rows || rows.length === 0) return null;
+		// Show only DEGRADED / CRITICAL / FAILED — every component starts FUNCTIONAL.
+		const allowed = new Set<AlertSeverity>(['DEGRADED', 'CRITICAL', 'FAILED']);
+		return rows
+			.filter((r) => allowed.has(r.status as AlertSeverity))
+			.map((r) => ({
+				tick: r.firstTick,
+				component: r.componentId.toUpperCase(),
+				status: r.status as AlertSeverity,
+				topDriverKey: r.topDriverKey ?? '—',
+				topDriverValue: r.topDriverValue ?? 0
+			}));
+	});
+	const alertsList = $derived(realAlerts ?? PROACTIVE_ALERTS);
+	const visibleAlerts = $derived(alertsList.filter((a) => a.tick >= startTick && a.tick < endTick));
 
 	// ──────────────────────────────────────────────────────────────────────
 	// PANEL BOTTOM — Component degradation grid
@@ -360,10 +377,85 @@
 		return 'FUNCTIONAL';
 	}
 
-	const componentMatrix = COMPONENT_ROWS.map((row) => ({
+	const syntheticComponentMatrix = COMPONENT_ROWS.map((row) => ({
 		...row,
 		cells: Array.from({ length: BUCKETS }, (_, b) => statusAt(row, b))
 	}));
+
+	// Real component-state per row, downsampled to BUCKETS columns by the
+	// "worst status in the bucket" rule (FAILED > CRITICAL > DEGRADED > FUNCTIONAL)
+	// so a single FAILED tick in a bucket window paints the cell black.
+	const STATUS_RANK: Record<Status, number> = {
+		FUNCTIONAL: 0,
+		DEGRADED: 1,
+		CRITICAL: 2,
+		FAILED: 3
+	};
+
+	const cmpBladeQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'blade' as const } : 'skip'
+	);
+	const cmpRailQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'rail' as const } : 'skip'
+	);
+	const cmpNozzleQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'nozzle' as const } : 'skip'
+	);
+	const cmpCleaningQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'cleaning' as const } : 'skip'
+	);
+	const cmpHeaterQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'heater' as const } : 'skip'
+	);
+	const cmpSensorQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'sensor' as const } : 'skip'
+	);
+
+	type CmpRow = { tick: number; status: string };
+	function downsampleStatuses(rows: CmpRow[] | undefined, runHorizon: number): Status[] {
+		if (!rows || rows.length === 0) return Array(BUCKETS).fill('FUNCTIONAL' as Status);
+		const cells: Status[] = Array(BUCKETS).fill('FUNCTIONAL' as Status);
+		const ranks: number[] = Array(BUCKETS).fill(0);
+		for (const r of rows) {
+			const b = Math.min(BUCKETS - 1, Math.floor((r.tick / Math.max(1, runHorizon)) * BUCKETS));
+			const s = (r.status in STATUS_RANK ? r.status : 'FUNCTIONAL') as Status;
+			const rank = STATUS_RANK[s];
+			if (rank >= (ranks[b] ?? 0)) {
+				ranks[b] = rank;
+				cells[b] = s;
+			}
+		}
+		return cells;
+	}
+
+	const realComponentMatrix = $derived.by(() => {
+		if (!runId) return null;
+		const byId: Record<string, CmpRow[] | undefined> = {
+			blade: cmpBladeQ.data,
+			rail: cmpRailQ.data,
+			nozzle: cmpNozzleQ.data,
+			cleaning: cmpCleaningQ.data,
+			heater: cmpHeaterQ.data,
+			sensor: cmpSensorQ.data
+		};
+		// Block until at least one query returns; rows that haven't loaded yet
+		// just render as FUNCTIONAL filler in the meantime.
+		const anyLoaded = Object.values(byId).some((r) => Array.isArray(r) && r.length > 0);
+		if (!anyLoaded) return null;
+		const horizon = Math.max(
+			...Object.values(byId).map((rows) => {
+				if (!rows || rows.length === 0) return 0;
+				const last = rows[rows.length - 1];
+				return last ? last.tick : 0;
+			})
+		);
+		return COMPONENT_ROWS.map((row) => ({
+			...row,
+			cells: downsampleStatuses(byId[row.id], horizon)
+		}));
+	});
+
+	const componentMatrix = $derived(realComponentMatrix ?? syntheticComponentMatrix);
 
 	// Status snapshot — pinned to NP-003 at NOW (matches Phoenix scenario)
 	const snapshot = {
@@ -418,36 +510,13 @@
 <section class="dcd">
 	<!-- ────────── TOP: Phase 2 — Driver streams + Proactive alerts (shared time window) ────────── -->
 	<div class="dcd-block">
-		<header class="dcd-head dcd-head-with-control">
-			<div>
-				<div class="dcd-eyebrow">Phase 2 / Brief inputs · Autonomy preview</div>
-				<h2 class="dcd-title">Driver streams &amp; proactive alerts</h2>
-				<p class="dcd-sub">
-					Four engine inputs and the alerts the autonomous agent would have raised, scoped to the
-					same time window.
-				</p>
-			</div>
-
-			<div class="dcd-window" role="group">
-				<button type="button" class="dcd-window-arrow" disabled={atLeft} onclick={panPrev}>
-					←
-				</button>
-				<div class="dcd-window-pills" role="group">
-					{#each WINDOW_OPTIONS as opt (opt.label)}
-						<button
-							type="button"
-							class="dcd-window-pill"
-							class:is-active={windowLabel === opt.label}
-							onclick={() => (windowLabel = opt.label)}
-						>
-							{opt.label}
-						</button>
-					{/each}
-				</div>
-				<button type="button" class="dcd-window-arrow" disabled={atRight} onclick={panNext}>
-					→
-				</button>
-			</div>
+		<header class="dcd-head">
+			<div class="dcd-eyebrow">Phase 2 / Brief inputs · Autonomy preview</div>
+			<h2 class="dcd-title">Driver streams &amp; proactive alerts</h2>
+			<p class="dcd-sub">
+				Four engine inputs and the alerts the autonomous agent would have raised, scoped to the same
+				time window selected above.
+			</p>
 		</header>
 
 		<div class="dcd-window-meta">
@@ -458,7 +527,7 @@
 			window <span class="dcd-mono">{windowLabel}</span>
 			<span class="dcd-meta-sep">·</span>
 			alerts in window <span class="dcd-mono">{visibleAlerts.length}</span> /
-			<span class="dcd-mono">{PROACTIVE_ALERTS.length}</span>
+			<span class="dcd-mono">{alertsList.length}</span>
 		</div>
 
 		<div class="dcd-block-split dcd-block-split-inner">
@@ -796,82 +865,12 @@
 		}
 	}
 
-	/* ─── Shared header row + time-window control (Phase 2) ─── */
-	.dcd-head-with-control {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 24px;
-		flex-wrap: wrap;
-	}
+	/* ─── Header sub-line + window meta strip (Phase 2) ─── */
 	.dcd-sub {
 		margin: 6px 0 0;
 		font-size: 12px;
 		color: var(--fg-3);
 		max-width: 56ch;
-	}
-	.dcd-window {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		flex-shrink: 0;
-	}
-	.dcd-window-arrow {
-		appearance: none;
-		background: var(--surface);
-		border: 1px solid var(--line);
-		border-radius: 8px;
-		min-width: 60px;
-		height: 32px;
-		font-size: 14px;
-		font-family: var(--sans);
-		color: var(--fg);
-		cursor: pointer;
-		transition:
-			background 120ms,
-			color 120ms,
-			border-color 120ms;
-	}
-	.dcd-window-arrow:hover:not(:disabled) {
-		background: #f5f5f5;
-	}
-	.dcd-window-arrow:disabled {
-		color: var(--fg-4);
-		cursor: not-allowed;
-	}
-	.dcd-window-pills {
-		display: inline-flex;
-		border: 1px solid var(--line);
-		border-radius: 8px;
-		overflow: hidden;
-		background: var(--surface);
-	}
-	.dcd-window-pill {
-		appearance: none;
-		background: transparent;
-		border: none;
-		border-right: 1px solid var(--line);
-		padding: 0 14px;
-		height: 32px;
-		font-size: 12px;
-		font-weight: 600;
-		font-family: var(--sans);
-		color: var(--fg);
-		cursor: pointer;
-		letter-spacing: 0.04em;
-		transition:
-			background 120ms,
-			color 120ms;
-	}
-	.dcd-window-pill:last-child {
-		border-right: none;
-	}
-	.dcd-window-pill:hover {
-		background: #f5f5f5;
-	}
-	.dcd-window-pill.is-active {
-		background: var(--accent);
-		color: #ffffff;
 	}
 	.dcd-window-meta {
 		margin-top: 12px;
