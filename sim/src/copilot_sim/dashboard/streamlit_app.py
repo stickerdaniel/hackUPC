@@ -385,9 +385,7 @@ def _render_panel1(
     # equal distance from the segmented control's left/right edges.
     _, ctrl_col = st.columns([5, 4])
     with ctrl_col:
-        prev_col, range_col, next_col = st.columns(
-            [1, 1.8, 1], vertical_alignment="bottom"
-        )
+        prev_col, range_col, next_col = st.columns([1, 1.8, 1], vertical_alignment="bottom")
         # Compute disabled state from the CURRENT (pre-click) session state
         # so the button visuals are right after the previous interaction.
         cur_start = int(st.session_state["panel1_start_tick"])
