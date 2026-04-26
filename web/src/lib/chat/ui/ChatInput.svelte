@@ -265,7 +265,7 @@
 										{...props}
 										variant="outline"
 										size="icon"
-										class="size-9 rounded-full"
+										class="size-9 rounded-md"
 										onclick={handleCameraClick}
 										aria-label={$t('chat.tooltip.mark_bug')}
 									>
@@ -290,7 +290,7 @@
 												{...props}
 												variant="outline"
 												size="icon"
-												class="size-9 rounded-full"
+												class="size-9 rounded-md"
 												aria-label={$t('chat.tooltip.attach_files')}
 											>
 												<PaperclipIcon class="h-[18px] w-[18px]" />
@@ -328,7 +328,7 @@
 							size="icon"
 							disabled={!canSend}
 							onclick={handleSend}
-							class="size-9 shrink-0 rounded-full"
+							class="size-9 shrink-0 rounded-md"
 							aria-label={$t('chat.aria.send')}
 						>
 							{#if ctx.isProcessing && !isHandedOff}

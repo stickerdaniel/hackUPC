@@ -84,7 +84,10 @@
 		bind:ref
 		variant={variant || 'outline'}
 		size={size || 'lg'}
-		class={cn('rounded-md px-4', className)}
+		class={cn(
+			'rounded-md border-primary/30 bg-primary/5 px-4 text-primary hover:bg-primary/10 hover:text-primary',
+			className
+		)}
 		{onclick}
 		{disabled}
 		{type}
