@@ -1,7 +1,20 @@
 <script lang="ts">
 	import { getTranslate } from '@tolgee/svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { localizedHref } from '$lib/utils/i18n';
+	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
+	import { useConvexClient } from 'convex-svelte';
+	import { toast } from 'svelte-sonner';
+	import { VoiceInput } from '$lib/chat/voice/use-voice-input.svelte';
 
 	const { t } = getTranslate();
+	const auth = useAuth();
+	const convexClient = useConvexClient();
+	const voice = new VoiceInput(convexClient);
+
+	// Shared with ai-chat thread-chat.svelte (reads + clears on mount)
+	const PENDING_PROMPT_KEY = 'copilot.pendingPrompt';
 
 	const STATUS_LABELS = {
 		FUNCTIONAL: 'functional',
@@ -42,20 +55,54 @@
 		}
 	];
 
-	const suggestedPrompts = [
-		'Why did heater R1 drift at 14:00?',
-		"Will the recoater blade survive tonight's 8-hour job?",
-		'Compare Barcelona vs Phoenix at the same duty cycle.',
-		"What's the next component most likely to fail?"
-	];
+	const suggestedPromptKeys = [
+		'hero.prompt_suggestion_1',
+		'hero.prompt_suggestion_2',
+		'hero.prompt_suggestion_3',
+		'hero.prompt_suggestion_4'
+	] as const;
 
 	let prompt = $state('');
-	let voice = $state(false);
+	let promptInputEl: HTMLInputElement | null = $state(null);
+
+	function handleMicClick() {
+		voice.toggle({
+			target: promptInputEl,
+			getValue: () => prompt,
+			setValue: (next) => {
+				prompt = next;
+			},
+			onError: (kind) =>
+				toast.error(
+					kind === 'permission'
+						? $t('chat.error.mic_permission')
+						: $t('chat.error.transcription_failed')
+				)
+		});
+	}
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (!prompt.trim()) return;
-		// no-op for now — wired in a follow-up
+		const text = prompt.trim();
+		if (!text) return;
+
+		try {
+			sessionStorage.setItem(PENDING_PROMPT_KEY, text);
+		} catch {
+			// sessionStorage unavailable (private mode, etc.) — fall back to query param
+			const target = auth.isAuthenticated
+				? localizedHref('/app/ai-chat')
+				: localizedHref(`/signin?redirectTo=${encodeURIComponent(localizedHref('/app/ai-chat'))}`);
+			void goto(
+				resolve(`${target}${target.includes('?') ? '&' : '?'}draft=${encodeURIComponent(text)}`)
+			);
+			return;
+		}
+
+		const target = auth.isAuthenticated
+			? localizedHref('/app/ai-chat')
+			: localizedHref(`/signin?redirectTo=${encodeURIComponent(localizedHref('/app/ai-chat'))}`);
+		void goto(resolve(target));
 	}
 
 	function pickPrompt(text: string) {
@@ -63,6 +110,10 @@
 	}
 
 	const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+	function printerStatusLabel(status: keyof typeof STATUS_LABELS): string {
+		return $t(`printer_status.${STATUS_LABELS[status]}`);
+	}
 </script>
 
 <section class="copilot">
@@ -76,50 +127,83 @@
 
 				<h1 class="hero-title-clean">
 					<span class="hero-title-line"
-						>Your printer is <span class="hero-title-status" data-sev={scenario.overall}
-							>{STATUS_LABELS[scenario.overall]}</span
+						>{$t('hero.printer_is_prefix')}
+						<span class="hero-title-status" data-sev={scenario.overall}
+							>{printerStatusLabel(scenario.overall)}</span
 						>.</span
 					>
-					<span class="hero-title-line hero-title-soft">Ask it why.</span>
+					<span class="hero-title-line hero-title-soft">{$t('hero.ask_why')}</span>
 				</h1>
 
 				<p class="hero-sub-clean">
-					Every answer grounded in live simulation telemetry — never a guess.
+					{$t('hero.description')}
 				</p>
 
 				<form class="prompt-clean" onsubmit={handleSubmit}>
 					<input
 						class="prompt-input-clean"
-						placeholder="Ask your printer anything…"
+						placeholder={$t('hero.prompt_placeholder')}
 						bind:value={prompt}
+						bind:this={promptInputEl}
 					/>
 					<div class="prompt-actions-clean">
-						<button
-							type="button"
-							class="mic-btn"
-							class:is-on={voice}
-							onclick={() => (voice = !voice)}
-							aria-label={$t('a11y.copilot_voice')}
-							title={$t('a11y.copilot_voice')}
-						>
-							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-								<rect
-									x="6"
-									y="2"
-									width="4"
-									height="8"
-									rx="2"
-									stroke="currentColor"
-									stroke-width="1.4"
-								/>
-								<path
-									d="M3.5 8.5C3.5 11 5.5 13 8 13C10.5 13 12.5 11 12.5 8.5"
-									stroke="currentColor"
-									stroke-width="1.4"
-								/>
-								<line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.4" />
-							</svg>
-						</button>
+						{#if auth.isAuthenticated}
+							<button
+								type="button"
+								class="mic-btn"
+								class:is-on={voice.state === 'recording'}
+								disabled={voice.state === 'transcribing'}
+								onclick={handleMicClick}
+								aria-label={voice.state === 'recording'
+									? $t('chat.tooltip.stop_recording')
+									: $t('chat.tooltip.start_recording')}
+								title={voice.state === 'recording'
+									? $t('chat.tooltip.stop_recording')
+									: $t('chat.tooltip.start_recording')}
+							>
+								{#if voice.state === 'recording'}
+									<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+										<rect x="2" y="2" width="10" height="10" fill="currentColor" />
+									</svg>
+								{:else if voice.state === 'transcribing'}
+									<svg
+										width="16"
+										height="16"
+										viewBox="0 0 16 16"
+										fill="none"
+										style="animation: copilot-pulse 1s ease-in-out infinite"
+									>
+										<circle
+											cx="8"
+											cy="8"
+											r="6"
+											stroke="currentColor"
+											stroke-width="1.4"
+											fill="none"
+											stroke-dasharray="20 8"
+										/>
+									</svg>
+								{:else}
+									<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+										<rect
+											x="6"
+											y="2"
+											width="4"
+											height="8"
+											rx="2"
+											stroke="currentColor"
+											stroke-width="1.4"
+										/>
+										<path
+											d="M3.5 8.5C3.5 11 5.5 13 8 13C10.5 13 12.5 11 12.5 8.5"
+											stroke="currentColor"
+											stroke-width="1.4"
+										/>
+										<line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.4" />
+									</svg>
+								{/if}
+							</button>
+						{/if}
 						<button
 							type="submit"
 							class="send-btn-clean"
@@ -140,9 +224,9 @@
 				</form>
 
 				<div class="chips-row">
-					{#each suggestedPrompts as text (text)}
-						<button type="button" class="chip-clean" onclick={() => pickPrompt(text)}>
-							{text}
+					{#each suggestedPromptKeys as key (key)}
+						<button type="button" class="chip-clean" onclick={() => pickPrompt($t(key))}>
+							{$t(key)}
 						</button>
 					{/each}
 				</div>
@@ -302,8 +386,14 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-start;
-		padding: 48px 40px 80px;
+		padding: 100px 40px 80px;
 		gap: 80px;
+	}
+
+	@media (max-width: 1000px) {
+		.empty-clean {
+			padding: 88px 24px 64px;
+		}
 	}
 
 	.empty-split {

@@ -1,20 +1,29 @@
 <script lang="ts">
+	import { getTranslate } from '@tolgee/svelte';
 	import { scaleLinear } from 'd3-scale';
 	import { line as d3Line } from 'd3-shape';
+	import { useQuery } from 'convex-svelte';
+	import { useTimeWindow } from '$lib/dashboard/time-window.svelte';
+	import { api } from '$lib/convex/_generated/api';
+	import type { Id } from '$lib/convex/_generated/dataModel';
+
+	const { t } = getTranslate();
+
+	const { runId = null }: { runId?: Id<'simRuns'> | null } = $props();
 
 	// ──────────────────────────────────────────────────────────────────────
 	// SHARED — palette, constants
 	// ──────────────────────────────────────────────────────────────────────
 	const STATUS_COLORS = {
 		FUNCTIONAL: '#ECECEC',
-		DEGRADED: '#B8C2F5',
+		DEGRADED: '#6B7FE5',
 		CRITICAL: '#024AD8',
 		FAILED: '#0A0A0A'
 	} as const;
 	type Status = keyof typeof STATUS_COLORS;
 
-	const HORIZON = 200; // tick count for driver streams
-	const NOW_TICK = 145; // operational load goes flat after this tick
+	const HORIZON = 260; // tick count — matches health-timeline so the shared TimeWindow aligns
+	const NOW_TICK = 200; // operational load goes flat after this tick
 
 	// Deterministic pseudo-random
 	function noise(seed: number): number {
@@ -27,14 +36,18 @@
 	// ──────────────────────────────────────────────────────────────────────
 	type Driver = {
 		id: 'temperature_stress' | 'humidity_contamination' | 'operational_load' | 'maintenance_level';
-		label: string;
+		labelKey: string;
 		flatten: boolean; // simulates "load shedding" — flat after NOW
 	};
 	const DRIVERS: Driver[] = [
-		{ id: 'temperature_stress', label: 'Temperature stress', flatten: false },
-		{ id: 'humidity_contamination', label: 'Humidity contamination', flatten: false },
-		{ id: 'operational_load', label: 'Operational load', flatten: true },
-		{ id: 'maintenance_level', label: 'Maintenance level', flatten: true }
+		{ id: 'temperature_stress', labelKey: 'sim_ui.drivers.temperature_stress', flatten: false },
+		{
+			id: 'humidity_contamination',
+			labelKey: 'sim_ui.drivers.humidity_contamination',
+			flatten: false
+		},
+		{ id: 'operational_load', labelKey: 'sim_ui.drivers.operational_load', flatten: true },
+		{ id: 'maintenance_level', labelKey: 'sim_ui.drivers.maintenance_level', flatten: true }
 	];
 
 	type Point = { tick: number; v: number };
@@ -72,7 +85,46 @@
 		return out;
 	}
 
-	const driverData = DRIVERS.map((d) => ({ ...d, data: genDriver(d) }));
+	const syntheticDriverData = DRIVERS.map((d) => ({ ...d, data: genDriver(d) }));
+
+	// Real driver streams from the historian. One query, returns 4 series in
+	// a single payload — cheaper than 4 separate queries per component.
+	const driversTSQuery = useQuery(api.sim.queries.getDriversTimeseries, () =>
+		runId ? { runId } : 'skip'
+	);
+	const realDriverData = $derived.by(() => {
+		const rows = driversTSQuery.data;
+		if (!runId || !rows || rows.length === 0) return null;
+		const map: Record<Driver['id'], Point[]> = {
+			temperature_stress: rows.map((r) => ({ tick: r.tick, v: r.temperatureStress })),
+			humidity_contamination: rows.map((r) => ({ tick: r.tick, v: r.humidityContamination })),
+			operational_load: rows.map((r) => ({ tick: r.tick, v: r.operationalLoad })),
+			maintenance_level: rows.map((r) => ({ tick: r.tick, v: r.maintenanceLevel }))
+		};
+		return DRIVERS.map((d) => ({ ...d, data: map[d.id] }));
+	});
+
+	const driverData = $derived(realDriverData ?? syntheticDriverData);
+
+	// ──────────────────────────────────────────────────────────────────────
+	// Phase 2 time-window — provided by the dashboard so the same selector
+	// drives Component health over time AND the driver/alerts block.
+	// Falls back to a local instance when this block is rendered standalone.
+	// Mirrors the Streamlit panel-1 control (sim/.../streamlit_app.py:386-418).
+	// ──────────────────────────────────────────────────────────────────────
+	const tw = useTimeWindow(HORIZON);
+
+	const startTick = $derived(tw.startTick);
+	const endTick = $derived(tw.endTick);
+	const windowLabel = $derived(tw.windowLabel);
+
+	// Filter driver and alerts data to the selected window.
+	const visibleDriverData = $derived(
+		driverData.map((d) => ({
+			...d,
+			data: d.data.filter((p) => p.tick >= startTick && p.tick < endTick)
+		}))
+	);
 
 	// Sparkline geometry (per strip) — compact so two columns fit side-by-side
 	const sparkW = 600;
@@ -82,11 +134,17 @@
 	const sparkInnerW = sparkW - sparkPadX * 2;
 	const sparkInnerH = sparkH - sparkPadY * 2;
 
-	const xSpark = scaleLinear().domain([0, HORIZON]).range([0, sparkInnerW]);
+	const xSpark = $derived(
+		scaleLinear()
+			.domain([startTick, Math.max(startTick + 1, endTick - 1)])
+			.range([0, sparkInnerW])
+	);
 	const ySpark = scaleLinear().domain([0, 1]).range([sparkInnerH, 0]);
-	const sparkLine = d3Line<Point>()
-		.x((d) => xSpark(d.tick))
-		.y((d) => ySpark(d.v));
+	const sparkLine = $derived(
+		d3Line<Point>()
+			.x((d) => xSpark(d.tick))
+			.y((d) => ySpark(d.v))
+	);
 
 	type SparkHover = {
 		driverId: Driver['id'];
@@ -107,7 +165,9 @@
 			sparkHover = null;
 			return;
 		}
-		const tick = Math.max(0, Math.min(HORIZON, Math.round(xSpark.invert(sx))));
+		// Invert with the windowed scale, then clamp to the visible range.
+		const raw = Math.round(xSpark.invert(sx));
+		const tick = Math.max(startTick, Math.min(endTick - 1, raw));
 		const point = d.data[tick];
 		if (!point) {
 			sparkHover = null;
@@ -134,9 +194,10 @@
 	// Placeholder data; will be derived from the active simulation run.
 	// ──────────────────────────────────────────────────────────────────────
 	type AlertSeverity = 'CRITICAL' | 'FAILED' | 'DEGRADED';
+	type ComponentId = 'blade' | 'rail' | 'nozzle' | 'cleaning' | 'heater' | 'sensor';
 	type ProactiveAlert = {
 		tick: number;
-		component: string;
+		component: ComponentId;
 		status: AlertSeverity;
 		topDriverKey: string;
 		topDriverValue: number;
@@ -145,78 +206,106 @@
 	const PROACTIVE_ALERTS: ProactiveAlert[] = [
 		{
 			tick: 31,
-			component: 'HEATER',
+			component: 'heater',
 			status: 'CRITICAL',
 			topDriverKey: 'cleaning_efficiency',
 			topDriverValue: 0.834
 		},
 		{
 			tick: 38,
-			component: 'RAIL',
+			component: 'rail',
 			status: 'CRITICAL',
 			topDriverKey: 'powder_spread_quality',
 			topDriverValue: 0.705
 		},
 		{
 			tick: 39,
-			component: 'BLADE',
+			component: 'blade',
 			status: 'CRITICAL',
 			topDriverKey: 'powder_spread_quality',
 			topDriverValue: 0.689
 		},
 		{
 			tick: 43,
-			component: 'CLEANING',
+			component: 'cleaning',
 			status: 'CRITICAL',
 			topDriverKey: 'powder_spread_quality',
 			topDriverValue: 0.848
 		},
 		{
 			tick: 58,
-			component: 'BLADE',
+			component: 'blade',
 			status: 'FAILED',
 			topDriverKey: 'cleaning_efficiency',
 			topDriverValue: 0.853
 		},
 		{
 			tick: 58,
-			component: 'RAIL',
+			component: 'rail',
 			status: 'FAILED',
 			topDriverKey: 'cleaning_efficiency',
 			topDriverValue: 0.853
 		},
 		{
 			tick: 62,
-			component: 'HEATER',
+			component: 'heater',
 			status: 'FAILED',
 			topDriverKey: 'powder_spread_quality',
 			topDriverValue: 0.948
 		},
 		{
 			tick: 109,
-			component: 'CLEANING',
+			component: 'cleaning',
 			status: 'FAILED',
 			topDriverKey: 'powder_spread_quality',
 			topDriverValue: 0.782
 		},
 		{
 			tick: 224,
-			component: 'SENSOR',
+			component: 'sensor',
 			status: 'DEGRADED',
 			topDriverKey: 'blade_loss_frac',
 			topDriverValue: 1.0
 		}
 	];
 
+	// Distinct palette for the alerts feed — independent of the heatmap's
+	// STATUS_COLORS so the right column reads as a notification log
+	// (amber = caution, mid-blue = critical, electric blue = failed) rather
+	// than as another swatch from the degradation grid.
 	const SEVERITY_COLOR: Record<AlertSeverity, string> = {
-		CRITICAL: '#024AD8',
-		FAILED: '#024AD8',
-		DEGRADED: '#E0A93B'
+		DEGRADED: '#E8A93B',
+		CRITICAL: '#5683FF',
+		FAILED: '#1846F5'
 	};
 
 	function fmtDriverValue(v: number): string {
 		return v.toFixed(3);
 	}
+
+	// Real status transitions from the historian. The Convex query also joins
+	// in the dominant coupling factor at each transition tick so the alert
+	// row can show "top driver = X" without a second round-trip.
+	const transitionsQuery = useQuery(api.sim.queries.getStatusTransitionsWithDrivers, () =>
+		runId ? { runId } : 'skip'
+	);
+	const realAlerts = $derived.by((): ProactiveAlert[] | null => {
+		const rows = transitionsQuery.data;
+		if (!runId || !rows || rows.length === 0) return null;
+		// Show only DEGRADED / CRITICAL / FAILED — every component starts FUNCTIONAL.
+		const allowed = new Set<AlertSeverity>(['DEGRADED', 'CRITICAL', 'FAILED']);
+		return rows
+			.filter((r) => allowed.has(r.status as AlertSeverity))
+			.map((r) => ({
+				tick: r.firstTick,
+				component: r.componentId as ComponentId,
+				status: r.status as AlertSeverity,
+				topDriverKey: r.topDriverKey ?? '—',
+				topDriverValue: r.topDriverValue ?? 0
+			}));
+	});
+	const alertsList = $derived(realAlerts ?? PROACTIVE_ALERTS);
+	const visibleAlerts = $derived(alertsList.filter((a) => a.tick >= startTick && a.tick < endTick));
 
 	// ──────────────────────────────────────────────────────────────────────
 	// PANEL BOTTOM — Component degradation grid
@@ -300,15 +389,90 @@
 		return 'FUNCTIONAL';
 	}
 
-	const componentMatrix = COMPONENT_ROWS.map((row) => ({
+	const syntheticComponentMatrix = COMPONENT_ROWS.map((row) => ({
 		...row,
 		cells: Array.from({ length: BUCKETS }, (_, b) => statusAt(row, b))
 	}));
 
+	// Real component-state per row, downsampled to BUCKETS columns by the
+	// "worst status in the bucket" rule (FAILED > CRITICAL > DEGRADED > FUNCTIONAL)
+	// so a single FAILED tick in a bucket window paints the cell black.
+	const STATUS_RANK: Record<Status, number> = {
+		FUNCTIONAL: 0,
+		DEGRADED: 1,
+		CRITICAL: 2,
+		FAILED: 3
+	};
+
+	const cmpBladeQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'blade' as const } : 'skip'
+	);
+	const cmpRailQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'rail' as const } : 'skip'
+	);
+	const cmpNozzleQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'nozzle' as const } : 'skip'
+	);
+	const cmpCleaningQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'cleaning' as const } : 'skip'
+	);
+	const cmpHeaterQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'heater' as const } : 'skip'
+	);
+	const cmpSensorQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'sensor' as const } : 'skip'
+	);
+
+	type CmpRow = { tick: number; status: string };
+	function downsampleStatuses(rows: CmpRow[] | undefined, runHorizon: number): Status[] {
+		if (!rows || rows.length === 0) return Array(BUCKETS).fill('FUNCTIONAL' as Status);
+		const cells: Status[] = Array(BUCKETS).fill('FUNCTIONAL' as Status);
+		const ranks: number[] = Array(BUCKETS).fill(0);
+		for (const r of rows) {
+			const b = Math.min(BUCKETS - 1, Math.floor((r.tick / Math.max(1, runHorizon)) * BUCKETS));
+			const s = (r.status in STATUS_RANK ? r.status : 'FUNCTIONAL') as Status;
+			const rank = STATUS_RANK[s];
+			if (rank >= (ranks[b] ?? 0)) {
+				ranks[b] = rank;
+				cells[b] = s;
+			}
+		}
+		return cells;
+	}
+
+	const realComponentMatrix = $derived.by(() => {
+		if (!runId) return null;
+		const byId: Record<string, CmpRow[] | undefined> = {
+			blade: cmpBladeQ.data,
+			rail: cmpRailQ.data,
+			nozzle: cmpNozzleQ.data,
+			cleaning: cmpCleaningQ.data,
+			heater: cmpHeaterQ.data,
+			sensor: cmpSensorQ.data
+		};
+		// Block until at least one query returns; rows that haven't loaded yet
+		// just render as FUNCTIONAL filler in the meantime.
+		const anyLoaded = Object.values(byId).some((r) => Array.isArray(r) && r.length > 0);
+		if (!anyLoaded) return null;
+		const horizon = Math.max(
+			...Object.values(byId).map((rows) => {
+				if (!rows || rows.length === 0) return 0;
+				const last = rows[rows.length - 1];
+				return last ? last.tick : 0;
+			})
+		);
+		return COMPONENT_ROWS.map((row) => ({
+			...row,
+			cells: downsampleStatuses(byId[row.id], horizon)
+		}));
+	});
+
+	const componentMatrix = $derived(realComponentMatrix ?? syntheticComponentMatrix);
+
 	// Status snapshot — pinned to NP-003 at NOW (matches Phoenix scenario)
 	const snapshot = {
 		code: 'NP-003',
-		label: 'Nozzle Plate',
+		label: 'nozzle',
 		health: 0,
 		status: 'FAILED' as Status,
 		rulDelta: -38
@@ -348,156 +512,203 @@
 	function bucketToTimeLabel(b: number): string {
 		if (b === 0) return 'T₀';
 		if (b === 16) return 'T+24h';
-		if (b === NOW_BUCKET) return 'NOW';
+		if (b === NOW_BUCKET) return $t('sim_ui.driver_coupled_decay.now');
 		if (b === 48) return 'T+72h';
 		if (b === BUCKETS - 1) return 'Tₙ';
 		return '';
 	}
+
+	function statusLabel(status: Status | AlertSeverity): string {
+		return $t(`sim_ui.status.${status.toLowerCase()}`);
+	}
+
+	function componentLabel(component: ComponentId): string {
+		return $t(`sim_ui.components.${component}`);
+	}
 </script>
 
 <section class="dcd">
-	<!-- ────────── TOP: Driver streams (left) + Proactive alerts feed (right) ────────── -->
-	<div class="dcd-block dcd-block-split">
-		<div class="dcd-split-col">
-			<header class="dcd-head">
-				<div class="dcd-eyebrow">Phase 2 / Brief inputs</div>
-				<h2 class="dcd-title">Driver streams</h2>
-			</header>
-
-			<div class="dcd-sparks">
-				{#each driverData as d (d.id)}
-					<div class="dcd-spark-strip">
-						<div class="dcd-spark-label">{d.label}</div>
-						<div class="dcd-spark-chart-wrap">
-							<svg
-								bind:this={sparkRefs[d.id]}
-								class="dcd-spark-svg"
-								viewBox={`0 0 ${sparkW} ${sparkH}`}
-								preserveAspectRatio="none"
-								role="img"
-								aria-label={d.label}
-								onmousemove={(e) => handleSparkMove(e, d)}
-								onmouseleave={handleSparkLeave}
-							>
-								<g transform={`translate(${sparkPadX}, ${sparkPadY})`}>
-									<path class="dcd-spark-line" d={sparkLine(d.data) ?? ''} />
-									{#if sparkHover && sparkHover.driverId === d.id}
-										<line
-											class="dcd-spark-guide"
-											x1={xSpark(sparkHover.tick)}
-											x2={xSpark(sparkHover.tick)}
-											y1="0"
-											y2={sparkInnerH}
-										/>
-										<circle
-											class="dcd-spark-dot"
-											cx={xSpark(sparkHover.tick)}
-											cy={ySpark(sparkHover.v)}
-											r="3"
-										/>
-									{/if}
-									<rect
-										class="dcd-spark-capture"
-										x="0"
-										y="0"
-										width={sparkInnerW}
-										height={sparkInnerH}
-									/>
-								</g>
-							</svg>
-							<span class="dcd-spark-value">{fmtPct(d.data[d.data.length - 1]?.v ?? 0)}</span>
-
-							{#if sparkHover && sparkHover.driverId === d.id}
-								<div
-									class="dcd-spark-tip"
-									style:left="{Math.min(sparkHover.clientX + 12, 420)}px"
-									style:top="{Math.max(sparkHover.clientY - 44, -28)}px"
-								>
-									<div class="dcd-tip-row">
-										<span class="dcd-tip-key">tick</span>
-										<span class="dcd-tip-val">{sparkHover.tick}</span>
-									</div>
-									<div class="dcd-tip-row">
-										<span class="dcd-tip-key">{d.id}</span>
-										<span class="dcd-tip-val">{sparkHover.v.toFixed(3)}</span>
-									</div>
-								</div>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-
-			<p class="dcd-foot">
-				Four engine inputs every tick. Right-edge value is the latest reading; all four are wired
-				into the coupled engine on every step.
+	<!-- ────────── TOP: Phase 2 — Driver streams + Proactive alerts (shared time window) ────────── -->
+	<div class="dcd-block">
+		<header class="dcd-head">
+			<div class="dcd-eyebrow">{$t('sim_ui.driver_coupled_decay.top.eyebrow')}</div>
+			<h2 class="dcd-title">{$t('sim_ui.driver_coupled_decay.top.title')}</h2>
+			<p class="dcd-sub">
+				{$t('sim_ui.driver_coupled_decay.top.description')}
 			</p>
+		</header>
+
+		<div class="dcd-window-meta">
+			{$t('sim_ui.driver_coupled_decay.top.showing_tick')} <span class="dcd-mono">{startTick}</span>
+			→
+			<span class="dcd-mono">{Math.max(startTick, endTick - 1)}</span>
+			{$t('sim_ui.driver_coupled_decay.top.of')} <span class="dcd-mono">{HORIZON}</span>
+			<span class="dcd-meta-sep">·</span>
+			{$t('sim_ui.driver_coupled_decay.top.window')} <span class="dcd-mono">{windowLabel}</span>
+			<span class="dcd-meta-sep">·</span>
+			{$t('sim_ui.driver_coupled_decay.top.alerts_in_window')}
+			<span class="dcd-mono">{visibleAlerts.length}</span>
+			/
+			<span class="dcd-mono">{alertsList.length}</span>
 		</div>
 
-		<div class="dcd-split-col">
-			<header class="dcd-head">
-				<div class="dcd-eyebrow">Phase 3 / Autonomy preview</div>
-				<h2 class="dcd-title">Proactive alerts feed</h2>
-				<p class="dcd-alerts-sub">
-					Notification-style log of every status crossing the engine produced — what the autonomous
-					agent would have raised in real time.
+		<div class="dcd-block-split dcd-block-split-inner">
+			<div class="dcd-split-col">
+				<div class="dcd-section-label">{$t('sim_ui.driver_coupled_decay.top.driver_streams')}</div>
+
+				<div class="dcd-sparks">
+					{#each visibleDriverData as d (d.id)}
+						<div class="dcd-spark-strip">
+							<div class="dcd-spark-label">{$t(d.labelKey)}</div>
+							<div class="dcd-spark-chart-wrap">
+								<svg
+									bind:this={sparkRefs[d.id]}
+									class="dcd-spark-svg"
+									viewBox={`0 0 ${sparkW} ${sparkH}`}
+									preserveAspectRatio="none"
+									role="img"
+									aria-label={$t(d.labelKey)}
+									onmousemove={(e) => handleSparkMove(e, d)}
+									onmouseleave={handleSparkLeave}
+								>
+									<g transform={`translate(${sparkPadX}, ${sparkPadY})`}>
+										<path class="dcd-spark-line" d={sparkLine(d.data) ?? ''} />
+										{#if sparkHover && sparkHover.driverId === d.id}
+											<line
+												class="dcd-spark-guide"
+												x1={xSpark(sparkHover.tick)}
+												x2={xSpark(sparkHover.tick)}
+												y1="0"
+												y2={sparkInnerH}
+											/>
+											<circle
+												class="dcd-spark-dot"
+												cx={xSpark(sparkHover.tick)}
+												cy={ySpark(sparkHover.v)}
+												r="3"
+											/>
+										{/if}
+										<rect
+											class="dcd-spark-capture"
+											x="0"
+											y="0"
+											width={sparkInnerW}
+											height={sparkInnerH}
+										/>
+									</g>
+								</svg>
+								<span class="dcd-spark-value">{fmtPct(d.data[d.data.length - 1]?.v ?? 0)}</span>
+
+								{#if sparkHover && sparkHover.driverId === d.id}
+									<div
+										class="dcd-spark-tip"
+										style:left="{Math.min(sparkHover.clientX + 12, 420)}px"
+										style:top="{Math.max(sparkHover.clientY - 44, -28)}px"
+									>
+										<div class="dcd-tip-row">
+											<span class="dcd-tip-key"
+												>{$t('sim_ui.driver_coupled_decay.tooltip.tick')}</span
+											>
+											<span class="dcd-tip-val">{sparkHover.tick}</span>
+										</div>
+										<div class="dcd-tip-row">
+											<span class="dcd-tip-key">{$t(d.labelKey)}</span>
+											<span class="dcd-tip-val">{sparkHover.v.toFixed(3)}</span>
+										</div>
+									</div>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				<p class="dcd-foot">{$t('sim_ui.driver_coupled_decay.top.latest_value_foot')}</p>
+			</div>
+
+			<div class="dcd-split-col">
+				<div class="dcd-section-label">
+					{$t('sim_ui.driver_coupled_decay.top.proactive_alerts')}
+				</div>
+
+				<ul class="dcd-alerts">
+					{#if visibleAlerts.length === 0}
+						<li class="dcd-alerts-empty">{$t('sim_ui.driver_coupled_decay.top.no_alerts')}</li>
+					{/if}
+					{#each visibleAlerts as a, i (i)}
+						<li class="dcd-alert-row">
+							<span
+								class="dcd-alert-icon"
+								class:is-failed={a.status === 'FAILED'}
+								class:is-critical={a.status === 'CRITICAL'}
+								class:is-degraded={a.status === 'DEGRADED'}
+								style:--icon-color={SEVERITY_COLOR[a.status]}
+								aria-hidden="true"
+							></span>
+							<span class="dcd-alert-tick"
+								>{$t('sim_ui.driver_coupled_decay.top.tick')} {a.tick}</span
+							>
+							<span class="dcd-alert-component">{componentLabel(a.component)}</span>
+							<span class="dcd-alert-arrow">→</span>
+							<span class="dcd-alert-status" style:color={SEVERITY_COLOR[a.status]}>
+								{statusLabel(a.status)}
+							</span>
+							<span class="dcd-alert-driver-label"
+								>· {$t('sim_ui.driver_coupled_decay.top.top_driver')}</span
+							>
+							<code class="dcd-alert-driver-pill"
+								>{a.topDriverKey} = {fmtDriverValue(a.topDriverValue)}</code
+							>
+						</li>
+					{/each}
+				</ul>
+
+				<p class="dcd-foot">
+					{$t('sim_ui.driver_coupled_decay.top.alerts_foot')}
 				</p>
-			</header>
-
-			<ul class="dcd-alerts">
-				{#each PROACTIVE_ALERTS as a, i (i)}
-					<li class="dcd-alert-row">
-						<span
-							class="dcd-alert-icon"
-							class:is-failed={a.status === 'FAILED'}
-							class:is-critical={a.status === 'CRITICAL'}
-							class:is-degraded={a.status === 'DEGRADED'}
-							style:--icon-color={SEVERITY_COLOR[a.status]}
-							aria-hidden="true"
-						></span>
-						<span class="dcd-alert-tick">TICK {a.tick}</span>
-						<span class="dcd-alert-component">{a.component}</span>
-						<span class="dcd-alert-arrow">→</span>
-						<span class="dcd-alert-status" style:color={SEVERITY_COLOR[a.status]}>
-							{a.status}
-						</span>
-						<span class="dcd-alert-driver-label">· top driver</span>
-						<code class="dcd-alert-driver-pill"
-							>{a.topDriverKey} = {fmtDriverValue(a.topDriverValue)}</code
-						>
-					</li>
-				{/each}
-			</ul>
-
-			<p class="dcd-foot">
-				{PROACTIVE_ALERTS.length} alerts. Each row is what the proactive agent would have raised the moment
-				a component crossed a status threshold.
-			</p>
+			</div>
 		</div>
 	</div>
 
 	<!-- ────────── BOTTOM: Driver-coupled component decay ────────── -->
 	<div class="dcd-block dcd-block-grid">
 		<header class="dcd-head">
-			<div class="dcd-eyebrow">Phase 2 / Degradation model</div>
-			<h2 class="dcd-title">Driver-coupled component decay</h2>
+			<div class="dcd-eyebrow">{$t('sim_ui.driver_coupled_decay.bottom.eyebrow')}</div>
+			<h2 class="dcd-title">{$t('sim_ui.driver_coupled_decay.bottom.title')}</h2>
 			<div class="dcd-meta">
-				<span><span class="dcd-meta-key">RUN</span> 2041</span>
+				<span
+					><span class="dcd-meta-key">{$t('sim_ui.driver_coupled_decay.bottom.meta.run')}</span> 2041</span
+				>
 				<span class="dcd-meta-sep">·</span>
-				<span><span class="dcd-meta-key">SCENARIO</span> phoenix</span>
+				<span
+					><span class="dcd-meta-key">{$t('sim_ui.driver_coupled_decay.bottom.meta.scenario')}</span
+					> phoenix</span
+				>
 				<span class="dcd-meta-sep">·</span>
-				<span><span class="dcd-meta-key">HORIZON</span> 96h</span>
+				<span
+					><span class="dcd-meta-key">{$t('sim_ui.driver_coupled_decay.bottom.meta.horizon')}</span> 96h</span
+				>
 				<span class="dcd-meta-sep">·</span>
-				<span><span class="dcd-meta-key">RES</span> 15min</span>
+				<span
+					><span class="dcd-meta-key"
+						>{$t('sim_ui.driver_coupled_decay.bottom.meta.resolution')}</span
+					> 15min</span
+				>
 				<span class="dcd-meta-sep">·</span>
-				<span><span class="dcd-meta-key">ENGINE</span> deterministic + stochastic</span>
+				<span
+					><span class="dcd-meta-key">{$t('sim_ui.driver_coupled_decay.bottom.meta.engine')}</span>
+					{$t('sim_ui.driver_coupled_decay.bottom.meta.engine_value')}</span
+				>
 			</div>
 		</header>
 
 		<div class="dcd-grid-section">
 			<div class="dcd-grid-section-head">
-				<div class="dcd-section-label">COMPONENT DEGRADATION</div>
-				<div class="dcd-section-sub">Health buckets · 6 components</div>
+				<div class="dcd-section-label">
+					{$t('sim_ui.driver_coupled_decay.bottom.component_degradation')}
+				</div>
+				<div class="dcd-section-sub">
+					{$t('sim_ui.driver_coupled_decay.bottom.health_buckets_sub')}
+				</div>
 			</div>
 
 			<div class="dcd-grid-wrap" bind:this={gridEl}>
@@ -526,7 +737,7 @@
 
 				<!-- NOW marker — overlays the rows -->
 				<div class="dcd-now-line" style:left="{(NOW_BUCKET / BUCKETS) * 100}%">
-					<span class="dcd-now-pill">NOW</span>
+					<span class="dcd-now-pill">{$t('sim_ui.driver_coupled_decay.now')}</span>
 				</div>
 
 				<!-- X axis labels -->
@@ -546,16 +757,19 @@
 					<div class="dcd-snapshot-arrow"></div>
 					<div class="dcd-snapshot-card">
 						<div class="dcd-snapshot-title">
-							<span class="dcd-snapshot-label">STATUS SNAPSHOT</span>
+							<span class="dcd-snapshot-label"
+								>{$t('sim_ui.driver_coupled_decay.bottom.status_snapshot')}</span
+							>
 							<span class="dcd-snapshot-sep">·</span>
 							<span class="dcd-snapshot-code">{snapshot.code}</span>
 						</div>
 						<div class="dcd-snapshot-body">
-							Health <strong>{snapshot.health}%</strong>
+							{$t('sim_ui.driver_coupled_decay.bottom.health')} <strong>{snapshot.health}%</strong>
 							<span class="dcd-snapshot-sep">·</span>
-							<strong>{snapshot.status}</strong>
+							<strong>{statusLabel(snapshot.status)}</strong>
 							<span class="dcd-snapshot-sep">·</span>
-							ΔRUL <strong>{snapshot.rulDelta}%</strong>
+							{$t('sim_ui.driver_coupled_decay.bottom.delta_rul')}
+							<strong>{snapshot.rulDelta}%</strong>
 						</div>
 					</div>
 				</div>
@@ -567,21 +781,23 @@
 						style:top="{Math.max(gridHover.clientY - 60, 0)}px"
 					>
 						<div class="dcd-tip-row">
-							<span class="dcd-tip-key">component_id</span>
+							<span class="dcd-tip-key"
+								>{$t('sim_ui.driver_coupled_decay.tooltip.component_id')}</span
+							>
 							<span class="dcd-tip-val">{gridHover.rowId}</span>
 						</div>
 						<div class="dcd-tip-row">
-							<span class="dcd-tip-key">code</span>
+							<span class="dcd-tip-key">{$t('sim_ui.driver_coupled_decay.tooltip.code')}</span>
 							<span class="dcd-tip-val">{gridHover.rowCode}</span>
 						</div>
 						<div class="dcd-tip-row">
-							<span class="dcd-tip-key">bucket</span>
+							<span class="dcd-tip-key">{$t('sim_ui.driver_coupled_decay.tooltip.bucket')}</span>
 							<span class="dcd-tip-val">{gridHover.bucket}</span>
 						</div>
 						<div class="dcd-tip-row">
-							<span class="dcd-tip-key">status</span>
+							<span class="dcd-tip-key">{$t('sim_ui.driver_coupled_decay.tooltip.status')}</span>
 							<span class="dcd-tip-val" style:color={STATUS_COLORS[gridHover.status]}>
-								{gridHover.status}
+								{statusLabel(gridHover.status)}
 							</span>
 						</div>
 					</div>
@@ -591,20 +807,34 @@
 
 		<footer class="dcd-grid-foot">
 			<div class="dcd-legend">
-				<span class="dcd-legend-key">HEALTH BUCKET</span>
+				<span class="dcd-legend-key"
+					>{$t('sim_ui.driver_coupled_decay.bottom.legend_health_bucket')}</span
+				>
 				{#each Object.entries(STATUS_COLORS) as [status, color] (status)}
 					<span class="dcd-legend-item">
 						<span class="dcd-legend-sq" style:background={color}></span>
-						<span class="dcd-legend-label">{status[0]}{status.slice(1).toLowerCase()}</span>
+						<span class="dcd-legend-label">{statusLabel(status as Status)}</span>
 					</span>
 				{/each}
 			</div>
 			<div class="dcd-meta dcd-meta-right">
-				<span><span class="dcd-meta-key">MODEL</span> v3.4.1</span>
+				<span
+					><span class="dcd-meta-key"
+						>{$t('sim_ui.driver_coupled_decay.bottom.footer_meta.model')}</span
+					> v3.4.1</span
+				>
 				<span class="dcd-meta-sep">·</span>
-				<span><span class="dcd-meta-key">TRAINED ON</span> 1.2M run-hours</span>
+				<span
+					><span class="dcd-meta-key"
+						>{$t('sim_ui.driver_coupled_decay.bottom.footer_meta.trained_on')}</span
+					> 1.2M run-hours</span
+				>
 				<span class="dcd-meta-sep">·</span>
-				<span><span class="dcd-meta-key">LAST CALIBRATION</span> 2026-04-02</span>
+				<span
+					><span class="dcd-meta-key"
+						>{$t('sim_ui.driver_coupled_decay.bottom.footer_meta.last_calibration')}</span
+					> 2026-04-02</span
+				>
 			</div>
 		</footer>
 	</div>
@@ -688,6 +918,9 @@
 		gap: 40px;
 		align-items: start;
 	}
+	.dcd-block-split-inner {
+		margin-top: 18px;
+	}
 	.dcd-split-col {
 		min-width: 0;
 	}
@@ -696,6 +929,35 @@
 			grid-template-columns: 1fr;
 			gap: 32px;
 		}
+	}
+
+	/* ─── Header sub-line + window meta strip (Phase 2) ─── */
+	.dcd-sub {
+		margin: 6px 0 0;
+		font-size: 12px;
+		color: var(--fg-3);
+		max-width: 56ch;
+	}
+	.dcd-window-meta {
+		margin-top: 12px;
+		font-size: 11px;
+		color: var(--fg-3);
+		letter-spacing: 0.04em;
+	}
+	.dcd-mono {
+		font-family: ui-monospace, 'SF Mono', 'Menlo', 'Consolas', monospace;
+		color: var(--fg);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ─── Empty state for the alerts list ─── */
+	.dcd-alerts-empty {
+		font-size: 12px;
+		color: var(--fg-4);
+		font-style: italic;
+		padding: 16px 0;
+		list-style: none;
 	}
 
 	/* ─── Sparklines ─── */
@@ -803,12 +1065,29 @@
 	}
 	.dcd-alerts {
 		list-style: none;
-		margin: 16px 0 0;
+		/* No top margin — section label sits flush above the box, matching
+		   the streams column where the first sparkline strip butts up
+		   against `DRIVER STREAMS`. Keeps both columns starting at the
+		   same Y position. */
+		margin: 4px 0 0;
 		padding: 0;
 		border: 1px solid var(--line);
 		border-radius: 8px;
 		background: var(--surface);
-		overflow: hidden;
+		max-height: 360px;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	/* subtle scrollbar */
+	.dcd-alerts::-webkit-scrollbar {
+		width: 6px;
+	}
+	.dcd-alerts::-webkit-scrollbar-thumb {
+		background: var(--line);
+		border-radius: 3px;
+	}
+	.dcd-alerts::-webkit-scrollbar-thumb:hover {
+		background: var(--fg-4);
 	}
 	.dcd-alert-row {
 		display: flex;

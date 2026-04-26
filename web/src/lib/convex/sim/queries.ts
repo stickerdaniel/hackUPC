@@ -65,7 +65,11 @@ async function _getRunSummary(ctx: QueryCtx, userId: string, runId: Id<'simRuns'
 		startedAt: run.startedAt,
 		completedAt: run.completedAt ?? null,
 		lastTick: run.lastTick ?? null,
-		errorMessage: run.errorMessage ?? null
+		errorMessage: run.errorMessage ?? null,
+		// Resolved scenario YAML (climate / drivers / maintenance) — JSON
+		// string so consumers parse it themselves. Null on runs predating the
+		// recordRunConfig wiring.
+		scenarioConfig: run.scenarioConfig ?? null
 	};
 }
 
@@ -145,6 +149,139 @@ async function _getComponentTimeseries(
 		ageTicks: row.ageTicks,
 		metrics: row.metrics
 	}));
+}
+
+async function _getMultiComponentTimeseries(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>,
+	componentIds: ReadonlyArray<typeof componentId.type>,
+	fromTick?: number,
+	toTick?: number
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	const all = await ctx.db
+		.query('simComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
+		.collect();
+
+	const wanted = new Set(componentIds);
+
+	const byTick = new Map<number, Record<string, number | null>>();
+	for (const row of all) {
+		if (!wanted.has(row.componentId)) continue;
+		if (fromTick !== undefined && row.tick < fromTick) continue;
+		if (toTick !== undefined && row.tick > toTick) continue;
+
+		let bucket = byTick.get(row.tick);
+		if (!bucket) {
+			bucket = { tick: row.tick } as Record<string, number | null>;
+			for (const cid of componentIds) bucket[cid] = null;
+			byTick.set(row.tick, bucket);
+		}
+		bucket[row.componentId] = row.healthIndex;
+	}
+
+	return Array.from(byTick.values()).sort((a, b) => (a.tick as number) - (b.tick as number));
+}
+
+async function _getDriversTimeseries(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>,
+	fromTick?: number,
+	toTick?: number
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	// Bounded read: one row per tick, capped server-side at run.horizonTicks
+	// (typically <= 1500 weekly ticks per the latest sim contract).
+	const all = await ctx.db
+		.query('simTicks')
+		.withIndex('by_run_and_tick', (q) => q.eq('runId', runId))
+		.collect();
+
+	return all
+		.filter((row) => (fromTick === undefined ? true : row.tick >= fromTick))
+		.filter((row) => (toTick === undefined ? true : row.tick <= toTick))
+		.sort((a, b) => a.tick - b.tick)
+		.map((row) => ({
+			runId,
+			tick: row.tick,
+			temperatureStress: row.drivers.temperatureStress,
+			humidityContamination: row.drivers.humidityContamination,
+			operationalLoad: row.drivers.operationalLoad,
+			maintenanceLevel: row.drivers.maintenanceLevel,
+			printOutcome: row.printOutcome
+		}));
+}
+
+async function _getStatusTransitionsWithDrivers(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	// Walk the component-state stream once, find the first tick each
+	// (componentId, status) appears. Server-side join with simTicks for
+	// the dominant coupling factor at the transition tick — this powers
+	// the dashboard's Proactive alerts feed without N+1 client queries.
+	const componentRows = await ctx.db
+		.query('simComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
+		.collect();
+
+	type FirstSeen = { componentId: string; status: string; firstTick: number };
+	const firstByKey = new Map<string, FirstSeen>();
+	for (const row of componentRows) {
+		const key = `${row.componentId}:${row.status}`;
+		const prev = firstByKey.get(key);
+		if (prev === undefined || row.tick < prev.firstTick) {
+			firstByKey.set(key, {
+				componentId: row.componentId,
+				status: row.status,
+				firstTick: row.tick
+			});
+		}
+	}
+
+	const transitions = Array.from(firstByKey.values()).sort((a, b) => a.firstTick - b.firstTick);
+
+	// Pull every needed tick row once and index by tick to avoid O(N) per-row reads.
+	const neededTicks = new Set(transitions.map((t) => t.firstTick));
+	const tickRows = await ctx.db
+		.query('simTicks')
+		.withIndex('by_run_and_tick', (q) => q.eq('runId', runId))
+		.collect();
+	const tickByTick = new Map(
+		tickRows.filter((r) => neededTicks.has(r.tick)).map((r) => [r.tick, r])
+	);
+
+	return transitions.map((t) => {
+		const tickRow = tickByTick.get(t.firstTick);
+		const factors = tickRow?.couplingFactors ?? {};
+		let topKey: string | null = null;
+		let topAbs = -1;
+		let topVal = 0;
+		for (const [k, v] of Object.entries(factors)) {
+			const abs = Math.abs(v);
+			if (abs > topAbs) {
+				topAbs = abs;
+				topKey = k;
+				topVal = v;
+			}
+		}
+		return {
+			runId,
+			componentId: t.componentId,
+			status: t.status,
+			firstTick: t.firstTick,
+			topDriverKey: topKey,
+			topDriverValue: topKey === null ? null : topVal
+		};
+	});
 }
 
 async function _listEvents(
@@ -293,6 +430,24 @@ export const getComponentTimeseries = authedQuery({
 		)
 });
 
+export const getMultiComponentTimeseries = authedQuery({
+	args: {
+		runId: v.id('simRuns'),
+		componentIds: v.array(componentId),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getMultiComponentTimeseries(
+			ctx,
+			ctx.user._id,
+			args.runId,
+			args.componentIds,
+			args.fromTick,
+			args.toTick
+		)
+});
+
 export const listEvents = authedQuery({
 	args: {
 		runId: v.id('simRuns'),
@@ -313,6 +468,21 @@ export const inspectSensorTrust = authedQuery({
 	},
 	handler: async (ctx, args) =>
 		_inspectSensorTrust(ctx, ctx.user._id, args.runId, args.componentId, args.fromTick, args.toTick)
+});
+
+export const getDriversTimeseries = authedQuery({
+	args: {
+		runId: v.id('simRuns'),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getDriversTimeseries(ctx, ctx.user._id, args.runId, args.fromTick, args.toTick)
+});
+
+export const getStatusTransitionsWithDrivers = authedQuery({
+	args: { runId: v.id('simRuns') },
+	handler: async (ctx, args) => _getStatusTransitionsWithDrivers(ctx, ctx.user._id, args.runId)
 });
 
 export const compareRuns = authedQuery({
@@ -366,6 +536,25 @@ export const getComponentTimeseriesForUser = internalQuery({
 		)
 });
 
+export const getMultiComponentTimeseriesForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runId: v.id('simRuns'),
+		componentIds: v.array(componentId),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getMultiComponentTimeseries(
+			ctx,
+			args.userId,
+			args.runId,
+			args.componentIds,
+			args.fromTick,
+			args.toTick
+		)
+});
+
 export const listEventsForUser = internalQuery({
 	args: {
 		userId: v.string(),
@@ -388,6 +577,22 @@ export const inspectSensorTrustForUser = internalQuery({
 	},
 	handler: async (ctx, args) =>
 		_inspectSensorTrust(ctx, args.userId, args.runId, args.componentId, args.fromTick, args.toTick)
+});
+
+export const getDriversTimeseriesForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runId: v.id('simRuns'),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getDriversTimeseries(ctx, args.userId, args.runId, args.fromTick, args.toTick)
+});
+
+export const getStatusTransitionsWithDriversForUser = internalQuery({
+	args: { userId: v.string(), runId: v.id('simRuns') },
+	handler: async (ctx, args) => _getStatusTransitionsWithDrivers(ctx, args.userId, args.runId)
 });
 
 export const compareRunsForUser = internalQuery({

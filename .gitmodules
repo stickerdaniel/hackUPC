@@ -22,3 +22,9 @@
 [submodule "references/shadcn-svelte"]
 	path = references/shadcn-svelte
 	url = https://github.com/huntabyte/shadcn-svelte.git
+[submodule "references/groq-typescript"]
+	path = references/groq-typescript
+	url = https://github.com/groq/groq-typescript.git
+[submodule "references/groq-python"]
+	path = references/groq-python
+	url = https://github.com/groq/groq-python.git

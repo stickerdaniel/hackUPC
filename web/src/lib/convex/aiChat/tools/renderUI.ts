@@ -28,7 +28,7 @@ export const renderUI = tool({
 		'Render a UI for the user from a json-render spec. Call this AFTER ' +
 		'fetching data via other tools. The spec must use only components from ' +
 		'the shadcn catalog (Card, Stack, Grid, Heading, Text, Badge, Table, ' +
-		'Alert, Separator, Progress, Button, etc.).',
+		'Alert, Separator, Progress, Button, LineChart, BarChart, etc.).',
 	inputSchema: z.object({
 		spec: z.string().describe('json-render spec as a JSON string')
 	}),

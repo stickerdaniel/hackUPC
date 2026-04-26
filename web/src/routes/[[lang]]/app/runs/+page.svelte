@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { useQuery, useConvexClient } from 'convex-svelte';
+	import { getTranslate } from '@tolgee/svelte';
 	import { api } from '$lib/convex/_generated/api';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 	import SEOHead from '$lib/components/SEOHead.svelte';
+
+	const { t } = getTranslate();
 
 	const SCENARIOS = [
 		'barcelona-baseline',
@@ -58,30 +61,32 @@
 
 	function fmtRelative(ts: number): string {
 		const delta = Date.now() - ts;
-		if (delta < 60_000) return `${Math.round(delta / 1000)}s ago`;
-		if (delta < 3_600_000) return `${Math.round(delta / 60_000)}m ago`;
-		if (delta < 86_400_000) return `${Math.round(delta / 3_600_000)}h ago`;
-		return `${Math.round(delta / 86_400_000)}d ago`;
+		if (delta < 60_000)
+			return $t('sim_ui.runs.relative.seconds_ago', { count: Math.round(delta / 1000) });
+		if (delta < 3_600_000)
+			return $t('sim_ui.runs.relative.minutes_ago', { count: Math.round(delta / 60_000) });
+		if (delta < 86_400_000)
+			return $t('sim_ui.runs.relative.hours_ago', { count: Math.round(delta / 3_600_000) });
+		return $t('sim_ui.runs.relative.days_ago', { count: Math.round(delta / 86_400_000) });
 	}
 </script>
 
-<SEOHead title="Simulation runs" />
+<SEOHead title={$t('sim_ui.runs.page_title')} />
 
 <div class="mx-auto max-w-5xl space-y-6 p-6">
 	<header>
-		<h1 class="text-2xl font-semibold">Simulation runs</h1>
+		<h1 class="text-2xl font-semibold">{$t('sim_ui.runs.page_title')}</h1>
 		<p class="text-sm text-muted-foreground">
-			Spawn new what-if runs of the HP Metal Jet S100 digital twin. Click any run to scrub its
-			playback.
+			{$t('sim_ui.runs.page_description')}
 		</p>
 	</header>
 
 	<!-- Start form -->
 	<section class="space-y-3 rounded-lg border bg-card p-4">
-		<h2 class="text-sm font-semibold">Start a new run</h2>
+		<h2 class="text-sm font-semibold">{$t('sim_ui.runs.start_title')}</h2>
 		<div class="grid gap-3 md:grid-cols-3">
 			<label class="space-y-1 text-sm">
-				<span class="text-muted-foreground">Scenario</span>
+				<span class="text-muted-foreground">{$t('sim_ui.runs.field.scenario')}</span>
 				<select
 					class="block w-full rounded-md border bg-background px-2 py-1.5 text-sm"
 					bind:value={scenario}
@@ -94,11 +99,14 @@
 			</label>
 
 			<label class="space-y-1 text-sm">
-				<span class="text-muted-foreground">Seed <span class="text-xs">(optional)</span></span>
+				<span class="text-muted-foreground"
+					>{$t('sim_ui.runs.field.seed')}
+					<span class="text-xs">{$t('sim_ui.common.optional')}</span></span
+				>
 				<input
 					type="number"
 					class="block w-full rounded-md border bg-background px-2 py-1.5 text-sm"
-					placeholder="(scenario default)"
+					placeholder={$t('sim_ui.runs.field.scenario_default')}
 					bind:value={seed}
 					disabled={busy}
 				/>
@@ -106,14 +114,15 @@
 
 			<label class="space-y-1 text-sm">
 				<span class="text-muted-foreground"
-					>Horizon ticks <span class="text-xs">(optional)</span></span
+					>{$t('sim_ui.runs.field.horizon_ticks')}
+					<span class="text-xs">{$t('sim_ui.common.optional')}</span></span
 				>
 				<input
 					type="number"
 					min="1"
 					max="10000"
 					class="block w-full rounded-md border bg-background px-2 py-1.5 text-sm"
-					placeholder="(scenario default)"
+					placeholder={$t('sim_ui.runs.field.scenario_default')}
 					bind:value={horizonTicks}
 					disabled={busy}
 				/>
@@ -127,7 +136,7 @@
 				onclick={startRun}
 				disabled={busy}
 			>
-				{busy ? 'Running…' : 'Run scenario'}
+				{busy ? $t('sim_ui.runs.running') : $t('sim_ui.runs.run_scenario')}
 			</button>
 
 			{#if errorMessage}
@@ -138,12 +147,12 @@
 
 	<!-- Runs list -->
 	<section>
-		<h2 class="mb-2 text-sm font-semibold">Your runs</h2>
+		<h2 class="mb-2 text-sm font-semibold">{$t('sim_ui.runs.your_runs')}</h2>
 		{#if runsQuery.isLoading}
-			<div class="text-sm text-muted-foreground">Loading…</div>
+			<div class="text-sm text-muted-foreground">{$t('sim_ui.common.loading')}</div>
 		{:else if !runsQuery.data || runsQuery.data.length === 0}
 			<div class="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-				No runs yet. Start one above.
+				{$t('sim_ui.runs.no_runs')}
 			</div>
 		{:else}
 			<ul class="divide-y rounded-lg border bg-card">
@@ -159,7 +168,11 @@
 								<code class="font-mono text-xs text-muted-foreground">{run._id}</code>
 							</span>
 							<span class="font-mono text-xs text-muted-foreground tabular-nums">
-								tick {run.lastTick ?? 0}/{run.horizonTicks} · {fmtRelative(run.startedAt)}
+								{$t('sim_ui.runs.tick_progress', {
+									current: run.lastTick ?? 0,
+									horizon: run.horizonTicks
+								})}
+								· {fmtRelative(run.startedAt)}
 							</span>
 						</a>
 					</li>

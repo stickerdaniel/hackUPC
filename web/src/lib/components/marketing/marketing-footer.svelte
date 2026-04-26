@@ -5,10 +5,10 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 </script>
 
-<footer class="mt-auto pt-24">
-	<div class="mx-auto max-w-6xl px-6 lg:px-12">
+<footer class="mt-auto pt-12">
+	<div class="mx-auto max-w-[1500px] px-4 lg:px-6">
 		<div
-			class="-mx-2 w-[calc(100%+1rem)] rounded-t-2xl border-t marketing-shell-panel-footer [mask-image:linear-gradient(to_bottom,black_30%,transparent_100%)] px-8 pt-8 pb-32 lg:-mx-8 lg:w-[calc(100%+4rem)] lg:px-8"
+			class="w-full rounded-t-xl border-t marketing-shell-panel-footer [mask-image:linear-gradient(to_bottom,black_30%,transparent_100%)] px-5 pt-4 pb-12 lg:px-7"
 		>
 			<div class="flex items-start justify-between sm:items-center">
 				<p class="text-xs text-muted-foreground">

@@ -5,6 +5,185 @@
 		"copilot_voice": "Sprachsteuerung",
 		"skip_to_content": "Zum Inhalt springen"
 	},
+	"health_timeline": {
+		"title": "Komponenten-Gesundheit im Zeitverlauf"
+	},
+	"sim_ui": {
+		"common": {
+			"clear": "Zurücksetzen",
+			"loading": "Lädt...",
+			"optional": "(optional)"
+		},
+		"drivers": {
+			"humidity_contamination": "Feuchte-/Kontaminationsniveau",
+			"maintenance_level": "Wartungsniveau",
+			"operational_load": "Betriebslast",
+			"temperature_stress": "Temperaturstress"
+		},
+		"driver_coupled_decay": {
+			"bottom": {
+				"component_degradation": "KOMPONENTEN-DEGRADATION",
+				"delta_rul": "Delta RUL",
+				"eyebrow": "Phase 2 / Degradationsmodell",
+				"footer_meta": {
+					"last_calibration": "LETZTE KALIBRIERUNG",
+					"model": "MODELL",
+					"trained_on": "TRAINIERT AUF"
+				},
+				"health": "Gesundheit",
+				"health_buckets_sub": "Gesundheits-Buckets - 6 Komponenten",
+				"legend_health_bucket": "GESUNDHEITS-BUCKET",
+				"meta": {
+					"engine": "ENGINE",
+					"engine_value": "deterministisch + stochastisch",
+					"horizon": "HORIZONT",
+					"resolution": "AUFLÖSUNG",
+					"run": "RUN",
+					"scenario": "SZENARIO"
+				},
+				"status_snapshot": "STATUS-SCHNAPPSCHUSS",
+				"title": "Treiber-gekoppelte Komponenten-Degradation"
+			},
+			"now": "JETZT",
+			"tooltip": {
+				"bucket": "Bucket",
+				"code": "Code",
+				"component_id": "Komponenten-ID",
+				"status": "Status",
+				"tick": "Tick"
+			},
+			"top": {
+				"alerts_foot": "Jede Zeile zeigt, was der proaktive Agent gemeldet hätte, sobald eine Komponente einen Statusschwellenwert überschreitet.",
+				"alerts_in_window": "Alerts im Fenster",
+				"description": "Vier Engine-Eingänge und die Alerts, die der autonome Agent ausgelöst hätte, bezogen auf dasselbe oben gewählte Zeitfenster.",
+				"driver_streams": "TREIBER-STRÖME",
+				"eyebrow": "Phase 2 / Eingaben · Autonomie-Vorschau",
+				"latest_value_foot": "Der rechte Wert ist die neueste Messung innerhalb des sichtbaren Fensters.",
+				"no_alerts": "Keine Alerts in diesem Fenster.",
+				"of": "von",
+				"proactive_alerts": "PROAKTIVE ALERTS",
+				"showing_tick": "Zeige Tick",
+				"tick": "TICK",
+				"title": "Treiberströme & proaktive Alerts",
+				"top_driver": "Top-Treiber",
+				"window": "Fenster"
+			}
+		},
+		"components": {
+			"blade": "Klinge",
+			"cleaning": "Reinigungseinheit",
+			"heater": "Heizelemente",
+			"nozzle": "Düsenplatte",
+			"rail": "Linearführung",
+			"sensor": "Temperatursensoren"
+		},
+		"dashboard": {
+			"completed": "Abgeschlossen",
+			"description": "Operator-Dashboard für die gekoppelte Simulations-Engine: Treiber, Zustandsabfall, Kaskadenzuordnung, Sensorvertrauen und Operator-Reaktion aus der Historie des gewählten Runs.",
+			"horizon": "Horizont",
+			"last_tick": "Letzter Tick",
+			"loaded": "Geladen",
+			"loading_run_summary": "Run-Zusammenfassung wird geladen...",
+			"no_run_selected": "Kein Run ausgewählt",
+			"operator": "Operator",
+			"pick_run": "- Run auswählen, um reale Daten zu laden -",
+			"run": "Run",
+			"scenario": "Szenario",
+			"seed": "Seed",
+			"started": "Gestartet",
+			"status": "Status",
+			"synthetic_hint": "Die Diagramme unten zeigen derzeit synthetische Platzhalterdaten. Wähle einen Run, um reale Historian-Daten zu rendern."
+		},
+		"health_timeline": {
+			"eyebrow": "Phase 1 / Gekoppelte Engine",
+			"event_label": "menschliche Störung",
+			"footnote": "Grau gestrichelte Markierungen zeigen Umweltereignisse aus dem Szenario (Chaos-Overlays wie Erdbeben, HVAC-Ausfall, Feiertag usw.).",
+			"tick_label": "Tick",
+			"title": "Komponenten-Gesundheit im Zeitverlauf",
+			"tooltip": {
+				"component_id": "Komponente",
+				"health": "Gesundheit",
+				"status": "Status",
+				"tick": "Tick"
+			}
+		},
+		"recommendation_cards": {
+			"actions": {
+				"replace_now": "JETZT ERSETZEN",
+				"schedule_fix": "REPARATUR PLANEN",
+				"watch": "BEOBACHTEN"
+			},
+			"chain_unavailable": "Kaskadenkette konnte aus den aufgezeichneten Faktoren nicht rekonstruiert werden.",
+			"empty": "In diesem Run gibt es keine DEGRADED/CRITICAL/FAILED-Übergänge.",
+			"eyebrow": "Phase 3 / Heuristische Vorschau",
+			"eyebrow_top": "Phase-3-Vorschau · Zuverlässigkeit · Intelligenz · Autonomie",
+			"meta": {
+				"health": "GESUNDHEIT",
+				"status": "STATUS"
+			},
+			"sub": "Nur-Lese-Insight-Karten - aktuell regelbasiert (Status zu empfohlener Aktion).",
+			"suggested_next_step": "EMPFOHLENER NÄCHSTER SCHRITT",
+			"tips": {
+				"critical": "Plane eine Reparatur im nächsten Wartungsfenster.",
+				"degraded": "Eng beobachten und im nächsten Fenster präventiv warten.",
+				"failed": "Sofort ersetzen - Druckergebnisse verschlechtern sich bereits."
+			},
+			"title": "Empfehlungskarten",
+			"top_driver_was": "wichtigster Treiber war",
+			"why": "Warum:"
+		},
+		"run_detail": {
+			"chart_time_series": "Komponenten-Gesundheit als Zeitreihe",
+			"end": "Ende",
+			"global": "Global",
+			"health": "Gesundheit",
+			"horizon": "Horizont",
+			"loading_run": "Run wird geladen...",
+			"maintenance_events": "Wartungsereignisse (bis zum aktuellen Tick)",
+			"no_events": "Noch keine Ereignisse aufgezeichnet.",
+			"not_found": "Run nicht gefunden oder kein Zugriff.",
+			"page_title": "Simulations-Run",
+			"pause": "Pause",
+			"play": "Start",
+			"reset": "Zurücksetzen",
+			"run_id": "Run",
+			"run_prefix": "Run",
+			"seed": "Seed",
+			"speed": "Geschwindigkeit",
+			"tick": "Tick",
+			"ticks": "Ticks"
+		},
+		"runs": {
+			"field": {
+				"horizon_ticks": "Horizont-Ticks",
+				"scenario": "Szenario",
+				"scenario_default": "(Szenario-Standard)",
+				"seed": "Seed"
+			},
+			"no_runs": "Noch keine Runs. Starte oben einen.",
+			"page_description": "Starte neue What-if-Runs des HP Metal Jet S100 Digital Twin. Klicke auf einen Run, um die Wiedergabe zu prüfen.",
+			"page_title": "Simulations-Runs",
+			"relative": {
+				"days_ago": "vor {count} T",
+				"hours_ago": "vor {count} Std",
+				"minutes_ago": "vor {count} Min",
+				"seconds_ago": "vor {count} Sek"
+			},
+			"run_scenario": "Szenario ausführen",
+			"running": "Läuft...",
+			"start_title": "Neuen Run starten",
+			"tick_progress": "Tick {current}/{horizon}",
+			"your_runs": "Deine Runs"
+		},
+		"status": {
+			"completed": "Abgeschlossen",
+			"critical": "Kritisch",
+			"degraded": "Eingeschränkt",
+			"failed": "Ausgefallen",
+			"functional": "Funktionsfähig",
+			"running": "Laufend"
+		}
+	},
 	"admin": {
 		"actions": {
 			"ban": "Benutzer sperren",
@@ -1602,7 +1781,9 @@
 			"file_max_size": "Maximale Größe ist {maxSize}",
 			"file_too_large": "Datei zu groß: \"{filename}\"",
 			"max_attachments": "Maximal {max} Anhänge erlaubt",
-			"pasted_file_too_large": "Eingefügte Datei zu groß"
+			"mic_permission": "Kein Mikrofonzugriff",
+			"pasted_file_too_large": "Eingefügte Datei zu groß",
+			"transcription_failed": "Transkription fehlgeschlagen — bitte erneut versuchen"
 		},
 		"greeting": "Wie können wir helfen?",
 		"greeting_hi": "Hallo",
@@ -1641,7 +1822,9 @@
 		"title": "Community Chat",
 		"tooltip": {
 			"attach_files": "Dateien anhängen",
-			"mark_bug": "Fehler markieren"
+			"mark_bug": "Fehler markieren",
+			"start_recording": "Aufnahme starten",
+			"stop_recording": "Aufnahme stoppen"
 		}
 	},
 	"common": {
@@ -1682,13 +1865,26 @@
 		"terms": "Nutzungsbedingungen"
 	},
 	"hero": {
+		"ask_why": "Fragen Sie ihn warum.",
 		"companies_text": "Vertrauen der besten Teams",
 		"cta": "Jetzt starten",
 		"cta_demo": "Demo anfordern",
-		"description": "Jede Antwort basiert auf Live-Simulationstelemetrie — niemals geraten.",
+		"description": "Jede Antwort basiert auf Live-Simulationstelemetrie — niemals geraten. ",
+		"prompt_placeholder": "Fragen Sie Ihren Drucker alles...",
+		"prompt_suggestion_1": "Warum ist Heizelement R1 um 14:00 abgedriftet?",
+		"prompt_suggestion_2": "Übersteht die Recoater-Klinge den heutigen 8-Stunden-Job?",
+		"prompt_suggestion_3": "Vergleiche Barcelona und Phoenix bei identischem Duty Cycle.",
+		"prompt_suggestion_4": "Welche Komponente fällt als Nächstes am wahrscheinlichsten aus?",
+		"printer_is_prefix": "Ihr Drucker ist",
 		"section_label": "Start",
 		"tagline": "Ihr Drucker ist kritisch.\nFragen Sie ihn warum.",
 		"title": "Co-Pilot für HP Metal Jet S100"
+	},
+	"printer_status": {
+		"critical": "kritisch",
+		"degraded": "beeinträchtigt",
+		"failed": "ausgefallen",
+		"functional": "funktionsfähig"
 	},
 	"impersonation": {
 		"banner_text": "Sie sehen die Ansicht eines anderen Benutzers",

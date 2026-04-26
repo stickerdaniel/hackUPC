@@ -59,7 +59,8 @@ export function getAppSidebarConfig(
 				translationKey: 'app.sidebar.runs',
 				url: localizedHref('/app/runs'),
 				icon: ActivityIcon,
-				isActive: pathname.startsWith(`/${lang}/app/runs`)
+				isActive: pathname.startsWith(`/${lang}/app/runs`),
+				kbd: [ctrlSymbol, '⇧', '1']
 			},
 			{
 				translationKey: 'app.sidebar.ai_chat',
@@ -68,7 +69,7 @@ export function getAppSidebarConfig(
 				isActive: pathname.startsWith(`/${lang}/app/ai-chat`),
 				collapsible: true,
 				subItems: aiChatSubItems,
-				kbd: [ctrlSymbol, '⇧', '1'],
+				kbd: [ctrlSymbol, '⇧', '2'],
 				// Disable nav when already on the warm thread (already "new chat")
 				disableNav: !!activeThreadId && activeThreadId === warmThreadId
 			}

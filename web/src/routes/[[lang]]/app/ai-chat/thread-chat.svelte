@@ -94,6 +94,55 @@
 		});
 	});
 
+	// Consume a pending prompt typed in the marketing hero (or restored from
+	// ?draft= query param after the auth redirect). Fires once per mount as
+	// soon as we have a real thread to attach the message to.
+	const PENDING_PROMPT_KEY = 'copilot.pendingPrompt';
+	let pendingConsumed = $state(false);
+
+	$effect(() => {
+		if (pendingConsumed || !threadId || !chatCore || sending) return;
+
+		let pending: string | null = null;
+		try {
+			pending = sessionStorage.getItem(PENDING_PROMPT_KEY);
+			if (pending) sessionStorage.removeItem(PENDING_PROMPT_KEY);
+		} catch {
+			pending = null;
+		}
+		if (!pending) {
+			const draftParam = page.url.searchParams.get('draft');
+			if (draftParam) {
+				pending = draftParam;
+				const url = new URL(page.url);
+				url.searchParams.delete('draft');
+				history.replaceState(null, '', url.pathname + url.search);
+			}
+		}
+		if (!pending?.trim()) return;
+
+		pendingConsumed = true;
+		sending = true;
+		const message = pending;
+		chatCore
+			.sendMessage(client, message, {
+				fileIds: chatUIContext.uploadedFileIds,
+				attachments: chatUIContext.attachments
+			})
+			.then(() => {
+				chatUIContext.clearAttachments();
+				draftManager.clearDraft(threadId);
+			})
+			.catch((error) => {
+				console.error('[AI Chat sendMessage] pending prompt failed:', error);
+				chatUIContext.setInputValue(message);
+				toast.error($t('chat.messages.send_failed'));
+			})
+			.finally(() => {
+				sending = false;
+			});
+	});
+
 	const suggestions = [
 		{
 			text: $t('ai_chat.suggestion.spawn_baseline'),

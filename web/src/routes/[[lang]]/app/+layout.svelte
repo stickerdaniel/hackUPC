@@ -62,7 +62,7 @@
 		// Ctrl+Shift+number for sidebar nav (avoids macOS ⌘⇧3/4 screenshot conflict)
 		if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey) {
 			const shiftRoutes: Record<string, string> = {
-				Digit1: localizedHref('/app/community-chat'),
+				Digit1: localizedHref('/app/runs'),
 				Digit2: localizedHref(warmThreadId ? `/app/ai-chat?thread=${warmThreadId}` : '/app/ai-chat')
 			};
 			url = shiftRoutes[e.code];

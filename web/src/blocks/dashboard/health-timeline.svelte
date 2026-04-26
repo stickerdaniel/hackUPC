@@ -2,6 +2,10 @@
 	import { scaleLinear } from 'd3-scale';
 	import { line as d3Line } from 'd3-shape';
 	import { getTranslate } from '@tolgee/svelte';
+	import { useQuery } from 'convex-svelte';
+	import { useTimeWindow, WINDOW_OPTIONS } from '$lib/dashboard/time-window.svelte';
+	import { api } from '$lib/convex/_generated/api';
+	import type { Id } from '$lib/convex/_generated/dataModel';
 
 	const { t } = getTranslate();
 
@@ -46,7 +50,10 @@
 
 	const HORIZON = 260;
 	const EVENT_TICK = 140;
-	const EVENT_LABEL = 'human-disruption';
+
+	const componentLabel = (id: ComponentId): string => $t(`sim_ui.components.${id}`);
+	const statusLabel = (status: ReturnType<typeof statusOf>): string =>
+		$t(`sim_ui.status.${status.toLowerCase()}`);
 
 	type Point = { tick: number; health: number };
 
@@ -85,7 +92,65 @@
 		return points;
 	}
 
-	const series = COMPONENTS.map((c) => ({ ...c, data: generateSeries(c) }));
+	const syntheticSeries = COMPONENTS.map((c) => ({ ...c, data: generateSeries(c) }));
+
+	// ──────────────────────────────────────────────────────────────────────
+	// Real-data wiring — when a runId is provided, switch from the synthetic
+	// fallback to per-component health timeseries from the Convex historian.
+	// One useQuery per component; Convex deduplicates so calling the same
+	// query from driver-coupled-decay too is free.
+	// ──────────────────────────────────────────────────────────────────────
+	const { runId = null }: { runId?: Id<'simRuns'> | null } = $props();
+
+	const bladeQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'blade' as const } : 'skip'
+	);
+	const railQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'rail' as const } : 'skip'
+	);
+	const nozzleQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'nozzle' as const } : 'skip'
+	);
+	const cleaningQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'cleaning' as const } : 'skip'
+	);
+	const heaterQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'heater' as const } : 'skip'
+	);
+	const sensorQ = useQuery(api.sim.queries.getComponentTimeseries, () =>
+		runId ? { runId, componentId: 'sensor' as const } : 'skip'
+	);
+
+	type RealRow = { tick: number; healthIndex: number };
+	function rowsToPoints(rows: RealRow[] | undefined): Point[] | null {
+		if (!rows || rows.length === 0) return null;
+		return rows.map((r) => ({ tick: r.tick, health: r.healthIndex }));
+	}
+
+	const realSeries = $derived.by(() => {
+		if (!runId) return null;
+		const byId: Record<ComponentId, RealRow[] | undefined> = {
+			blade: bladeQ.data,
+			rail: railQ.data,
+			nozzle: nozzleQ.data,
+			cleaning: cleaningQ.data,
+			heater: heaterQ.data,
+			sensor: sensorQ.data
+		};
+		// Block until at least one query has landed; nulls fall back to synthetic.
+		return COMPONENTS.map((c) => {
+			const real = rowsToPoints(byId[c.id]);
+			return { ...c, data: real ?? generateSeries(c) };
+		});
+	});
+
+	const series = $derived(realSeries ?? syntheticSeries);
+
+	// Window controller — shared with the driver/alerts block when this chart
+	// is mounted inside the dashboard. Falls back to a local instance otherwise.
+	const tw = useTimeWindow(HORIZON);
+	const startTick = $derived(tw.startTick);
+	const endTick = $derived(tw.endTick);
 
 	// Chart geometry
 	const margin = { top: 12, right: 24, bottom: 32, left: 36 };
@@ -94,17 +159,41 @@
 	const innerW = viewW - margin.left - margin.right;
 	const innerH = viewH - margin.top - margin.bottom;
 
-	const xScale = scaleLinear().domain([0, HORIZON]).range([0, innerW]);
+	const xScale = $derived(
+		scaleLinear()
+			.domain([startTick, Math.max(startTick + 1, endTick)])
+			.range([0, innerW])
+	);
 	const yScale = scaleLinear().domain([0, 1]).range([innerH, 0]);
 
-	const lineGen = d3Line<Point>()
-		.x((d) => xScale(d.tick))
-		.y((d) => yScale(d.health));
+	const lineGen = $derived(
+		d3Line<Point>()
+			.x((d) => xScale(d.tick))
+			.y((d) => yScale(d.health))
+	);
 
-	const xTicks = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260];
+	// Filter each series to the visible window so the line generator only sees
+	// in-range data (avoids long off-screen segments on small windows).
+	const visibleSeries = $derived(
+		series.map((s) => ({
+			...s,
+			data: s.data.filter((p) => p.tick >= startTick && p.tick <= endTick)
+		}))
+	);
+
+	// X-axis ticks: 12 evenly-spaced labels across the visible window.
+	const xTicks = $derived.by(() => {
+		const span = Math.max(1, endTick - startTick);
+		const step = Math.max(1, Math.round(span / 12));
+		const out: number[] = [];
+		for (let t = startTick; t <= endTick; t += step) out.push(t);
+		if (out[out.length - 1] !== endTick) out.push(endTick);
+		return out;
+	});
 	const yTicks = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
 
-	const eventX = xScale(EVENT_TICK);
+	const eventInWindow = $derived(EVENT_TICK >= startTick && EVENT_TICK <= endTick);
+	const eventX = $derived(xScale(EVENT_TICK));
 
 	// Health → status mapping (matches the scenario data thresholds)
 	function statusOf(health: number): 'FUNCTIONAL' | 'DEGRADED' | 'CRITICAL' | 'FAILED' {
@@ -136,7 +225,8 @@
 			hover = null;
 			return;
 		}
-		const tick = Math.round(xScale.invert(sx));
+		const raw = Math.round(xScale.invert(sx));
+		const tick = Math.max(startTick, Math.min(endTick, raw));
 		// Find series whose health at this tick is closest to the cursor's Y (in data units)
 		const cursorHealth = yScale.invert(sy);
 		let best: (typeof series)[number] | null = null;
@@ -183,16 +273,51 @@
 </script>
 
 <section class="health-timeline">
-	<header class="ht-head">
-		<div class="ht-eyebrow">Phase 1 / Coupled engine</div>
-		<h2 class="ht-title">Component health over time</h2>
+	<header class="ht-head ht-head-with-control">
+		<div>
+			<div class="ht-eyebrow">{$t('sim_ui.health_timeline.eyebrow')}</div>
+			<h2 class="ht-title">{$t('sim_ui.health_timeline.title')}</h2>
+		</div>
+
+		<div class="ht-window" role="group">
+			<button
+				type="button"
+				class="ht-window-arrow"
+				disabled={tw.atLeft}
+				onclick={() => tw.panPrev()}
+				aria-label={$t('aria.pan_window_prev')}
+			>
+				←
+			</button>
+			<div class="ht-window-pills" role="group">
+				{#each WINDOW_OPTIONS as opt (opt.label)}
+					<button
+						type="button"
+						class="ht-window-pill"
+						class:is-active={tw.windowLabel === opt.label}
+						onclick={() => tw.setLabel(opt.label)}
+					>
+						{opt.label}
+					</button>
+				{/each}
+			</div>
+			<button
+				type="button"
+				class="ht-window-arrow"
+				disabled={tw.atRight}
+				onclick={() => tw.panNext()}
+				aria-label={$t('aria.pan_window_next')}
+			>
+				→
+			</button>
+		</div>
 	</header>
 
 	<div class="ht-legend">
 		{#each COMPONENTS as comp (comp.id)}
 			<span class="ht-legend-item">
 				<span class="ht-legend-dot" style:--c={comp.color}></span>
-				<span class="ht-legend-label">{comp.label}</span>
+				<span class="ht-legend-label">{componentLabel(comp.id)}</span>
 			</span>
 		{/each}
 	</div>
@@ -231,12 +356,16 @@
 					</text>
 				{/each}
 
-				<!-- Event marker -->
-				<line class="ht-event-line" x1={eventX} x2={eventX} y1="0" y2={innerH} />
-				<text class="ht-event-label" x={eventX + 6} y="14">{EVENT_LABEL}</text>
+				<!-- Event marker (only when within the visible window) -->
+				{#if eventInWindow}
+					<line class="ht-event-line" x1={eventX} x2={eventX} y1="0" y2={innerH} />
+					<text class="ht-event-label" x={eventX + 6} y="14"
+						>{$t('sim_ui.health_timeline.event_label')}</text
+					>
+				{/if}
 
-				<!-- Series -->
-				{#each series as s (s.id)}
+				<!-- Series — windowed -->
+				{#each visibleSeries as s (s.id)}
 					<path class="ht-line" d={lineGen(s.data) ?? ''} stroke={s.color} />
 				{/each}
 
@@ -253,7 +382,7 @@
 
 				<!-- X axis tick text label -->
 				<text class="ht-axis-title" x={innerW / 2} y={innerH + 32} text-anchor="middle">
-					tick
+					{$t('sim_ui.health_timeline.tick_label')}
 				</text>
 
 				<!-- Transparent capture rect — covers the inner chart area for mouse tracking -->
@@ -277,28 +406,27 @@
 				style:top="{Math.max(hover.clientY - 10, 0)}px"
 			>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">component_id</span>
-					<span class="ht-tip-val">{hover.comp.id}</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.component_id')}</span>
+					<span class="ht-tip-val">{componentLabel(hover.comp.id)}</span>
 				</div>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">tick</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.tick')}</span>
 					<span class="ht-tip-val">{hover.tick}</span>
 				</div>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">health</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.health')}</span>
 					<span class="ht-tip-val">{hover.health.toFixed(3)}</span>
 				</div>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">status</span>
-					<span class="ht-tip-val">{hover.status}</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.status')}</span>
+					<span class="ht-tip-val">{statusLabel(hover.status)}</span>
 				</div>
 			</div>
 		{/if}
 	</div>
 
 	<p class="ht-foot">
-		Grey dashed rules mark environmental events from the scenario (chaos overlays — earthquake, HVAC
-		failure, holiday, …).
+		{$t('sim_ui.health_timeline.footnote')}
 	</p>
 </section>
 
@@ -322,6 +450,78 @@
 
 	.ht-head {
 		margin-bottom: 18px;
+	}
+	.ht-head-with-control {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 24px;
+		flex-wrap: wrap;
+	}
+
+	/* ─── Time-window selector (shared with the driver/alerts block) ─── */
+	.ht-window {
+		display: inline-flex;
+		align-items: stretch;
+		gap: 6px;
+		font-family: var(--sans);
+		font-feature-settings: 'tnum' 1;
+	}
+	.ht-window-arrow {
+		width: 36px;
+		height: 36px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #ffffff;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		color: var(--fg);
+		font-size: 14px;
+		cursor: pointer;
+		transition:
+			background 0.12s,
+			border-color 0.12s,
+			color 0.12s;
+	}
+	.ht-window-arrow:hover:not(:disabled) {
+		background: #f4f4f5;
+	}
+	.ht-window-arrow:disabled {
+		color: var(--fg-4);
+		cursor: not-allowed;
+	}
+	.ht-window-pills {
+		display: inline-flex;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		overflow: hidden;
+		background: #ffffff;
+	}
+	.ht-window-pill {
+		padding: 0 14px;
+		min-width: 48px;
+		height: 36px;
+		background: transparent;
+		border: none;
+		border-right: 1px solid var(--line);
+		color: var(--fg);
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background 0.12s,
+			color 0.12s;
+	}
+	.ht-window-pill:last-child {
+		border-right: none;
+	}
+	.ht-window-pill:hover {
+		background: #f4f4f5;
+	}
+	.ht-window-pill.is-active {
+		background: var(--accent);
+		color: #ffffff;
 	}
 	.ht-eyebrow {
 		font-size: 10px;

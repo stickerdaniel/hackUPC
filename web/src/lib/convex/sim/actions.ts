@@ -84,7 +84,28 @@ async function _runScenarioForUser(
 			throw new ConvexError(errMsg);
 		}
 
-		const result = (await res.json()) as { tick_count: number; status: string };
+		const result = (await res.json()) as {
+			tick_count: number;
+			status: string;
+			resolved_config?: {
+				run?: { seed?: number; horizon_ticks?: number; dt_seconds?: number };
+				[k: string]: unknown;
+			};
+		};
+
+		// Persist the resolved scenario config + the YAML's actual run defaults.
+		// Tolerant of missing resolved_config so older Python images still work.
+		if (result.resolved_config) {
+			const runCfg = result.resolved_config.run ?? {};
+			await ctx.runMutation(internal.sim.mutations.recordRunConfig, {
+				runId,
+				scenarioConfig: JSON.stringify(result.resolved_config),
+				resolvedSeed: runCfg.seed ?? seed,
+				resolvedHorizonTicks: runCfg.horizon_ticks ?? horizonTicks,
+				resolvedDtSeconds: runCfg.dt_seconds ?? dtSeconds
+			});
+		}
+
 		await ctx.runMutation(internal.sim.mutations.recordRunCompleted, {
 			runId,
 			lastTick: Math.max(0, result.tick_count - 1)

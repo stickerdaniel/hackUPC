@@ -154,31 +154,33 @@
 			<!-- AI messages: ghost/prose style with interleaved reasoning/tools/text -->
 			<MessageBubble {align} variant="ghost">
 				{#if hasParts}
-					{#each orderedParts as part (part.key)}
-						{#if part.kind === 'reasoning'}
-							<ChatReasoning
-								open={isReasoningPartOpen(part.key)}
-								onOpenChange={(open) => handleReasoningPartOpenChange(part.key, open)}
-								isStreaming={part.isStreaming}
-								hasContent={part.hasContent}
-								content={part.text}
-							/>
-						{:else if part.kind === 'tool' && part.toolPart.type === 'tool-renderUI' && part.toolPart.state === 'output-available'}
-							{@const out = part.toolPart.output as
-								| { ok: true; spec: Spec }
-								| { ok: false; error: string }
-								| undefined}
-							{#if out && out.ok && out.spec}
-								<SpecRenderer spec={out.spec} />
-							{:else}
+					<div class="flex flex-col gap-3">
+						{#each orderedParts as part (part.key)}
+							{#if part.kind === 'reasoning'}
+								<ChatReasoning
+									open={isReasoningPartOpen(part.key)}
+									onOpenChange={(open) => handleReasoningPartOpenChange(part.key, open)}
+									isStreaming={part.isStreaming}
+									hasContent={part.hasContent}
+									content={part.text}
+								/>
+							{:else if part.kind === 'tool' && part.toolPart.type === 'tool-renderUI' && part.toolPart.state === 'output-available'}
+								{@const out = part.toolPart.output as
+									| { ok: true; spec: Spec }
+									| { ok: false; error: string }
+									| undefined}
+								{#if out && out.ok && out.spec}
+									<SpecRenderer spec={out.spec} />
+								{:else}
+									<ToolComposed toolPart={part.toolPart} />
+								{/if}
+							{:else if part.kind === 'tool'}
 								<ToolComposed toolPart={part.toolPart} />
+							{:else if part.kind === 'text'}
+								<Response content={part.text} animation={{ enabled: true }} />
 							{/if}
-						{:else if part.kind === 'tool'}
-							<ToolComposed toolPart={part.toolPart} />
-						{:else if part.kind === 'text'}
-							<Response content={part.text} animation={{ enabled: true }} />
-						{/if}
-					{/each}
+						{/each}
+					</div>
 				{:else}
 					<!-- Fallback for messages without parts (pending, old messages) -->
 					{#if showReasoningFallback}
