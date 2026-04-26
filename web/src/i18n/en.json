@@ -1313,8 +1313,11 @@
 		},
 		"select_chat": "Select a conversation or start a new chat",
 		"suggestion": {
+			"compare_climates": "Spawn a phoenix-aggressive run with the same seed as my last barcelona-baseline, then compare the heater's final-tick health between the two and explain the gap.",
+			"diagnose_sensor_trust": "On my latest run, find the component that degraded fastest and use inspectSensorTrust to tell me whether the sensor reading is trustworthy.",
 			"explain": "Explain something",
 			"help": "Get help",
+			"spawn_baseline": "Run a barcelona-baseline scenario for one year (52 ticks). I want to see how the printer ages.",
 			"understand": "Help me understand",
 			"weather": "What's the weather like in Tokyo?"
 		},

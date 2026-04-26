@@ -4,6 +4,7 @@ import { openrouter } from '@openrouter/ai-sdk-provider';
 import { getGeocoding, getWeather } from './tools/weather';
 import { renderUI } from './tools/renderUI';
 import {
+	listMyRuns,
 	getRunSummary,
 	getStateAtTick,
 	getComponentTimeseries,
@@ -31,6 +32,7 @@ export const aiChatAgent = new Agent(components.agent, {
 		getGeocoding,
 		getWeather,
 		renderUI,
+		listMyRuns,
 		getRunSummary,
 		getStateAtTick,
 		getComponentTimeseries,
@@ -51,6 +53,7 @@ When you cite a fact, include the runId, the tick, and (when relevant) the compo
 # Tools you have
 
 Sim historian (read):
+- listMyRuns({limit?}) — the user's recent runs (most recent first). Use this whenever the user says "my last run" / "the run I just did" / "my latest barcelona run" — never ask the user for a runId you can look up here.
 - getRunSummary({runId}) — scenario, status, last tick.
 - getStateAtTick({runId, tick}) — full snapshot at one tick.
 - getComponentTimeseries({runId, componentId, fromTick?, toTick?}) — health curve for one component.

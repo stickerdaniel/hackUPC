@@ -32,6 +32,24 @@ function requireUserId(ctx: { userId?: string }): string {
 	return ctx.userId;
 }
 
+export const listMyRuns = createTool({
+	description:
+		"List the user's recent simulation runs (most recent first). Returns runId, " +
+		'scenarioName, status, lastTick, startedAt for each. Use this when the user ' +
+		'asks about "my last run" / "my latest barcelona run" / "the run I just did" — ' +
+		'never ask the user for a runId you can look up here.',
+	args: z.object({
+		limit: z.number().int().positive().max(50).optional()
+	}),
+	handler: async (ctx, args): Promise<unknown> => {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.listMyRunsForUser, {
+			userId,
+			limit: args.limit
+		});
+	}
+});
+
 export const getRunSummary = createTool({
 	description:
 		'Get high-level metadata for a simulation run (scenario, status, last tick). ' +

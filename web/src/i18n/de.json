@@ -1312,8 +1312,11 @@
 		},
 		"select_chat": "Wählen Sie eine Unterhaltung oder starten Sie einen neuen Chat",
 		"suggestion": {
+			"compare_climates": "Starte einen phoenix-aggressive-Lauf mit demselben Seed wie mein letzter barcelona-baseline und vergleiche dann die finale Heizungs-Gesundheit beider Läufe und erkläre die Differenz.",
+			"diagnose_sensor_trust": "Finde im letzten Lauf die Komponente, die am schnellsten degradiert ist, und prüfe mit inspectSensorTrust, ob die Sensoranzeige vertrauenswürdig ist.",
 			"explain": "Erkläre etwas",
 			"help": "Hilfe erhalten",
+			"spawn_baseline": "Starte ein barcelona-baseline-Szenario über ein Jahr (52 Ticks). Ich möchte sehen, wie der Drucker altert.",
 			"understand": "Hilf mir zu verstehen",
 			"weather": "Wie ist das Wetter in Tokio?"
 		},

@@ -1312,8 +1312,11 @@
 		},
 		"select_chat": "Sélectionnez une conversation ou démarrez un nouveau chat",
 		"suggestion": {
+			"compare_climates": "Lance une exécution phoenix-aggressive avec la même graine que mon dernier barcelona-baseline, puis compare la santé finale du chauffage entre les deux et explique l'écart.",
+			"diagnose_sensor_trust": "Sur ma dernière exécution, trouve le composant qui s'est dégradé le plus vite et utilise inspectSensorTrust pour dire si la lecture du capteur est fiable.",
 			"explain": "Explique quelque chose",
 			"help": "Obtenir de l'aide",
+			"spawn_baseline": "Lance un scénario barcelona-baseline sur un an (52 ticks). Je veux voir comment l'imprimante vieillit.",
 			"understand": "Aide-moi à comprendre",
 			"weather": "Quel temps fait-il à Tokyo ?"
 		},

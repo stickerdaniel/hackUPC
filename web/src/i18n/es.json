@@ -1312,8 +1312,11 @@
 		},
 		"select_chat": "Selecciona una conversación o inicia un nuevo chat",
 		"suggestion": {
+			"compare_climates": "Lanza una ejecución phoenix-aggressive con la misma semilla que mi último barcelona-baseline, luego compara la salud final del calentador entre ambas y explica la diferencia.",
+			"diagnose_sensor_trust": "En mi última ejecución, encuentra el componente que se degradó más rápido y usa inspectSensorTrust para decirme si la lectura del sensor es fiable.",
 			"explain": "Explica algo",
 			"help": "Obtener ayuda",
+			"spawn_baseline": "Lanza un escenario barcelona-baseline durante un año (52 ticks). Quiero ver cómo envejece la impresora.",
 			"understand": "Ayúdame a entender",
 			"weather": "¿Qué tiempo hace en Tokio?"
 		},

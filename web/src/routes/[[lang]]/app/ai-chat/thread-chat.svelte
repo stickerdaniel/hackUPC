@@ -95,9 +95,18 @@
 	});
 
 	const suggestions = [
-		{ text: $t('ai_chat.suggestion.weather'), label: $t('ai_chat.suggestion.weather') },
-		{ text: $t('ai_chat.suggestion.explain'), label: $t('ai_chat.suggestion.explain') },
-		{ text: $t('ai_chat.suggestion.help'), label: $t('ai_chat.suggestion.help') }
+		{
+			text: $t('ai_chat.suggestion.spawn_baseline'),
+			label: $t('ai_chat.suggestion.spawn_baseline')
+		},
+		{
+			text: $t('ai_chat.suggestion.diagnose_sensor_trust'),
+			label: $t('ai_chat.suggestion.diagnose_sensor_trust')
+		},
+		{
+			text: $t('ai_chat.suggestion.compare_climates'),
+			label: $t('ai_chat.suggestion.compare_climates')
+		}
 	];
 </script>
 
