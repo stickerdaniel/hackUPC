@@ -74,6 +74,54 @@
 
 	const driverData = DRIVERS.map((d) => ({ ...d, data: genDriver(d) }));
 
+	// ──────────────────────────────────────────────────────────────────────
+	// Phase 2 time-window — shared by Driver streams + Proactive alerts.
+	// Mirrors the Streamlit panel-1 control (sim/.../streamlit_app.py:386-418)
+	// so the two surfaces speak the same vocabulary (6mo / 1y / 3y / all).
+	// Sizes are weekly ticks (dt = 1 week) per the latest sim contract.
+	// ──────────────────────────────────────────────────────────────────────
+	type WindowLabel = '6mo' | '1y' | '3y' | 'all';
+	const WINDOW_OPTIONS: { label: WindowLabel; size: number }[] = [
+		{ label: '6mo', size: 26 },
+		{ label: '1y', size: 52 },
+		{ label: '3y', size: 156 },
+		{ label: 'all', size: HORIZON }
+	];
+	const labelToSize = (l: WindowLabel) =>
+		WINDOW_OPTIONS.find((w) => w.label === l)?.size ?? HORIZON;
+
+	let windowLabel = $state<WindowLabel>('1y');
+	let startTick = $state(0);
+
+	const windowSize = $derived(labelToSize(windowLabel));
+	const upperStart = $derived(Math.max(0, HORIZON - windowSize));
+	// Clamp the start tick whenever the window resizes (e.g. zooming out
+	// past the right edge after the user picked "all").
+	$effect(() => {
+		if (startTick > upperStart) startTick = upperStart;
+	});
+	const endTick = $derived(Math.min(HORIZON, startTick + windowSize));
+	const panStep = $derived(Math.max(1, Math.floor(windowSize / 2)));
+	const atLeft = $derived(startTick <= 0);
+	const atRight = $derived(startTick >= upperStart);
+
+	function panPrev() {
+		if (atLeft) return;
+		startTick = Math.max(0, startTick - panStep);
+	}
+	function panNext() {
+		if (atRight) return;
+		startTick = Math.min(upperStart, startTick + panStep);
+	}
+
+	// Filter driver and alerts data to the selected window.
+	const visibleDriverData = $derived(
+		driverData.map((d) => ({
+			...d,
+			data: d.data.filter((p) => p.tick >= startTick && p.tick < endTick)
+		}))
+	);
+
 	// Sparkline geometry (per strip) — compact so two columns fit side-by-side
 	const sparkW = 600;
 	const sparkH = 40;
@@ -82,11 +130,17 @@
 	const sparkInnerW = sparkW - sparkPadX * 2;
 	const sparkInnerH = sparkH - sparkPadY * 2;
 
-	const xSpark = scaleLinear().domain([0, HORIZON]).range([0, sparkInnerW]);
+	const xSpark = $derived(
+		scaleLinear()
+			.domain([startTick, Math.max(startTick + 1, endTick - 1)])
+			.range([0, sparkInnerW])
+	);
 	const ySpark = scaleLinear().domain([0, 1]).range([sparkInnerH, 0]);
-	const sparkLine = d3Line<Point>()
-		.x((d) => xSpark(d.tick))
-		.y((d) => ySpark(d.v));
+	const sparkLine = $derived(
+		d3Line<Point>()
+			.x((d) => xSpark(d.tick))
+			.y((d) => ySpark(d.v))
+	);
 
 	type SparkHover = {
 		driverId: Driver['id'];
@@ -107,7 +161,9 @@
 			sparkHover = null;
 			return;
 		}
-		const tick = Math.max(0, Math.min(HORIZON, Math.round(xSpark.invert(sx))));
+		// Invert with the windowed scale, then clamp to the visible range.
+		const raw = Math.round(xSpark.invert(sx));
+		const tick = Math.max(startTick, Math.min(endTick - 1, raw));
 		const point = d.data[tick];
 		if (!point) {
 			sparkHover = null;
@@ -217,6 +273,10 @@
 	function fmtDriverValue(v: number): string {
 		return v.toFixed(3);
 	}
+
+	const visibleAlerts = $derived(
+		PROACTIVE_ALERTS.filter((a) => a.tick >= startTick && a.tick < endTick)
+	);
 
 	// ──────────────────────────────────────────────────────────────────────
 	// PANEL BOTTOM — Component degradation grid
@@ -356,123 +416,158 @@
 </script>
 
 <section class="dcd">
-	<!-- ────────── TOP: Driver streams (left) + Proactive alerts feed (right) ────────── -->
-	<div class="dcd-block dcd-block-split">
-		<div class="dcd-split-col">
-			<header class="dcd-head">
-				<div class="dcd-eyebrow">Phase 2 / Brief inputs</div>
-				<h2 class="dcd-title">Driver streams</h2>
-			</header>
-
-			<div class="dcd-sparks">
-				{#each driverData as d (d.id)}
-					<div class="dcd-spark-strip">
-						<div class="dcd-spark-label">{d.label}</div>
-						<div class="dcd-spark-chart-wrap">
-							<svg
-								bind:this={sparkRefs[d.id]}
-								class="dcd-spark-svg"
-								viewBox={`0 0 ${sparkW} ${sparkH}`}
-								preserveAspectRatio="none"
-								role="img"
-								aria-label={d.label}
-								onmousemove={(e) => handleSparkMove(e, d)}
-								onmouseleave={handleSparkLeave}
-							>
-								<g transform={`translate(${sparkPadX}, ${sparkPadY})`}>
-									<path class="dcd-spark-line" d={sparkLine(d.data) ?? ''} />
-									{#if sparkHover && sparkHover.driverId === d.id}
-										<line
-											class="dcd-spark-guide"
-											x1={xSpark(sparkHover.tick)}
-											x2={xSpark(sparkHover.tick)}
-											y1="0"
-											y2={sparkInnerH}
-										/>
-										<circle
-											class="dcd-spark-dot"
-											cx={xSpark(sparkHover.tick)}
-											cy={ySpark(sparkHover.v)}
-											r="3"
-										/>
-									{/if}
-									<rect
-										class="dcd-spark-capture"
-										x="0"
-										y="0"
-										width={sparkInnerW}
-										height={sparkInnerH}
-									/>
-								</g>
-							</svg>
-							<span class="dcd-spark-value">{fmtPct(d.data[d.data.length - 1]?.v ?? 0)}</span>
-
-							{#if sparkHover && sparkHover.driverId === d.id}
-								<div
-									class="dcd-spark-tip"
-									style:left="{Math.min(sparkHover.clientX + 12, 420)}px"
-									style:top="{Math.max(sparkHover.clientY - 44, -28)}px"
-								>
-									<div class="dcd-tip-row">
-										<span class="dcd-tip-key">tick</span>
-										<span class="dcd-tip-val">{sparkHover.tick}</span>
-									</div>
-									<div class="dcd-tip-row">
-										<span class="dcd-tip-key">{d.id}</span>
-										<span class="dcd-tip-val">{sparkHover.v.toFixed(3)}</span>
-									</div>
-								</div>
-							{/if}
-						</div>
-					</div>
-				{/each}
+	<!-- ────────── TOP: Phase 2 — Driver streams + Proactive alerts (shared time window) ────────── -->
+	<div class="dcd-block">
+		<header class="dcd-head dcd-head-with-control">
+			<div>
+				<div class="dcd-eyebrow">Phase 2 / Brief inputs · Autonomy preview</div>
+				<h2 class="dcd-title">Driver streams &amp; proactive alerts</h2>
+				<p class="dcd-sub">
+					Four engine inputs and the alerts the autonomous agent would have raised, scoped to the
+					same time window.
+				</p>
 			</div>
 
-			<p class="dcd-foot">
-				Four engine inputs every tick. Right-edge value is the latest reading; all four are wired
-				into the coupled engine on every step.
-			</p>
+			<div class="dcd-window" role="group">
+				<button type="button" class="dcd-window-arrow" disabled={atLeft} onclick={panPrev}>
+					←
+				</button>
+				<div class="dcd-window-pills" role="group">
+					{#each WINDOW_OPTIONS as opt (opt.label)}
+						<button
+							type="button"
+							class="dcd-window-pill"
+							class:is-active={windowLabel === opt.label}
+							onclick={() => (windowLabel = opt.label)}
+						>
+							{opt.label}
+						</button>
+					{/each}
+				</div>
+				<button type="button" class="dcd-window-arrow" disabled={atRight} onclick={panNext}>
+					→
+				</button>
+			</div>
+		</header>
+
+		<div class="dcd-window-meta">
+			Showing tick <span class="dcd-mono">{startTick}</span> →
+			<span class="dcd-mono">{Math.max(startTick, endTick - 1)}</span>
+			of <span class="dcd-mono">{HORIZON}</span>
+			<span class="dcd-meta-sep">·</span>
+			window <span class="dcd-mono">{windowLabel}</span>
+			<span class="dcd-meta-sep">·</span>
+			alerts in window <span class="dcd-mono">{visibleAlerts.length}</span> /
+			<span class="dcd-mono">{PROACTIVE_ALERTS.length}</span>
 		</div>
 
-		<div class="dcd-split-col">
-			<header class="dcd-head">
-				<div class="dcd-eyebrow">Phase 3 / Autonomy preview</div>
-				<h2 class="dcd-title">Proactive alerts feed</h2>
-				<p class="dcd-alerts-sub">
-					Notification-style log of every status crossing the engine produced — what the autonomous
-					agent would have raised in real time.
+		<div class="dcd-block-split dcd-block-split-inner">
+			<div class="dcd-split-col">
+				<div class="dcd-section-label">DRIVER STREAMS</div>
+
+				<div class="dcd-sparks">
+					{#each visibleDriverData as d (d.id)}
+						<div class="dcd-spark-strip">
+							<div class="dcd-spark-label">{d.label}</div>
+							<div class="dcd-spark-chart-wrap">
+								<svg
+									bind:this={sparkRefs[d.id]}
+									class="dcd-spark-svg"
+									viewBox={`0 0 ${sparkW} ${sparkH}`}
+									preserveAspectRatio="none"
+									role="img"
+									aria-label={d.label}
+									onmousemove={(e) => handleSparkMove(e, d)}
+									onmouseleave={handleSparkLeave}
+								>
+									<g transform={`translate(${sparkPadX}, ${sparkPadY})`}>
+										<path class="dcd-spark-line" d={sparkLine(d.data) ?? ''} />
+										{#if sparkHover && sparkHover.driverId === d.id}
+											<line
+												class="dcd-spark-guide"
+												x1={xSpark(sparkHover.tick)}
+												x2={xSpark(sparkHover.tick)}
+												y1="0"
+												y2={sparkInnerH}
+											/>
+											<circle
+												class="dcd-spark-dot"
+												cx={xSpark(sparkHover.tick)}
+												cy={ySpark(sparkHover.v)}
+												r="3"
+											/>
+										{/if}
+										<rect
+											class="dcd-spark-capture"
+											x="0"
+											y="0"
+											width={sparkInnerW}
+											height={sparkInnerH}
+										/>
+									</g>
+								</svg>
+								<span class="dcd-spark-value">{fmtPct(d.data[d.data.length - 1]?.v ?? 0)}</span>
+
+								{#if sparkHover && sparkHover.driverId === d.id}
+									<div
+										class="dcd-spark-tip"
+										style:left="{Math.min(sparkHover.clientX + 12, 420)}px"
+										style:top="{Math.max(sparkHover.clientY - 44, -28)}px"
+									>
+										<div class="dcd-tip-row">
+											<span class="dcd-tip-key">tick</span>
+											<span class="dcd-tip-val">{sparkHover.tick}</span>
+										</div>
+										<div class="dcd-tip-row">
+											<span class="dcd-tip-key">{d.id}</span>
+											<span class="dcd-tip-val">{sparkHover.v.toFixed(3)}</span>
+										</div>
+									</div>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				<p class="dcd-foot">Right-edge value is the latest reading inside the visible window.</p>
+			</div>
+
+			<div class="dcd-split-col">
+				<div class="dcd-section-label">PROACTIVE ALERTS</div>
+
+				<ul class="dcd-alerts">
+					{#if visibleAlerts.length === 0}
+						<li class="dcd-alerts-empty">No alerts in this window.</li>
+					{/if}
+					{#each visibleAlerts as a, i (i)}
+						<li class="dcd-alert-row">
+							<span
+								class="dcd-alert-icon"
+								class:is-failed={a.status === 'FAILED'}
+								class:is-critical={a.status === 'CRITICAL'}
+								class:is-degraded={a.status === 'DEGRADED'}
+								style:--icon-color={SEVERITY_COLOR[a.status]}
+								aria-hidden="true"
+							></span>
+							<span class="dcd-alert-tick">TICK {a.tick}</span>
+							<span class="dcd-alert-component">{a.component}</span>
+							<span class="dcd-alert-arrow">→</span>
+							<span class="dcd-alert-status" style:color={SEVERITY_COLOR[a.status]}>
+								{a.status}
+							</span>
+							<span class="dcd-alert-driver-label">· top driver</span>
+							<code class="dcd-alert-driver-pill"
+								>{a.topDriverKey} = {fmtDriverValue(a.topDriverValue)}</code
+							>
+						</li>
+					{/each}
+				</ul>
+
+				<p class="dcd-foot">
+					Each row is what the proactive agent would have raised the moment a component crossed a
+					status threshold.
 				</p>
-			</header>
-
-			<ul class="dcd-alerts">
-				{#each PROACTIVE_ALERTS as a, i (i)}
-					<li class="dcd-alert-row">
-						<span
-							class="dcd-alert-icon"
-							class:is-failed={a.status === 'FAILED'}
-							class:is-critical={a.status === 'CRITICAL'}
-							class:is-degraded={a.status === 'DEGRADED'}
-							style:--icon-color={SEVERITY_COLOR[a.status]}
-							aria-hidden="true"
-						></span>
-						<span class="dcd-alert-tick">TICK {a.tick}</span>
-						<span class="dcd-alert-component">{a.component}</span>
-						<span class="dcd-alert-arrow">→</span>
-						<span class="dcd-alert-status" style:color={SEVERITY_COLOR[a.status]}>
-							{a.status}
-						</span>
-						<span class="dcd-alert-driver-label">· top driver</span>
-						<code class="dcd-alert-driver-pill"
-							>{a.topDriverKey} = {fmtDriverValue(a.topDriverValue)}</code
-						>
-					</li>
-				{/each}
-			</ul>
-
-			<p class="dcd-foot">
-				{PROACTIVE_ALERTS.length} alerts. Each row is what the proactive agent would have raised the moment
-				a component crossed a status threshold.
-			</p>
+			</div>
 		</div>
 	</div>
 
@@ -688,6 +783,9 @@
 		gap: 40px;
 		align-items: start;
 	}
+	.dcd-block-split-inner {
+		margin-top: 18px;
+	}
 	.dcd-split-col {
 		min-width: 0;
 	}
@@ -696,6 +794,105 @@
 			grid-template-columns: 1fr;
 			gap: 32px;
 		}
+	}
+
+	/* ─── Shared header row + time-window control (Phase 2) ─── */
+	.dcd-head-with-control {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 24px;
+		flex-wrap: wrap;
+	}
+	.dcd-sub {
+		margin: 6px 0 0;
+		font-size: 12px;
+		color: var(--fg-3);
+		max-width: 56ch;
+	}
+	.dcd-window {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
+	}
+	.dcd-window-arrow {
+		appearance: none;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		min-width: 60px;
+		height: 32px;
+		font-size: 14px;
+		font-family: var(--sans);
+		color: var(--fg);
+		cursor: pointer;
+		transition:
+			background 120ms,
+			color 120ms,
+			border-color 120ms;
+	}
+	.dcd-window-arrow:hover:not(:disabled) {
+		background: #f5f5f5;
+	}
+	.dcd-window-arrow:disabled {
+		color: var(--fg-4);
+		cursor: not-allowed;
+	}
+	.dcd-window-pills {
+		display: inline-flex;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--surface);
+	}
+	.dcd-window-pill {
+		appearance: none;
+		background: transparent;
+		border: none;
+		border-right: 1px solid var(--line);
+		padding: 0 14px;
+		height: 32px;
+		font-size: 12px;
+		font-weight: 600;
+		font-family: var(--sans);
+		color: var(--fg);
+		cursor: pointer;
+		letter-spacing: 0.04em;
+		transition:
+			background 120ms,
+			color 120ms;
+	}
+	.dcd-window-pill:last-child {
+		border-right: none;
+	}
+	.dcd-window-pill:hover {
+		background: #f5f5f5;
+	}
+	.dcd-window-pill.is-active {
+		background: var(--accent);
+		color: #ffffff;
+	}
+	.dcd-window-meta {
+		margin-top: 12px;
+		font-size: 11px;
+		color: var(--fg-3);
+		letter-spacing: 0.04em;
+	}
+	.dcd-mono {
+		font-family: ui-monospace, 'SF Mono', 'Menlo', 'Consolas', monospace;
+		color: var(--fg);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ─── Empty state for the alerts list ─── */
+	.dcd-alerts-empty {
+		font-size: 12px;
+		color: var(--fg-4);
+		font-style: italic;
+		padding: 16px 0;
+		list-style: none;
 	}
 
 	/* ─── Sparklines ─── */
