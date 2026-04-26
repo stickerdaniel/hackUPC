@@ -245,10 +245,14 @@
 				</div>
 
 				<h1 class="hero-title-clean">
+					<!-- The status word in the hero h1 is intentionally pinned to
+					     `critical` (not derived from the live run) — it's the
+					     marketing-page hook, not a real telemetry readout. The
+					     truth-telling happens in the KPI pills below. -->
 					<span class="hero-title-line"
 						>{$t('hero.printer_is_prefix')}
-						<span class="hero-title-status" data-sev={overall}
-							>{printerStatusLabel(overall)}</span
+						<span class="hero-title-status" data-sev="CRITICAL"
+							>{printerStatusLabel('CRITICAL')}</span
 						>.</span
 					>
 					<span class="hero-title-line hero-title-soft">{$t('hero.ask_why')}</span>
