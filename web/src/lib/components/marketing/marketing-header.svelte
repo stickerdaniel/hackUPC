@@ -120,6 +120,14 @@
 
 				<!-- Desktop Actions -->
 				<div class="hidden items-center gap-3 lg:flex">
+					{#if showAuthButtons && isAuthenticated}
+						<Button variant="ghost" size="sm" href={localizedHref('/app/dashboard')}>
+							<T keyName="nav.dashboard" />
+						</Button>
+						<Button variant="ghost" size="sm" href={localizedHref('/app/runs')}>
+							<T keyName="nav.runs" />
+						</Button>
+					{/if}
 					<Button
 						variant="ghost"
 						size="icon"
@@ -150,9 +158,6 @@
 								)}
 							>
 								{#if isAuthenticated}
-									<Button size="sm" href={localizedHref('/app')}>
-										<T keyName="nav.dashboard" />
-									</Button>
 									<Button
 										variant="outline"
 										size="icon"
@@ -241,8 +246,23 @@
 						)}
 					>
 						{#if isAuthenticated}
-							<Button size="sm" href={localizedHref('/app')} class="w-full">
+							<Button
+								variant="ghost"
+								size="sm"
+								href={localizedHref('/app/dashboard')}
+								class="w-full justify-start"
+								onclick={() => (menuState = false)}
+							>
 								<T keyName="nav.dashboard" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								href={localizedHref('/app/runs')}
+								class="w-full justify-start"
+								onclick={() => (menuState = false)}
+							>
+								<T keyName="nav.runs" />
 							</Button>
 						{:else if isAtTop}
 							<Button variant="ghost" size="sm" href={localizedHref('/signin')} class="w-full">

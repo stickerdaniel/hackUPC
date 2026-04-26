@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { getTranslate } from '@tolgee/svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { localizedHref } from '$lib/utils/i18n';
+	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
 
 	const { t } = getTranslate();
+	const auth = useAuth();
+
+	// Shared with ai-chat thread-chat.svelte (reads + clears on mount)
+	const PENDING_PROMPT_KEY = 'copilot.pendingPrompt';
 
 	const STATUS_LABELS = {
 		FUNCTIONAL: 'functional',
@@ -54,8 +62,26 @@
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (!prompt.trim()) return;
-		// no-op for now — wired in a follow-up
+		const text = prompt.trim();
+		if (!text) return;
+
+		try {
+			sessionStorage.setItem(PENDING_PROMPT_KEY, text);
+		} catch {
+			// sessionStorage unavailable (private mode, etc.) — fall back to query param
+			const target = auth.isAuthenticated
+				? localizedHref('/app/ai-chat')
+				: localizedHref(`/signin?redirectTo=${encodeURIComponent(localizedHref('/app/ai-chat'))}`);
+			void goto(
+				resolve(`${target}${target.includes('?') ? '&' : '?'}draft=${encodeURIComponent(text)}`)
+			);
+			return;
+		}
+
+		const target = auth.isAuthenticated
+			? localizedHref('/app/ai-chat')
+			: localizedHref(`/signin?redirectTo=${encodeURIComponent(localizedHref('/app/ai-chat'))}`);
+		void goto(resolve(target));
 	}
 
 	function pickPrompt(text: string) {
