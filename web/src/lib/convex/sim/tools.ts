@@ -176,10 +176,11 @@ export const compareRuns = createTool({
 
 export const runScenario = createTool({
 	description:
-		'Spawn a new simulation run for what-if analysis. ALWAYS show the user the proposed ' +
-		'config (scenario name, seed, horizonTicks) and ask for confirmation before calling ' +
-		'this. The run is one-shot: it computes all ticks immediately and returns the new ' +
-		'runId. Never call this without explicit user confirmation.',
+		'Spawn a new simulation run. The run is one-shot: it computes all ticks immediately ' +
+		'and returns the new runId. If the user explicitly asked to run / spawn / do a ' +
+		'scenario, call this immediately — sending the message IS their confirmation. ' +
+		'Only ask "yes/no" first when YOU are proposing an unsolicited what-if the user ' +
+		'did not request. When in doubt, run.',
 	args: z.object({
 		scenario: z
 			.string()
