@@ -13,17 +13,16 @@
   </p>
 
   <p>
+    <a href="#cloning"><strong>Cloning</strong></a> ·
     <a href="#what-we-are-building"><strong>Architecture</strong></a> ·
     <a href="#research-synthesis-phase-1--phase-2"><strong>Research</strong></a> ·
-    <a href="#the-killer-demo-sim-only-5-min"><strong>Demo</strong></a> ·
-    <a href="#pre-build-research-checklist"><strong>Checklist</strong></a> ·
-    <a href="#next-steps-build-order"><strong>Build order</strong></a>
+    <a href="#the-killer-demo-sim-only-5-min"><strong>Demo</strong></a>
   </p>
 </div>
 
-Full briefing: [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md). Source docs: [`docs/briefing/`](./docs/briefing/). Decision docs: [`docs/research/`](./docs/research/). Code: [`sim/`](./sim/).
+Briefing: [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md) · Decisions: [`docs/research/`](./docs/research/) · Code: [`sim/`](./sim/)
 
-> **Build scope: Phase 1 + Phase 2 only.** Phase 3 (chatbot, voice, frontend) is **deferred**. Research docs 10–13 are preserved for future work. Visualisation uses Python-native tools (Streamlit + matplotlib).
+> **Build scope: Phase 1 + Phase 2 only.** Phase 3 (chatbot, voice, frontend) is deferred.
 
 ---
 
@@ -45,12 +44,6 @@ GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/stickerdaniel/hackUPC.git
 You'll still get every other brand asset, all simulation code, and the docs. Pull individual LFS files later with `git lfs pull --include="<path>"`.
 
 If you already cloned and the working tree contains ~130-byte text files where the binaries should be, run `git lfs install && git lfs pull` from the repo root.
-
----
-
-## Status
-
-**Research locked. Engine types in code. Components landing.** The coupled-engine type layer — `Drivers`, `CouplingContext`, `PrinterState`, `ObservedPrinterState`, `MaintenanceAction`, `OperatorEvent` — lives in [`sim/src/copilot_sim/domain/`](./sim/src/copilot_sim/domain/) as frozen+slots dataclasses. Per-component `step()` functions are next.
 
 ---
 
@@ -95,17 +88,6 @@ input drivers ─▶│  Phase 1 — Logic     │──▶ next PrinterState (T
                 │  toggle + scenarios  │       live.
                 └──────────────────────┘
 ```
-
-**Strategic bet:** stack every Phase 1 + Phase 2 bonus pillar, and lean into the §3.4 sensor-fault twist the organisers opened up.
-
-| Phase 1 evaluation | Phase 2 evaluation |
-| :--- | :--- |
-| Rigor — six textbook laws, all parameters cited | Time moves — `dt = 1h` × 4380 ticks, 6 sim-months |
-| Systemic Interaction — coupled engine, 3 two-way loops + 2 cross-subsystem cascades, all 4 drivers wired | Systemic Integration — Phase 1 called every tick, both true & observed states persisted |
-| **Complexity & Innovation (bonus)** — coupling matrix + AI surrogate + §3.4 sensor model | **Complexity & Innovation (bonus)** — chaos + 3-action maintenance agent + sensor-fault-vs-component-fault story |
-| **Realism & Fidelity (bonus)** — physically motivated knees + thresholds, observed != true | **Realism & Fidelity (bonus)** — live weather driver, stochastic shocks, `print_outcome ∈ {OK, QUALITY_DEGRADED, HALTED}` |
-
-Bonus pillars in scope: **Cascading Failures · Stochastic Realism · Maintenance as Input · AI-Powered Degradation · Live Environmental Data · What-If Scenarios · Chaos Engineering · AI Maintenance Agent · Observability (§3.4)**. Nine levers; the §3.4 sensor-fault story is uniquely ours.
 
 ---
 
@@ -239,152 +221,14 @@ References: **recoater wear** (*Inside Metal Additive Manufacturing*, Jan 2024),
 
 ## The killer demo (sim-only, 5 min)
 
-Six charts, one SQLite historian, one Streamlit dashboard with scenario selectors:
+Six charts, one SQLite historian, one Streamlit dashboard:
 
-1. **Six components degrading** under a chosen scenario (`barcelona-baseline-…`). Time-series of `health` for blade / rail / nozzle / cleaning / heater / sensor. Status colour bands (green / yellow / orange / red). At least one component reaches `FAILED` inside the window.
-2. **The §3.4 sensor-fault story**: side-by-side **true vs observed** health for the heater + sensor pair. The heater appears to drift but the temperature sensor's `sensor_note = "drift"` reveals the real fault. The LLM-as-policy maintenance agent emits `TROUBLESHOOT(sensor)` → `REPLACE(sensor)` with a stored rationale.
-3. **Same-seed three-policy A/B** ([`09`](./docs/research/09-maintenance-agent.md)): no-agent vs heuristic vs LLM-as-policy. `min(component_health)` over 180 days. Maintenance triangles (with `OperatorEventKind` colour) + FAILED ✗ markers. Title: *"Same printer, three policies, three uptimes."*
-4. **What-if: Barcelona vs Phoenix** ([`07`](./docs/research/07-weather-api.md)). Same printer, same duty cycle, same seed; only `T_stress` and `Humidity` swap (Open-Meteo). Different failure modes dominate per climate (Phoenix → heater + sensor first, Barcelona → blade + nozzle first).
-5. **AI surrogate parity** ([`05`](./docs/research/05-cascading-and-ai-degradation.md)): analytic Arrhenius curve vs MLPRegressor surrogate over the same 6-month run, MAE ≤ 2 %. Two lines that overlap.
-6. **Coupling cascade attribution**: pick a moment when nozzle hits CRITICAL; query `coupling_factors_json` and walk back through the four hops — `nozzle.clog → humidity_contamination_effective → powder_spread_quality → blade.loss_frac × rail.alignment_error`. The dashboard renders the chain as a small graph.
-7. (Stretch) **Chaos overlay**: same seed with `config.chaos = false` vs `true`. Poisson temp spikes amplifying the cascade.
+- **Six components degrading** — health time-series with status bands; at least one hits `FAILED` in the window.
+- **Sensor-fault story (§3.4)** — true vs observed for the heater+sensor pair; LLM agent emits `TROUBLESHOOT(sensor)` → `REPLACE(sensor)`.
+- **Three-policy A/B** ([`09`](./docs/research/09-maintenance-agent.md)) — no-agent vs heuristic vs LLM, same seed, 180 days. *"Same printer, three policies, three uptimes."*
+- **Barcelona vs Phoenix** ([`07`](./docs/research/07-weather-api.md)) — same printer + duty cycle + seed; only weather swaps. Phoenix kills the heater + sensor first; Barcelona kills the blade + nozzle first.
+- **AI surrogate parity** ([`05`](./docs/research/05-cascading-and-ai-degradation.md)) — analytic vs MLP, MAE ≤ 2 %. Two lines that overlap.
+- **Cascade attribution** — pick a CRITICAL moment, walk `coupling_factors_json` back four hops to its root cause.
+- **Chaos overlay** *(stretch)* — same seed, `config.chaos = false` vs `true`.
 
-Demo split: Chris ~3 min on math + chart 1 + chart 3, Jana / Leonie ~1 min on chart 4 (what-if), Daniel ~1 min on chart 2 (sensor-fault story) + chart 5 (surrogate). See [`16`](./docs/research/16-submission-prep.md) for the full minute-by-minute split.
-
----
-
-## Pre-build research checklist
-
-Each item links to its decision document. All locked on 2026-04-25.
-
-<details>
-<summary><strong>A. Phase 1 — picking the right failure math (6 components)</strong></summary>
-
-- [x] **Recoater Blade — Abrasive Wear** → [`01-recoater-blade-archard.md`](./docs/research/01-recoater-blade-archard.md). Linear `Δh = k_eff · P · s_eff · dt / H_eff`; FAILED at ≥50 % thickness loss.
-- [x] **Linear Guide / Rail — Mechanical Fatigue** → [`17-linear-rail.md`](./docs/research/17-linear-rail.md). Weibull β=2.0 / η=220 d + driver damage; FAILED at 50 µm alignment error; raceway pitting permanent.
-- [x] **Nozzle Plate — Clogging + Thermal Fatigue** → [`02-nozzle-plate-coffin-manson.md`](./docs/research/02-nozzle-plate-coffin-manson.md). Coffin-Manson + Miner damage + Poisson clog hazard; composite `H = (1−clog%/100)·(1−D)`.
-- [x] **Cleaning Interface — Wear-per-Cycle** → [`18-cleaning-interface.md`](./docs/research/18-cleaning-interface.md). Power-law `H_use = 1 − a·n^p`; rewrites doc 02's clog reset to `× (1 − cleaning_efficiency)`.
-- [x] **Heating Elements — Electrical Degradation** → [`03-heating-elements-arrhenius.md`](./docs/research/03-heating-elements-arrhenius.md). Arrhenius AF, `E_a = 0.7 eV`; FAILED at +10 % drift.
-- [x] **Temperature Sensor — Drift + §3.4 ref impl** → [`19-temperature-sensor.md`](./docs/research/19-temperature-sensor.md). PT100 bias drift Arrhenius-fast; reference per-component sensor model; hard FAILED at `\|bias_C\| > 5 °C`.
-- [x] **Universal aging baselines** → [`04-aging-baselines-and-normalization.md`](./docs/research/04-aging-baselines-and-normalization.md). Weibull per component (table now 6 rows); multiplicative composition `H = H_base · H_driver`.
-- [x] **Health-index normalisation** → same doc 04. Thresholds: `>0.75` FUNCTIONAL, `>0.40` DEGRADED, `>0.15` CRITICAL, else FAILED.
-- [x] **Coupling matrix + cross-component coupling (bonus)** → [`05-cascading-and-ai-degradation.md`](./docs/research/05-cascading-and-ai-degradation.md). 12-row matrix; 3 two-way loops (rail↔blade, cleaning↔nozzle, sensor↔heater) + 2 cross-subsystem cascades (powder→jetting, thermal→everything); CouplingContext factor names locked.
-- [x] **AI-degradation option (bonus)** → same doc 05. Heater = sklearn `MLPRegressor (32,32,32) tanh` on 20k Latin-Hypercube samples; acceptance gate MAE ≤ 2 %.
-- [x] **Engine architecture (`Engine.step()` pattern)** → implemented in code at [`sim/src/copilot_sim/domain/`](./sim/src/copilot_sim/domain/) (commit `64b3e0d`). Frozen+slots dataclasses for `Drivers`, `CouplingContext`, `PrinterState`, `ObservedPrinterState`, `MaintenanceAction`, `OperatorEvent`. AGENTS.md locks the double-buffered update rule.
-- [x] **§3.4 Observability split** → `TRACK-CONTEXT.md §3.4` (commit `bb73666`); reference impl in doc 19; historian schema in doc 08 mirrors true and observed views.
-
-</details>
-
-<details>
-<summary><strong>B. Phase 2 — driver generation, time, and persistence</strong></summary>
-
-- [x] **Driver-profile generators** → [`06-driver-profiles-and-time.md`](./docs/research/06-driver-profiles-and-time.md). Sinusoidal Temp, OU Humidity, monotonic+duty Load, step Maintenance.
-- [x] **Live weather API** → [`07-weather-api.md`](./docs/research/07-weather-api.md). **Open-Meteo Archive API** (no auth, 10k/day, single GET returns 6 mo hourly).
-- [x] **Time step + horizon** → doc 06. `dt = 1 h`, **4380 ticks** for 6 sim-months.
-- [x] **Historian schema** → [`08-historian-schema.md`](./docs/research/08-historian-schema.md). SQLite WAL; **seven** tables: `runs`, `drivers` (now also carries `print_outcome` + `coupling_factors_json`), `component_state`, `metrics`, `observed_component_state`, `observed_metrics`, `events`. All time-series tables `WITHOUT ROWID`.
-- [x] **Run/scenario identity** → same doc 08. Format `{scenario}-{profile}-{YYYYMMDD}-{seq}`.
-- [x] **Stochastic mode (bonus)** → doc 06. Poisson temp spikes, contamination bursts, Bernoulli skipped maintenance. All seeded.
-- [x] **AI Maintenance Agent (bonus)** → [`09-maintenance-agent.md`](./docs/research/09-maintenance-agent.md). Three-action vocabulary `TROUBLESHOOT/FIX/REPLACE`; reads only `ObservedPrinterState`; per-component reset rules updated for 6 components.
-
-</details>
-
-<details>
-<summary><strong>C. Stack & repo skeleton (sim-only path)</strong></summary>
-
-- [x] **Sim core language** → [`14-stack-and-topology.md`](./docs/research/14-stack-and-topology.md). Python 3.12 + uv.
-- [x] **Sim libs** → numpy · pandas · simpy · scikit-learn · pydantic.
-- [x] **Persistence** → SQLite WAL at `data/historian.sqlite`. WAL pragmas on writer; reader opens same file.
-- [x] **Dashboard** → **Streamlit** (Python-native; one app, all five demo charts). matplotlib for deck PNG export.
-- [x] **Repo layout** → see below; top-level `Makefile` with `make sim`, `make app`, `make seed`.
-
-</details>
-
-<details>
-<summary><strong>D. Domain priors</strong></summary>
-
-- [x] **HP Metal Jet S100** → [`15-domain-priors.md`](./docs/research/15-domain-priors.md). 6 printheads · 63,360 nozzles · 1,200 dpi · 316L/17-4 PH · launched IMTS 2022.
-- [x] **Wear / clog / drift references** → same doc 15. Inside Metal AM 2024, Waasdorp et al. RSC 2018, oxidation+elongation chain.
-- [x] **NASA C-MAPSS / PHM Society** → same doc 15. Visual shape prior only — flat → knee → cliff. Not training data.
-
-</details>
-
-<details>
-<summary><strong>E. Submission-side prep</strong></summary>
-
-- [x] **Submission deadline / format** → [`16-submission-prep.md`](./docs/research/16-submission-prep.md). Placeholder Sun 09:00 CEST; **confirm in Slack first hour of day 2**.
-- [x] **Slide deck outline** → same doc 16, but drop the chatbot/voice slides (slides 7–8) for now and replace with "future work".
-- [x] **Technical report outline** → same doc 16, omit Phase 3 section.
-- [x] **Demo split** → see "The killer demo" above; Chris ~3 min on math + sim, Daniel ~2 min on bonuses.
-
-</details>
-
-<details>
-<summary><strong>F. Phase 3 work — preserved, deferred</strong></summary>
-
-These are written but not part of the current build:
-
-- [`10-chatbot-architecture.md`](./docs/research/10-chatbot-architecture.md) — Pattern C ReAct, 5 tools, defense-in-depth citations.
-- [`11-vercel-ai-sdk.md`](./docs/research/11-vercel-ai-sdk.md) — AI SDK v6 + Gateway, Sonnet 4.6 / Opus 4.6.
-- [`12-proactive-alerts.md`](./docs/research/12-proactive-alerts.md) — sim-writes-events + client polling pattern.
-- [`13-voice-interface.md`](./docs/research/13-voice-interface.md) — Web Speech primary, OpenAI Realtime stretch.
-
-If Phase 1 + Phase 2 finishes early, revisit in this order: 10 → 11 → 12 → 13. Otherwise, future work for the deck.
-
-</details>
-
----
-
-## Repo layout (target — sim-focused)
-
-<details>
-<summary><strong>Show tree</strong></summary>
-
-```
-.
-├── sim/
-│   ├── pyproject.toml         # uv-managed
-│   ├── engine/                # Phase 1 — pure formulas (blade, nozzle, heater, baseline)
-│   │   ├── components/        # one file per component model
-│   │   ├── composition.py     # H = H_base · H_driver, status mapping
-│   │   └── surrogate.py       # MLPRegressor wrapper for the heater
-│   ├── loop/                  # Phase 2 — clock + driver generators + writer
-│   │   ├── drivers/           # sinusoid, OU, duty-cycle, step, weather adapter
-│   │   ├── chaos.py           # Poisson spikes, contamination bursts
-│   │   ├── historian.py       # SQLite WAL writer
-│   │   └── main.py            # `python -m loop.main --scenario default`
-│   ├── agent/                 # Phase 2 bonus — heuristic + LLM-as-policy
-│   ├── scenarios/             # YAML driver profiles (barcelona, phoenix, chaos, abusive)
-│   ├── viz/                   # Streamlit app + matplotlib export
-│   └── tests/
-├── data/
-│   ├── historian.sqlite       # committed seed (regenerate with `make seed`)
-│   └── weather/               # cached Open-Meteo JSON for Barcelona + Phoenix
-├── docs/
-│   ├── briefing/              # HP-provided source material
-│   ├── research/              # 16 locked decision docs (10–13 deferred)
-│   └── report/                # technical report + slide deck source
-├── scripts/                   # one-shots: run scenario, train surrogate, export CSV
-└── Makefile                   # `make sim`, `make app`, `make seed`, `make train`
-```
-
-</details>
-
----
-
-## Next steps (build order)
-
-✅ **Done:** `sim/pyproject.toml`, `sim/src/copilot_sim/domain/` (frozen+slots dataclasses for `Drivers`, `CouplingContext`, `PrinterState`, `ObservedPrinterState`, `MaintenanceAction`, `OperatorEvent`, plus the four enums), AGENTS.md engine update rule, `TRACK-CONTEXT.md §3.4` observability split.
-
-▶ **Now:**
-
-1. **Historian writer** ([doc 08](./docs/research/08-historian-schema.md)) in `sim/src/copilot_sim/historian/`. Smoke-test: empty DB created, all seven tables (4 true + observed_component_state + observed_metrics + events), indexes, WAL pragmas.
-2. **`engine.coupling.build_coupling_context(prev, drivers, dt)`** following [doc 05](./docs/research/05-cascading-and-ai-degradation.md). Pure function over `prev_state`; populates the `factors` dict with the 7 named entries + the 4 `*_effective` drivers.
-3. **Six per-component `step()` functions** in `sim/src/copilot_sim/components/`, in this order (easiest → hardest): blade ([01](./docs/research/01-recoater-blade-archard.md)) → heater ([03](./docs/research/03-heating-elements-arrhenius.md)) → rail ([17](./docs/research/17-linear-rail.md)) → cleaning ([18](./docs/research/18-cleaning-interface.md)) → nozzle ([02](./docs/research/02-nozzle-plate-coffin-manson.md)) → sensor ([19](./docs/research/19-temperature-sensor.md)). Each is deterministic, reads `(prev_self, coupling, drivers, dt)`, returns `next_self`. Unit-tested in isolation.
-4. **Composition + status mapping** ([04](./docs/research/04-aging-baselines-and-normalization.md)): Weibull baseline + multiplicative composition + status enum, applied uniformly inside each `step()` to produce `ComponentState`.
-5. **Per-component sensor models** ([19](./docs/research/19-temperature-sensor.md) §reference impl): `(true_value, sensor_state) → (observed_value, sensor_note)` — wraps each component's true output into an `ObservedComponentState`.
-6. **`Engine.step()`**: read `prev_state`, call `build_coupling_context`, call all six `step()` functions from the same snapshot, assemble `next_state`, return — double-buffered. Plus `apply_maintenance(MaintenanceAction)` that mutates next state per [doc 09](./docs/research/09-maintenance-agent.md) reset rules.
-7. **Phase 2 loop** ([06](./docs/research/06-driver-profiles-and-time.md)): driver generators (sin / OU / duty / step), `OpenMeteoDriver` adapter ([07](./docs/research/07-weather-api.md)), chaos overlay, tick loop, historian writes, `print_outcome` derivation. Commit a seeded `historian.sqlite` once it runs end-to-end.
-8. **AI surrogate** ([05](./docs/research/05-cascading-and-ai-degradation.md)): 20k Latin-Hypercube samples, train MLPRegressor, joblib-dump, swap in behind `--heater-model={analytic,nn}`, prove parity.
-9. **Maintenance agent** ([09](./docs/research/09-maintenance-agent.md)): heuristic first reading `ObservedPrinterState`, emitting `Action(kind, component_id)`; if time, LLM-as-policy A/B.
-10. **Streamlit dashboard**: scenario selector, time-series with true-vs-observed toggle, A/B policy picker, surrogate-parity chart, coupling-cascade attribution panel. Export PNGs for the deck.
-11. **Deck + report**: populate from the doc 16 sim-only outlines.
+Minute-by-minute split in [`16`](./docs/research/16-submission-prep.md).
