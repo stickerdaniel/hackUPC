@@ -1389,6 +1389,8 @@
 		"pagination_last": "Última página",
 		"pagination_next": "Página siguiente",
 		"pagination_previous": "Página anterior",
+		"pan_window_next": "Avanzar ventana de tiempo",
+		"pan_window_prev": "Retroceder ventana de tiempo",
 		"remove_attachment": "Eliminar adjunto",
 		"reviewer": "Revisor",
 		"scroll_to_bottom": "Desplazarse al final",

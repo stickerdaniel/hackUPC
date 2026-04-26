@@ -1390,6 +1390,8 @@
 		"pagination_last": "Last page",
 		"pagination_next": "Next page",
 		"pagination_previous": "Previous page",
+		"pan_window_next": "Pan time window forward",
+		"pan_window_prev": "Pan time window backward",
 		"remove_attachment": "Remove attachment",
 		"reviewer": "Reviewer",
 		"scroll_to_bottom": "Scroll to bottom",

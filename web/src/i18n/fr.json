@@ -1389,6 +1389,8 @@
 		"pagination_last": "Dernière page",
 		"pagination_next": "Page suivante",
 		"pagination_previous": "Page précédente",
+		"pan_window_next": "Avancer la fenêtre temporelle",
+		"pan_window_prev": "Reculer la fenêtre temporelle",
 		"remove_attachment": "Supprimer la pièce jointe",
 		"reviewer": "Réviseur",
 		"scroll_to_bottom": "Faire défiler vers le bas",

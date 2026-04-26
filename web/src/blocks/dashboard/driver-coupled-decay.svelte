@@ -261,10 +261,14 @@
 		}
 	];
 
+	// Distinct palette for the alerts feed — independent of the heatmap's
+	// STATUS_COLORS so the right column reads as a notification log
+	// (amber = caution, mid-blue = critical, electric blue = failed) rather
+	// than as another swatch from the degradation grid.
 	const SEVERITY_COLOR: Record<AlertSeverity, string> = {
-		CRITICAL: STATUS_COLORS.CRITICAL,
-		FAILED: STATUS_COLORS.FAILED,
-		DEGRADED: STATUS_COLORS.DEGRADED
+		DEGRADED: '#E8A93B',
+		CRITICAL: '#5683FF',
+		FAILED: '#1846F5'
 	};
 
 	function fmtDriverValue(v: number): string {
@@ -999,12 +1003,29 @@
 	}
 	.dcd-alerts {
 		list-style: none;
-		margin: 16px 0 0;
+		/* No top margin — section label sits flush above the box, matching
+		   the streams column where the first sparkline strip butts up
+		   against `DRIVER STREAMS`. Keeps both columns starting at the
+		   same Y position. */
+		margin: 4px 0 0;
 		padding: 0;
 		border: 1px solid var(--line);
 		border-radius: 8px;
 		background: var(--surface);
-		overflow: hidden;
+		max-height: 360px;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	/* subtle scrollbar */
+	.dcd-alerts::-webkit-scrollbar {
+		width: 6px;
+	}
+	.dcd-alerts::-webkit-scrollbar-thumb {
+		background: var(--line);
+		border-radius: 3px;
+	}
+	.dcd-alerts::-webkit-scrollbar-thumb:hover {
+		background: var(--fg-4);
 	}
 	.dcd-alert-row {
 		display: flex;

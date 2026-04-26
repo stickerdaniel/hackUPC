@@ -1389,6 +1389,8 @@
 		"pagination_last": "Letzte Seite",
 		"pagination_next": "Nächste Seite",
 		"pagination_previous": "Vorherige Seite",
+		"pan_window_next": "Zeitfenster vorwärts schieben",
+		"pan_window_prev": "Zeitfenster rückwärts schieben",
 		"remove_attachment": "Anhang entfernen",
 		"reviewer": "Prüfer",
 		"scroll_to_bottom": "Nach unten scrollen",
