@@ -407,6 +407,12 @@ def _render_panel1(
                 key="panel1_window_label",
                 label_visibility="collapsed",
                 width="stretch",
+                # Disallow deselection — clicking the active option in a
+                # default segmented_control returns None, which crashed
+                # the `label_to_size[window_label]` lookup below.
+                # `required=True` keeps a selection always active so the
+                # widget behaves like a radio-group (no None state).
+                required=True,
             )
         with next_col:
             next_clicked = st.button(
@@ -417,11 +423,18 @@ def _render_panel1(
                 width="stretch",
             )
 
-    # Resolve window size and pan step. `window_label` is None on first render
-    # if the user has just deselected the segmented control; fall back to the
-    # session-state default.
-    if window_label is None:
-        window_label = st.session_state.get("panel1_window_label", "1y")
+    # Resolve window size and pan step. With `required=True` on the
+    # segmented control above, `window_label` should never be None — but
+    # we keep a defensive fallback in case the widget's API changes or the
+    # session state is corrupted on a stale rerun. The fallback picks the
+    # same default the one-time init used.
+    if window_label is None or window_label not in label_to_size:
+        if max_tick >= 52:
+            window_label = "1y"
+        elif max_tick >= 26:
+            window_label = "6mo"
+        else:
+            window_label = "all"
     window_size = label_to_size[window_label]
     pan_step = max(1, window_size // 2)
 

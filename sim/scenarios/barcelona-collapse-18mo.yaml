@@ -1,0 +1,80 @@
+run:
+  scenario: barcelona
+  profile: collapse-18mo
+  seed: 42
+  horizon_ticks: 78    # 18 months × 52 weeks/year ÷ 12 ≈ 78 weeks
+  dt_seconds: 604800   # 1 week
+
+environment:
+  base_ambient_C: 22.0
+  amplitude_C: 8.0
+  weekly_runtime_hours: 60
+  vibration_level: 0.10
+
+drivers:
+  temperature_stress:
+    kind: sinusoidal_seasonal
+    base: 0.30
+    amplitude: 0.10
+    period_weeks: 52
+    weekly_wobble_amplitude: 0.015
+    noise_sigma: 0.008
+    noise_theta: 0.30
+  humidity_contamination:
+    kind: ornstein_uhlenbeck
+    mean: 0.35
+    theta: 0.05
+    sigma: 0.04
+  operational_load:
+    kind: smooth_synthetic
+    mean: 0.55
+    theta: 0.25
+    sigma: 0.12
+    annual_amplitude: 0.15
+    idle_probability: 0.05
+    overload_probability: 0.04
+  maintenance_level:
+    kind: step
+    schedule:
+      - tick: 0
+        value: 0.7
+
+# Chaos disabled so the named-event narrative is the only source of
+# disruption — keeps the chart visually clean for the demo.
+chaos:
+  enabled: false
+
+policy:
+  kind: heuristic
+
+# Two-act narrative for the demo:
+#   Act 1 (ticks 0–35): normal Barcelona operation, policy holds the
+#     printer above 0.20 with the standard sawtooth pattern.
+#   Tick 36–37: contamination burst — humidity max + operational load
+#     spike + vibration. The policy reacts: REPLACE/FIX events fire
+#     for blade, nozzle, cleaning.
+#   Tick 40 onward: operator-walkout — `disable_human_maintenance`
+#     prevents any further policy intervention. The contamination
+#     damage cascades through unmaintained components: blade wears
+#     into the powder, powder clogs the nozzle, the heater overshoots,
+#     the sensor drifts.
+#
+# The pitch line: "Nine months of the policy doing its job, then nine
+# months of nothing."
+events:
+  - tick: 36
+    name: contamination-burst
+    duration: 2
+    driver_overrides:
+      humidity_contamination: 0.95
+      operational_load: 0.85
+    env_overrides:
+      vibration_level: 0.45
+
+  - tick: 40
+    name: operator-walkout
+    duration: 39    # active from tick 40 through tick 78 (end of run)
+    disable_human_maintenance: true
+
+historian:
+  path: data/historian.sqlite
