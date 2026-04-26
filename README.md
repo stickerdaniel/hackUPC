@@ -2,21 +2,14 @@
   <h1>A digital twin for the HP Metal Jet S100.</h1>
 
   <p>
-    Deterministic and coupled — six components across three subsystems, sensors that fail too, and an AI maintenance agent that learns to tell sensor faults from component faults. Live weather, a stochastic chaos layer, and an ML surrogate for the heater are wired in as bonus levers.
+    A deterministic, coupled simulation of six components across three subsystems, with per-component sensor models, an AI maintenance agent, live weather data, a stochastic chaos layer, and an ML surrogate for the heater.
   </p>
 
   <p>
     <a href="https://www.python.org/"><img alt="Python ≥3.12" src="https://img.shields.io/badge/python-%E2%89%A53.12-3776AB?style=for-the-badge&logo=python&logoColor=white&labelColor=000000"></a>
     <img alt="HackUPC 2026" src="https://img.shields.io/badge/HackUPC-2026-FF4F00?style=for-the-badge">
   </p>
-
-  <p>
-    <a href="#cloning"><strong>Cloning</strong></a> ·
-    <a href="#what-we-are-building"><strong>Architecture</strong></a>
-  </p>
 </div>
-
-Briefing: [`TRACK-CONTEXT.md`](./TRACK-CONTEXT.md) · Decisions: [`docs/research/`](./docs/research/) · Code: [`sim/`](./sim/)
 
 ---
 
