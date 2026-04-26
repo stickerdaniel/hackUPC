@@ -24,5 +24,14 @@ export const aiChatRateLimiter = new RateLimiter(components.rateLimiter, {
 		rate: 10,
 		period: HOUR,
 		capacity: 10
+	},
+
+	// Per-user voice transcription rate
+	// Token bucket: 6 clips burst, sustained 6 per minute
+	aiChatTranscription: {
+		kind: 'token bucket',
+		rate: 6,
+		period: MINUTE,
+		capacity: 6
 	}
 });

@@ -1780,7 +1780,9 @@
 			"file_max_size": "Taille maximale : {maxSize}",
 			"file_too_large": "Fichier trop volumineux : \"{filename}\"",
 			"max_attachments": "Maximum {max} pièces jointes autorisées",
-			"pasted_file_too_large": "Fichier collé trop volumineux"
+			"mic_permission": "Accès au microphone refusé",
+			"pasted_file_too_large": "Fichier collé trop volumineux",
+			"transcription_failed": "Transcription impossible — réessayez"
 		},
 		"greeting": "Comment pouvons-nous vous aider ?",
 		"greeting_hi": "Bonjour",
@@ -1819,7 +1821,9 @@
 		"title": "Chat Communautaire",
 		"tooltip": {
 			"attach_files": "Joindre des fichiers",
-			"mark_bug": "Marquer le bug"
+			"mark_bug": "Marquer le bug",
+			"start_recording": "Démarrer l'enregistrement",
+			"stop_recording": "Arrêter l'enregistrement"
 		}
 	},
 	"common": {

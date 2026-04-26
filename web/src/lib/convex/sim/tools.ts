@@ -110,6 +110,32 @@ export const getComponentTimeseries = createTool({
 	}
 });
 
+export const getMultiComponentTimeseries = createTool({
+	description:
+		'Read per-tick health for MULTIPLE components in a single call. Returns wide rows ' +
+		'shaped { tick, blade?, rail?, nozzle?, cleaning?, heater?, sensor? } where each ' +
+		'componentId key is the healthIndex for that component at that tick (null if absent). ' +
+		'Prefer this over multiple getComponentTimeseries calls when the user wants a chart ' +
+		'spanning more than one component — the wide shape drops directly into LineChart data ' +
+		'with one series entry per componentId.',
+	args: z.object({
+		runId: z.string(),
+		componentIds: z.array(componentSchema).min(1),
+		fromTick: z.number().int().nonnegative().optional(),
+		toTick: z.number().int().nonnegative().optional()
+	}),
+	handler: async (ctx, args): Promise<unknown> => {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.getMultiComponentTimeseriesForUser, {
+			userId,
+			runId: args.runId as Id<'simRuns'>,
+			componentIds: args.componentIds,
+			fromTick: args.fromTick,
+			toTick: args.toTick
+		});
+	}
+});
+
 export const listEvents = createTool({
 	description:
 		'List operator/maintenance events (TROUBLESHOOT, FIX, REPLACE) for a run, optionally ' +

@@ -2,6 +2,7 @@
 	import { tick, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { getTranslate } from '@tolgee/svelte';
+	import { useConvexClient } from 'convex-svelte';
 	import {
 		PromptInput,
 		PromptInputAction,
@@ -15,9 +16,12 @@
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import CameraIcon from '@lucide/svelte/icons/camera';
 	import PaperclipIcon from '@lucide/svelte/icons/paperclip';
+	import MicIcon from '@lucide/svelte/icons/mic';
+	import SquareIcon from '@lucide/svelte/icons/square';
 	import ChatAttachments from './ChatAttachments.svelte';
 	import { haptic } from '$lib/hooks/use-haptic.svelte';
 	import { getChatUIContext } from './ChatContext.svelte.js';
+	import { VoiceInput } from '$lib/chat/voice/use-voice-input.svelte';
 	import {
 		ALLOWED_FILE_EXTENSIONS,
 		ALLOWED_FILE_TYPES,
@@ -34,6 +38,7 @@
 		placeholderNoSuggestions,
 		showCameraButton = false,
 		showFileButton = true,
+		showRecordButton = true,
 		showHandoffButton = false,
 		isHandedOff = false,
 		isRateLimited = false,
@@ -54,6 +59,8 @@
 		showCameraButton?: boolean;
 		/** Whether to show file upload button */
 		showFileButton?: boolean;
+		/** Whether to show voice record button */
+		showRecordButton?: boolean;
 		/** Whether to show the handoff to human button */
 		showHandoffButton?: boolean;
 		/** Whether thread is already handed off to humans */
@@ -75,8 +82,29 @@
 	} = $props();
 
 	const ctx = getChatUIContext();
+	const convexClient = useConvexClient();
+	const voice = new VoiceInput(convexClient);
 
 	let containerEl: HTMLDivElement;
+
+	function handleRecordClick() {
+		const target = containerEl?.querySelector<HTMLTextAreaElement>('textarea') ?? null;
+		const wasIdle = voice.state === 'idle';
+		voice.toggle({
+			target,
+			getValue: () => ctx.inputValue,
+			setValue: (next) => ctx.setInputValue(next),
+			onError: (kind) => {
+				haptic.trigger('error');
+				toast.error(
+					kind === 'permission'
+						? $t('chat.error.mic_permission')
+						: $t('chat.error.transcription_failed')
+				);
+			}
+		});
+		if (wasIdle) haptic.trigger('medium');
+	}
 
 	// Use centralized isProcessing from context (single source of truth)
 	// When handed off to human support, don't block - use fire-and-forget pattern
@@ -270,6 +298,38 @@
 										aria-label={$t('chat.tooltip.mark_bug')}
 									>
 										<CameraIcon class="h-[18px] w-[18px]" />
+									</Button>
+								{/snippet}
+							</PromptInputAction>
+						{/if}
+						{#if showRecordButton}
+							<PromptInputAction>
+								{#snippet tooltip()}
+									<p>
+										{voice.state === 'recording'
+											? $t('chat.tooltip.stop_recording')
+											: $t('chat.tooltip.start_recording')}
+									</p>
+								{/snippet}
+								{#snippet children(props)}
+									<Button
+										{...props}
+										variant="outline"
+										size="icon"
+										class="size-9 rounded-md {voice.state === 'recording' ? 'text-red-500' : ''}"
+										disabled={voice.state === 'transcribing'}
+										onclick={handleRecordClick}
+										aria-label={voice.state === 'recording'
+											? $t('chat.tooltip.stop_recording')
+											: $t('chat.tooltip.start_recording')}
+									>
+										{#if voice.state === 'transcribing'}
+											<LoaderCircleIcon class="h-[18px] w-[18px] motion-safe:animate-spin" />
+										{:else if voice.state === 'recording'}
+											<SquareIcon class="h-[18px] w-[18px]" />
+										{:else}
+											<MicIcon class="h-[18px] w-[18px]" />
+										{/if}
 									</Button>
 								{/snippet}
 							</PromptInputAction>

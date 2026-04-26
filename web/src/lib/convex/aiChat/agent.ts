@@ -8,6 +8,7 @@ import {
 	getRunSummary,
 	getStateAtTick,
 	getComponentTimeseries,
+	getMultiComponentTimeseries,
 	listEvents,
 	inspectSensorTrust,
 	compareRuns,
@@ -36,6 +37,7 @@ export const aiChatAgent = new Agent(components.agent, {
 		getRunSummary,
 		getStateAtTick,
 		getComponentTimeseries,
+		getMultiComponentTimeseries,
 		listEvents,
 		inspectSensorTrust,
 		compareRuns,
@@ -56,7 +58,8 @@ Sim historian (read):
 - listMyRuns({limit?}) — the user's recent runs (most recent first). Use this whenever the user says "my last run" / "the run I just did" / "my latest barcelona run" — never ask the user for a runId you can look up here.
 - getRunSummary({runId}) — scenario, status, last tick. Includes scenarioConfig (climate baseline, driver kinds + params, maintenance schedule) — use it to explain *why* a run aged the way it did, not just what happened.
 - getStateAtTick({runId, tick}) — full snapshot at one tick.
-- getComponentTimeseries({runId, componentId, fromTick?, toTick?}) — health curve for one component.
+- getComponentTimeseries({runId, componentId, fromTick?, toTick?}) — health curve for ONE component. Returns rows shaped {tick, healthIndex, status, ageTicks, metrics}.
+- getMultiComponentTimeseries({runId, componentIds, fromTick?, toTick?}) — health curves for SEVERAL components in one call. Returns wide rows {tick, blade, rail, ...} where each componentId key is the healthIndex at that tick (null if absent). PREFER this over multiple getComponentTimeseries calls when the user wants a chart spanning >1 component.
 - listEvents({runId, fromTick?, toTick?}) — TROUBLESHOOT/FIX/REPLACE actions.
 - inspectSensorTrust({runId, componentId, fromTick?, toTick?}) — true vs observed health gap. Use to distinguish a component fault from a sensor fault.
 - compareRuns({runIdA, runIdB, componentId}) — final-tick health side by side.
@@ -137,7 +140,7 @@ The renderUI spec MUST be valid JSON of shape:
 - Every key listed in any "children" array MUST exist as its own entry in "elements".
 - Use only these shadcn components (NO Metric — it does not exist):
   Card, Stack, Grid, Heading, Text, Badge, Table, Alert, Separator,
-  Progress, Button, ButtonGroup, Tabs, Avatar, Image.
+  Progress, Button, ButtonGroup, Tabs, Avatar, Image, LineChart, BarChart.
 
 Valid enum prop values (using anything else fails validation):
 - Stack.gap, Grid.gap: "none" | "sm" | "md" | "lg"  (NOT "xs", "medium", "large")
@@ -154,6 +157,67 @@ Table shape — STRICT, do not invent your own:
 - rows: 2-D array of plain strings (cells). Example: [["Feels Like", "46.3°F"], ["Wind", "1.8 mph"]]
 - Do NOT use { header, key } objects for columns or { metric, value } objects for rows.
 - Cell strings must already include units / formatting; the renderer prints them as-is.
+
+Charts (LineChart, BarChart) — when to pick what:
+- Time-series of one or more numbers over ticks → LineChart (e.g. healthIndex over ticks, true vs observed health, multi-component health curves).
+- Categorical comparison of a small number of bars → BarChart (e.g. compareRuns final-tick scores, event counts per component).
+- Few rows of mixed text/numbers → Table.
+
+LineChart props (STRICT):
+  { "type": "LineChart", "props": {
+      "title": "<string|null>",
+      "description": "<string|null>",
+      "data": [ { "<xKey>": <number>, "<series.key>": <number>, ... }, ... ],
+      "xKey": "<key in every row>",
+      "series": [ { "key": "<row key>", "label": "<display>", "color": "<#hex|css|null>" }, ... ],
+      "yMin": <number|null>,
+      "yMax": <number|null>,
+      "events": [ { "tick": <number>, "label": "<string>", "color": "<#hex|null>" }, ... ] | null,
+      "height": <number|null>
+    },
+    "children": []
+  }
+
+  Single-component health (\`getComponentTimeseries\` rows are {tick, healthIndex, status, ageTicks, metrics}):
+    "data": [{tick:0, healthIndex:1.0}, {tick:50, healthIndex:0.78}],
+    "xKey": "tick",
+    "series": [{ "key": "healthIndex", "label": "Blade", "color": "#6366f1" }]
+
+  Multi-component (PREFERRED via getMultiComponentTimeseries — wide rows {tick, blade, rail, ...}):
+    "data": [{tick:0, blade:1.0, rail:0.95, nozzle:0.92}, ...],
+    "xKey": "tick",
+    "series": [
+      { "key": "blade", "label": "Blade", "color": "#6366f1" },
+      { "key": "rail",  "label": "Rail",  "color": "#0ea5e9" }
+    ]
+    series.key MUST match the row key, which IS the componentId in this case.
+
+  Sensor trust (inspectSensorTrust rows are {tick, trueHealthIndex, observedHealthIndex, gap, sensorNote}):
+    "series": [
+      { "key": "trueHealthIndex",     "label": "True",     "color": "#16a34a" },
+      { "key": "observedHealthIndex", "label": "Observed", "color": "#ef4444" }
+    ]
+
+  Component color map — reuse for visual consistency with the runs dashboard:
+    blade #6366f1, rail #0ea5e9, nozzle #f97316, cleaning #14b8a6, heater #ef4444, sensor #a855f7
+
+  Events overlay — pull rows from listEvents and map each to {tick, label: kind+componentId, color}.
+  Render events on top of a healthIndex line so the operator sees repair-effect cause/effect.
+
+BarChart props (STRICT):
+  { "type": "BarChart", "props": {
+      "title": "<string|null>",
+      "description": "<string|null>",
+      "data": [ { "<xKey>": "<category>", "<yKey>": <number> }, ... ],
+      "xKey": "<key for category strings>",
+      "yKey": "<key for numeric values>",
+      "color": "<#hex|css|null>",
+      "height": <number|null>
+    },
+    "children": []
+  }
+
+Reinforce: chart \`data\` is an array of FLAT objects keyed by xKey + each series.key. Do NOT nest series under sub-objects per row, and do NOT use {header, key} column-style objects.
 
 The top-level "state" field is ONLY for "$state" bindings (e.g. {"$state": "/path"}).
 - Do NOT use "state" as a key→content map for elements (e.g. {"state":{"locationHeading":"Tokyo"}} is wrong).

@@ -1781,7 +1781,9 @@
 			"file_max_size": "Maximale Größe ist {maxSize}",
 			"file_too_large": "Datei zu groß: \"{filename}\"",
 			"max_attachments": "Maximal {max} Anhänge erlaubt",
-			"pasted_file_too_large": "Eingefügte Datei zu groß"
+			"mic_permission": "Kein Mikrofonzugriff",
+			"pasted_file_too_large": "Eingefügte Datei zu groß",
+			"transcription_failed": "Transkription fehlgeschlagen — bitte erneut versuchen"
 		},
 		"greeting": "Wie können wir helfen?",
 		"greeting_hi": "Hallo",
@@ -1820,7 +1822,9 @@
 		"title": "Community Chat",
 		"tooltip": {
 			"attach_files": "Dateien anhängen",
-			"mark_bug": "Fehler markieren"
+			"mark_bug": "Fehler markieren",
+			"start_recording": "Aufnahme starten",
+			"stop_recording": "Aufnahme stoppen"
 		}
 	},
 	"common": {

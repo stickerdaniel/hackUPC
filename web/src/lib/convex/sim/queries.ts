@@ -151,6 +151,41 @@ async function _getComponentTimeseries(
 	}));
 }
 
+async function _getMultiComponentTimeseries(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>,
+	componentIds: ReadonlyArray<typeof componentId.type>,
+	fromTick?: number,
+	toTick?: number
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	const all = await ctx.db
+		.query('simComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
+		.collect();
+
+	const wanted = new Set(componentIds);
+
+	const byTick = new Map<number, Record<string, number | null>>();
+	for (const row of all) {
+		if (!wanted.has(row.componentId)) continue;
+		if (fromTick !== undefined && row.tick < fromTick) continue;
+		if (toTick !== undefined && row.tick > toTick) continue;
+
+		let bucket = byTick.get(row.tick);
+		if (!bucket) {
+			bucket = { tick: row.tick } as Record<string, number | null>;
+			for (const cid of componentIds) bucket[cid] = null;
+			byTick.set(row.tick, bucket);
+		}
+		bucket[row.componentId] = row.healthIndex;
+	}
+
+	return Array.from(byTick.values()).sort((a, b) => (a.tick as number) - (b.tick as number));
+}
+
 async function _getDriversTimeseries(
 	ctx: QueryCtx,
 	userId: string,
@@ -395,6 +430,24 @@ export const getComponentTimeseries = authedQuery({
 		)
 });
 
+export const getMultiComponentTimeseries = authedQuery({
+	args: {
+		runId: v.id('simRuns'),
+		componentIds: v.array(componentId),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getMultiComponentTimeseries(
+			ctx,
+			ctx.user._id,
+			args.runId,
+			args.componentIds,
+			args.fromTick,
+			args.toTick
+		)
+});
+
 export const listEvents = authedQuery({
 	args: {
 		runId: v.id('simRuns'),
@@ -483,6 +536,25 @@ export const getComponentTimeseriesForUser = internalQuery({
 		)
 });
 
+export const getMultiComponentTimeseriesForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runId: v.id('simRuns'),
+		componentIds: v.array(componentId),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getMultiComponentTimeseries(
+			ctx,
+			args.userId,
+			args.runId,
+			args.componentIds,
+			args.fromTick,
+			args.toTick
+		)
+});
+
 export const listEventsForUser = internalQuery({
 	args: {
 		userId: v.string(),
@@ -533,4 +605,3 @@ export const compareRunsForUser = internalQuery({
 	handler: async (ctx, args) =>
 		_compareRuns(ctx, args.userId, args.runIdA, args.runIdB, args.componentId)
 });
-// TEST 1777174776

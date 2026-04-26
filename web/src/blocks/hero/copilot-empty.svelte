@@ -4,9 +4,14 @@
 	import { resolve } from '$app/paths';
 	import { localizedHref } from '$lib/utils/i18n';
 	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
+	import { useConvexClient } from 'convex-svelte';
+	import { toast } from 'svelte-sonner';
+	import { VoiceInput } from '$lib/chat/voice/use-voice-input.svelte';
 
 	const { t } = getTranslate();
 	const auth = useAuth();
+	const convexClient = useConvexClient();
+	const voice = new VoiceInput(convexClient);
 
 	// Shared with ai-chat thread-chat.svelte (reads + clears on mount)
 	const PENDING_PROMPT_KEY = 'copilot.pendingPrompt';
@@ -58,7 +63,23 @@
 	] as const;
 
 	let prompt = $state('');
-	let voice = $state(false);
+	let promptInputEl: HTMLInputElement | null = $state(null);
+
+	function handleMicClick() {
+		voice.toggle({
+			target: promptInputEl,
+			getValue: () => prompt,
+			setValue: (next) => {
+				prompt = next;
+			},
+			onError: (kind) =>
+				toast.error(
+					kind === 'permission'
+						? $t('chat.error.mic_permission')
+						: $t('chat.error.transcription_failed')
+				)
+		});
+	}
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -123,34 +144,66 @@
 						class="prompt-input-clean"
 						placeholder={$t('hero.prompt_placeholder')}
 						bind:value={prompt}
+						bind:this={promptInputEl}
 					/>
 					<div class="prompt-actions-clean">
-						<button
-							type="button"
-							class="mic-btn"
-							class:is-on={voice}
-							onclick={() => (voice = !voice)}
-							aria-label={$t('a11y.copilot_voice')}
-							title={$t('a11y.copilot_voice')}
-						>
-							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-								<rect
-									x="6"
-									y="2"
-									width="4"
-									height="8"
-									rx="2"
-									stroke="currentColor"
-									stroke-width="1.4"
-								/>
-								<path
-									d="M3.5 8.5C3.5 11 5.5 13 8 13C10.5 13 12.5 11 12.5 8.5"
-									stroke="currentColor"
-									stroke-width="1.4"
-								/>
-								<line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.4" />
-							</svg>
-						</button>
+						{#if auth.isAuthenticated}
+							<button
+								type="button"
+								class="mic-btn"
+								class:is-on={voice.state === 'recording'}
+								disabled={voice.state === 'transcribing'}
+								onclick={handleMicClick}
+								aria-label={voice.state === 'recording'
+									? $t('chat.tooltip.stop_recording')
+									: $t('chat.tooltip.start_recording')}
+								title={voice.state === 'recording'
+									? $t('chat.tooltip.stop_recording')
+									: $t('chat.tooltip.start_recording')}
+							>
+								{#if voice.state === 'recording'}
+									<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+										<rect x="2" y="2" width="10" height="10" fill="currentColor" />
+									</svg>
+								{:else if voice.state === 'transcribing'}
+									<svg
+										width="16"
+										height="16"
+										viewBox="0 0 16 16"
+										fill="none"
+										style="animation: copilot-pulse 1s ease-in-out infinite"
+									>
+										<circle
+											cx="8"
+											cy="8"
+											r="6"
+											stroke="currentColor"
+											stroke-width="1.4"
+											fill="none"
+											stroke-dasharray="20 8"
+										/>
+									</svg>
+								{:else}
+									<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+										<rect
+											x="6"
+											y="2"
+											width="4"
+											height="8"
+											rx="2"
+											stroke="currentColor"
+											stroke-width="1.4"
+										/>
+										<path
+											d="M3.5 8.5C3.5 11 5.5 13 8 13C10.5 13 12.5 11 12.5 8.5"
+											stroke="currentColor"
+											stroke-width="1.4"
+										/>
+										<line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.4" />
+									</svg>
+								{/if}
+							</button>
+						{/if}
 						<button
 							type="submit"
 							class="send-btn-clean"
