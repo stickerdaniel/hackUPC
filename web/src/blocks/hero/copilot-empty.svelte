@@ -328,8 +328,14 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-start;
-		padding: 48px 40px 80px;
+		padding: 100px 40px 80px;
 		gap: 80px;
+	}
+
+	@media (max-width: 1000px) {
+		.empty-clean {
+			padding: 88px 24px 64px;
+		}
 	}
 
 	.empty-split {

@@ -87,10 +87,10 @@
 <svelte:window bind:scrollY />
 
 <header>
-	<nav class="fixed z-40 w-full pt-4">
-		<div class="mx-auto max-w-6xl px-6 lg:px-12">
+	<nav class="fixed z-40 w-full pt-2">
+		<div class="mx-auto max-w-[1500px] px-4 lg:px-6">
 			<div
-				class="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between rounded-2xl border marketing-shell-panel px-6 py-4 transition-[height,transform,background-color,border-color] duration-300 lg:-mx-8 lg:w-[calc(100%+4rem)] lg:px-8"
+				class="flex w-full items-center justify-between rounded-xl border marketing-shell-panel px-5 py-2 transition-[height,transform,background-color,border-color] duration-300 lg:px-7"
 			>
 				<!-- Logo -->
 				<Button
@@ -121,10 +121,10 @@
 				<!-- Desktop Actions -->
 				<div class="hidden items-center gap-3 lg:flex">
 					{#if showAuthButtons && isAuthenticated}
-						<Button variant="ghost" size="sm" href={localizedHref('/app/dashboard')}>
+						<Button size="sm" href={localizedHref('/app/dashboard')} class="rounded-none">
 							<T keyName="nav.dashboard" />
 						</Button>
-						<Button variant="ghost" size="sm" href={localizedHref('/app/runs')}>
+						<Button size="sm" href={localizedHref('/app/runs')} class="rounded-none">
 							<T keyName="nav.runs" />
 						</Button>
 					{/if}
@@ -247,19 +247,17 @@
 					>
 						{#if isAuthenticated}
 							<Button
-								variant="ghost"
 								size="sm"
 								href={localizedHref('/app/dashboard')}
-								class="w-full justify-start"
+								class="w-full justify-start rounded-none"
 								onclick={() => (menuState = false)}
 							>
 								<T keyName="nav.dashboard" />
 							</Button>
 							<Button
-								variant="ghost"
 								size="sm"
 								href={localizedHref('/app/runs')}
-								class="w-full justify-start"
+								class="w-full justify-start rounded-none"
 								onclick={() => (menuState = false)}
 							>
 								<T keyName="nav.runs" />
