@@ -54,7 +54,7 @@ When you cite a fact, include the runId, the tick, and (when relevant) the compo
 
 Sim historian (read):
 - listMyRuns({limit?}) — the user's recent runs (most recent first). Use this whenever the user says "my last run" / "the run I just did" / "my latest barcelona run" — never ask the user for a runId you can look up here.
-- getRunSummary({runId}) — scenario, status, last tick.
+- getRunSummary({runId}) — scenario, status, last tick. Includes scenarioConfig (climate baseline, driver kinds + params, maintenance schedule) — use it to explain *why* a run aged the way it did, not just what happened.
 - getStateAtTick({runId, tick}) — full snapshot at one tick.
 - getComponentTimeseries({runId, componentId, fromTick?, toTick?}) — health curve for one component.
 - listEvents({runId, fromTick?, toTick?}) — TROUBLESHOOT/FIX/REPLACE actions.

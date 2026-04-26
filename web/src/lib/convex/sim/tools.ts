@@ -53,7 +53,9 @@ export const listMyRuns = createTool({
 export const getRunSummary = createTool({
 	description:
 		'Get high-level metadata for a simulation run (scenario, status, last tick). ' +
-		'Always cite the runId in your answer.',
+		'Includes scenarioConfig — the resolved YAML (climate baseline, driver kinds + ' +
+		'params, maintenance schedule). Use scenarioConfig to explain *why* a run aged ' +
+		'the way it did, not just what happened. Always cite the runId in your answer.',
 	args: z.object({
 		runId: z.string().describe('Convex run ID (an Id<"simRuns">)')
 	}),
