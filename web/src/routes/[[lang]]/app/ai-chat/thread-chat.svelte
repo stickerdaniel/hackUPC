@@ -131,10 +131,12 @@
 						<div class="flex flex-wrap gap-2">
 							{#each suggestions as suggestion, i (suggestion.text)}
 								<div
-									class="motion-safe:animate-[chip-in_375ms_ease-out_both]"
+									class="min-w-0 max-w-full flex-1 motion-safe:animate-[chip-in_375ms_ease-out_both] sm:max-w-[14rem]"
 									style="animation-delay: {i * 50}ms"
+									title={suggestion.text}
 								>
 									<PromptSuggestion
+										class="w-full min-w-0 max-w-full"
 										onclick={() => {
 											chatUIContext.setInputValue(suggestion.text);
 											tick().then(() => {
@@ -142,7 +144,7 @@
 											});
 										}}
 									>
-										{suggestion.label}
+										<span class="block min-w-0 max-w-full truncate">{suggestion.label}</span>
 									</PromptSuggestion>
 								</div>
 							{/each}
