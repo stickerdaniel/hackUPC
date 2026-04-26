@@ -66,6 +66,11 @@ def run_scenario_sync(req: RunRequest) -> RunResponse:
     if run_overrides:
         config = config.model_copy(update={"run": config.run.model_copy(update=run_overrides)})
 
+    # Capture the resolved (post-override) config so the API response can
+    # echo it back to Convex. Pydantic mode="json" produces a fully
+    # JSON-serialisable dict including every nested driver kind+params.
+    resolved_config = config.model_dump(mode="json")
+
     profile = build_driver_profile(config)
     engine, state = bootstrap_engine(config)
 
@@ -119,6 +124,7 @@ def run_scenario_sync(req: RunRequest) -> RunResponse:
             status="completed",
             tick_count=config.run.horizon_ticks,
             elapsed_ms=elapsed_ms,
+            resolved_config=resolved_config,
         )
     finally:
         if ingest_client is not None:

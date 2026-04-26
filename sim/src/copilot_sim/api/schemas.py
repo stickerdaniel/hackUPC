@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -33,3 +33,4 @@ class RunResponse(BaseModel):
     status: Literal["completed"]
     tick_count: int
     elapsed_ms: int
+    resolved_config: dict[str, Any] | None = None
