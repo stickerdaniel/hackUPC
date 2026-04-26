@@ -6,6 +6,7 @@
 	import * as v from 'valibot';
 	import HealthTimeline from '$blocks/dashboard/health-timeline.svelte';
 	import DriverCoupledDecay from '$blocks/dashboard/driver-coupled-decay.svelte';
+	import RecommendationCards from '$blocks/dashboard/recommendation-cards.svelte';
 	import { provideTimeWindow, TimeWindow } from '$lib/dashboard/time-window.svelte';
 	import { api } from '$lib/convex/_generated/api';
 	import type { Id } from '$lib/convex/_generated/dataModel';
@@ -174,6 +175,7 @@
 
 	<HealthTimeline runId={selectedRunId} />
 	<DriverCoupledDecay runId={selectedRunId} />
+	<RecommendationCards runId={selectedRunId} />
 </div>
 
 <style>
