@@ -1,15 +1,21 @@
 /**
- * Public read queries for the printer simulation historian.
+ * Read queries for the printer simulation historian.
  *
- * Every query enforces ownership against `simRuns.userId` so a user can only
- * inspect their own runs. The agent's `createTool` handlers also call these,
- * receiving the user identity through the ToolCtx.
+ * Two flavors per logical query, both backed by the same `_*` helper so
+ * the ownership/shape contract stays in one place:
+ *   - `authedQuery` for direct client `useQuery` calls — derives userId from
+ *     Better Auth via `ctx.user`.
+ *   - `internalQuery` taking `userId` as an arg — for the agent's createTool
+ *     handlers, which receive the user identity via `ToolCtx.userId` (set by
+ *     `aiChatAgent.createThread({ userId })`). Auth identity does NOT cross
+ *     `ctx.runQuery` boundaries, so the agent path must pass userId explicitly.
  *
  * All payloads include `runId`/`tick`/`componentId` so the agent can cite a
  * specific data point per the Phase 3 grounding protocol.
  */
 import { ConvexError, v } from 'convex/values';
 import { authedQuery } from '../functions';
+import { internalQuery } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { QueryCtx } from '../_generated/server';
 
@@ -33,93 +39,240 @@ async function assertOwnership(
 	return run;
 }
 
+// ---------- shared handlers ----------
+
+async function _listMyRuns(ctx: QueryCtx, userId: string, limit: number) {
+	const cap = Math.min(limit, 200);
+	return await ctx.db
+		.query('simRuns')
+		.withIndex('by_user', (q) => q.eq('userId', userId))
+		.order('desc')
+		.take(cap);
+}
+
+async function _getRun(ctx: QueryCtx, userId: string, runId: Id<'simRuns'>) {
+	return await assertOwnership(ctx, runId, userId);
+}
+
+async function _getRunSummary(ctx: QueryCtx, userId: string, runId: Id<'simRuns'>) {
+	const run = await assertOwnership(ctx, runId, userId);
+	return {
+		runId: run._id,
+		scenarioName: run.scenarioName,
+		seed: run.seed,
+		horizonTicks: run.horizonTicks,
+		status: run.status,
+		startedAt: run.startedAt,
+		completedAt: run.completedAt ?? null,
+		lastTick: run.lastTick ?? null,
+		errorMessage: run.errorMessage ?? null
+	};
+}
+
+async function _getStateAtTick(ctx: QueryCtx, userId: string, runId: Id<'simRuns'>, tick: number) {
+	await assertOwnership(ctx, runId, userId);
+
+	const tickRow = await ctx.db
+		.query('simTicks')
+		.withIndex('by_run_and_tick', (q) => q.eq('runId', runId).eq('tick', tick))
+		.unique();
+	if (!tickRow) return null;
+
+	const components = await ctx.db
+		.query('simComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId).eq('tick', tick))
+		.collect();
+
+	const observed = await ctx.db
+		.query('simObservedComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId).eq('tick', tick))
+		.collect();
+
+	return {
+		runId,
+		tick,
+		tsIso: tickRow.tsIso,
+		drivers: tickRow.drivers,
+		env: tickRow.env,
+		couplingFactors: tickRow.couplingFactors,
+		printOutcome: tickRow.printOutcome,
+		components: components.map((c) => ({
+			componentId: c.componentId,
+			healthIndex: c.healthIndex,
+			status: c.status,
+			ageTicks: c.ageTicks,
+			metrics: c.metrics
+		})),
+		observed: observed.map((o) => ({
+			componentId: o.componentId,
+			observedHealthIndex: o.observedHealthIndex ?? null,
+			observedStatus: o.observedStatus ?? null,
+			sensorNote: o.sensorNote,
+			observedMetrics: o.observedMetrics,
+			sensorHealth: o.sensorHealth
+		}))
+	};
+}
+
+async function _getComponentTimeseries(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>,
+	component: typeof componentId.type,
+	fromTick?: number,
+	toTick?: number
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	// Bounded read: 6 components × <=10000 ticks (config-clamped).
+	const all = await ctx.db
+		.query('simComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
+		.collect();
+
+	const filtered = all
+		.filter((row) => row.componentId === component)
+		.filter((row) => (fromTick === undefined ? true : row.tick >= fromTick))
+		.filter((row) => (toTick === undefined ? true : row.tick <= toTick))
+		.sort((a, b) => a.tick - b.tick);
+
+	return filtered.map((row) => ({
+		runId,
+		tick: row.tick,
+		componentId: row.componentId,
+		healthIndex: row.healthIndex,
+		status: row.status,
+		ageTicks: row.ageTicks,
+		metrics: row.metrics
+	}));
+}
+
+async function _listEvents(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>,
+	fromTick?: number,
+	toTick?: number,
+	limit?: number
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	const cap = Math.min(limit ?? 100, 500);
+	// Bounded: events per run are O(maintenance ticks), ~hundreds max.
+	const events = await ctx.db
+		.query('simEvents')
+		.withIndex('by_run', (q) => q.eq('runId', runId))
+		.collect();
+
+	return events
+		.filter((e) => (fromTick === undefined ? true : e.tick >= fromTick))
+		.filter((e) => (toTick === undefined ? true : e.tick <= toTick))
+		.sort((a, b) => a.tick - b.tick)
+		.slice(0, cap)
+		.map((e) => ({
+			runId,
+			tick: e.tick,
+			kind: e.kind,
+			componentId: e.componentId ?? null,
+			tsIso: e.tsIso,
+			payload: e.payload
+		}));
+}
+
+async function _inspectSensorTrust(
+	ctx: QueryCtx,
+	userId: string,
+	runId: Id<'simRuns'>,
+	component: typeof componentId.type,
+	fromTick?: number,
+	toTick?: number
+) {
+	await assertOwnership(ctx, runId, userId);
+
+	const trueRows = await ctx.db
+		.query('simComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
+		.collect();
+	const obsRows = await ctx.db
+		.query('simObservedComponents')
+		.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
+		.collect();
+
+	const obsByTick = new Map(
+		obsRows.filter((r) => r.componentId === component).map((r) => [r.tick, r])
+	);
+
+	const filtered = trueRows
+		.filter((r) => r.componentId === component)
+		.filter((r) => (fromTick === undefined ? true : r.tick >= fromTick))
+		.filter((r) => (toTick === undefined ? true : r.tick <= toTick))
+		.sort((a, b) => a.tick - b.tick);
+
+	return filtered.map((row) => {
+		const obs = obsByTick.get(row.tick);
+		const observedHealth = obs?.observedHealthIndex ?? null;
+		const gap = observedHealth === null ? null : row.healthIndex - observedHealth;
+		return {
+			runId,
+			tick: row.tick,
+			componentId: row.componentId,
+			trueHealthIndex: row.healthIndex,
+			observedHealthIndex: observedHealth,
+			gap,
+			sensorNote: obs?.sensorNote ?? null
+		};
+	});
+}
+
+async function _compareRuns(
+	ctx: QueryCtx,
+	userId: string,
+	runIdA: Id<'simRuns'>,
+	runIdB: Id<'simRuns'>,
+	component: typeof componentId.type
+) {
+	await assertOwnership(ctx, runIdA, userId);
+	await assertOwnership(ctx, runIdB, userId);
+
+	async function lastHealth(rid: Id<'simRuns'>) {
+		const rows = await ctx.db
+			.query('simComponents')
+			.withIndex('by_run_tick_component', (q) => q.eq('runId', rid))
+			.collect();
+		const filtered = rows
+			.filter((r) => r.componentId === component)
+			.sort((a, b) => b.tick - a.tick);
+		return filtered[0] ?? null;
+	}
+
+	const [a, b] = await Promise.all([lastHealth(runIdA), lastHealth(runIdB)]);
+	return {
+		componentId: component,
+		a: a ? { runId: runIdA, tick: a.tick, healthIndex: a.healthIndex, status: a.status } : null,
+		b: b ? { runId: runIdB, tick: b.tick, healthIndex: b.healthIndex, status: b.status } : null
+	};
+}
+
+// ---------- public (frontend useQuery) ----------
+
 export const listMyRuns = authedQuery({
 	args: { limit: v.optional(v.number()) },
-	handler: async (ctx, args) => {
-		const limit = Math.min(args.limit ?? 50, 200);
-		const userId = ctx.user._id;
-		return await ctx.db
-			.query('simRuns')
-			.withIndex('by_user', (q) => q.eq('userId', userId))
-			.order('desc')
-			.take(limit);
-	}
+	handler: async (ctx, args) => _listMyRuns(ctx, ctx.user._id, args.limit ?? 50)
 });
 
 export const getRun = authedQuery({
 	args: { runId: v.id('simRuns') },
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		return await assertOwnership(ctx, args.runId, userId);
-	}
+	handler: async (ctx, args) => _getRun(ctx, ctx.user._id, args.runId)
 });
 
 export const getRunSummary = authedQuery({
 	args: { runId: v.id('simRuns') },
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		const run = await assertOwnership(ctx, args.runId, userId);
-		return {
-			runId: run._id,
-			scenarioName: run.scenarioName,
-			seed: run.seed,
-			horizonTicks: run.horizonTicks,
-			status: run.status,
-			startedAt: run.startedAt,
-			completedAt: run.completedAt ?? null,
-			lastTick: run.lastTick ?? null,
-			errorMessage: run.errorMessage ?? null
-		};
-	}
+	handler: async (ctx, args) => _getRunSummary(ctx, ctx.user._id, args.runId)
 });
 
 export const getStateAtTick = authedQuery({
 	args: { runId: v.id('simRuns'), tick: v.number() },
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		await assertOwnership(ctx, args.runId, userId);
-
-		const tick = await ctx.db
-			.query('simTicks')
-			.withIndex('by_run_and_tick', (q) => q.eq('runId', args.runId).eq('tick', args.tick))
-			.unique();
-		if (!tick) return null;
-
-		const components = await ctx.db
-			.query('simComponents')
-			.withIndex('by_run_tick_component', (q) => q.eq('runId', args.runId).eq('tick', args.tick))
-			.collect();
-
-		const observed = await ctx.db
-			.query('simObservedComponents')
-			.withIndex('by_run_tick_component', (q) => q.eq('runId', args.runId).eq('tick', args.tick))
-			.collect();
-
-		return {
-			runId: args.runId,
-			tick: args.tick,
-			tsIso: tick.tsIso,
-			drivers: tick.drivers,
-			env: tick.env,
-			couplingFactors: tick.couplingFactors,
-			printOutcome: tick.printOutcome,
-			components: components.map((c) => ({
-				componentId: c.componentId,
-				healthIndex: c.healthIndex,
-				status: c.status,
-				ageTicks: c.ageTicks,
-				metrics: c.metrics
-			})),
-			observed: observed.map((o) => ({
-				componentId: o.componentId,
-				observedHealthIndex: o.observedHealthIndex ?? null,
-				observedStatus: o.observedStatus ?? null,
-				sensorNote: o.sensorNote,
-				observedMetrics: o.observedMetrics,
-				sensorHealth: o.sensorHealth
-			}))
-		};
-	}
+	handler: async (ctx, args) => _getStateAtTick(ctx, ctx.user._id, args.runId, args.tick)
 });
 
 export const getComponentTimeseries = authedQuery({
@@ -129,33 +282,15 @@ export const getComponentTimeseries = authedQuery({
 		fromTick: v.optional(v.number()),
 		toTick: v.optional(v.number())
 	},
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		await assertOwnership(ctx, args.runId, userId);
-
-		// Bounded read: timeseries rows for one component on one run.
-		// 6 components × <=10000 ticks (config-clamped) keeps this safe.
-		const all = await ctx.db
-			.query('simComponents')
-			.withIndex('by_run_tick_component', (q) => q.eq('runId', args.runId))
-			.collect();
-
-		const filtered = all
-			.filter((row) => row.componentId === args.componentId)
-			.filter((row) => (args.fromTick === undefined ? true : row.tick >= args.fromTick))
-			.filter((row) => (args.toTick === undefined ? true : row.tick <= args.toTick))
-			.sort((a, b) => a.tick - b.tick);
-
-		return filtered.map((row) => ({
-			runId: args.runId,
-			tick: row.tick,
-			componentId: row.componentId,
-			healthIndex: row.healthIndex,
-			status: row.status,
-			ageTicks: row.ageTicks,
-			metrics: row.metrics
-		}));
-	}
+	handler: async (ctx, args) =>
+		_getComponentTimeseries(
+			ctx,
+			ctx.user._id,
+			args.runId,
+			args.componentId,
+			args.fromTick,
+			args.toTick
+		)
 });
 
 export const listEvents = authedQuery({
@@ -165,31 +300,8 @@ export const listEvents = authedQuery({
 		toTick: v.optional(v.number()),
 		limit: v.optional(v.number())
 	},
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		await assertOwnership(ctx, args.runId, userId);
-
-		const limit = Math.min(args.limit ?? 100, 500);
-		// Bounded: events per run are O(maintenance ticks), ~hundreds max.
-		const events = await ctx.db
-			.query('simEvents')
-			.withIndex('by_run', (q) => q.eq('runId', args.runId))
-			.collect();
-
-		return events
-			.filter((e) => (args.fromTick === undefined ? true : e.tick >= args.fromTick))
-			.filter((e) => (args.toTick === undefined ? true : e.tick <= args.toTick))
-			.sort((a, b) => a.tick - b.tick)
-			.slice(0, limit)
-			.map((e) => ({
-				runId: args.runId,
-				tick: e.tick,
-				kind: e.kind,
-				componentId: e.componentId ?? null,
-				tsIso: e.tsIso,
-				payload: e.payload
-			}));
-	}
+	handler: async (ctx, args) =>
+		_listEvents(ctx, ctx.user._id, args.runId, args.fromTick, args.toTick, args.limit)
 });
 
 export const inspectSensorTrust = authedQuery({
@@ -199,44 +311,8 @@ export const inspectSensorTrust = authedQuery({
 		fromTick: v.optional(v.number()),
 		toTick: v.optional(v.number())
 	},
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		await assertOwnership(ctx, args.runId, userId);
-
-		const trueRows = await ctx.db
-			.query('simComponents')
-			.withIndex('by_run_tick_component', (q) => q.eq('runId', args.runId))
-			.collect();
-		const obsRows = await ctx.db
-			.query('simObservedComponents')
-			.withIndex('by_run_tick_component', (q) => q.eq('runId', args.runId))
-			.collect();
-
-		const obsByTick = new Map(
-			obsRows.filter((r) => r.componentId === args.componentId).map((r) => [r.tick, r])
-		);
-
-		const filtered = trueRows
-			.filter((r) => r.componentId === args.componentId)
-			.filter((r) => (args.fromTick === undefined ? true : r.tick >= args.fromTick))
-			.filter((r) => (args.toTick === undefined ? true : r.tick <= args.toTick))
-			.sort((a, b) => a.tick - b.tick);
-
-		return filtered.map((row) => {
-			const obs = obsByTick.get(row.tick);
-			const observedHealth = obs?.observedHealthIndex ?? null;
-			const gap = observedHealth === null ? null : row.healthIndex - observedHealth;
-			return {
-				runId: args.runId,
-				tick: row.tick,
-				componentId: row.componentId,
-				trueHealthIndex: row.healthIndex,
-				observedHealthIndex: observedHealth,
-				gap,
-				sensorNote: obs?.sensorNote ?? null
-			};
-		});
-	}
+	handler: async (ctx, args) =>
+		_inspectSensorTrust(ctx, ctx.user._id, args.runId, args.componentId, args.fromTick, args.toTick)
 });
 
 export const compareRuns = authedQuery({
@@ -245,31 +321,82 @@ export const compareRuns = authedQuery({
 		runIdB: v.id('simRuns'),
 		componentId
 	},
-	handler: async (ctx, args) => {
-		const userId = ctx.user._id;
-		await assertOwnership(ctx, args.runIdA, userId);
-		await assertOwnership(ctx, args.runIdB, userId);
+	handler: async (ctx, args) =>
+		_compareRuns(ctx, ctx.user._id, args.runIdA, args.runIdB, args.componentId)
+});
 
-		async function lastHealth(runId: Id<'simRuns'>) {
-			const rows = await ctx.db
-				.query('simComponents')
-				.withIndex('by_run_tick_component', (q) => q.eq('runId', runId))
-				.collect();
-			const filtered = rows
-				.filter((r) => r.componentId === args.componentId)
-				.sort((a, b) => b.tick - a.tick);
-			return filtered[0] ?? null;
-		}
+// ---------- internal (agent createTool, ToolCtx.userId) ----------
 
-		const [a, b] = await Promise.all([lastHealth(args.runIdA), lastHealth(args.runIdB)]);
-		return {
-			componentId: args.componentId,
-			a: a
-				? { runId: args.runIdA, tick: a.tick, healthIndex: a.healthIndex, status: a.status }
-				: null,
-			b: b
-				? { runId: args.runIdB, tick: b.tick, healthIndex: b.healthIndex, status: b.status }
-				: null
-		};
-	}
+export const listMyRunsForUser = internalQuery({
+	args: { userId: v.string(), limit: v.optional(v.number()) },
+	handler: async (ctx, args) => _listMyRuns(ctx, args.userId, args.limit ?? 50)
+});
+
+export const getRunForUser = internalQuery({
+	args: { userId: v.string(), runId: v.id('simRuns') },
+	handler: async (ctx, args) => _getRun(ctx, args.userId, args.runId)
+});
+
+export const getRunSummaryForUser = internalQuery({
+	args: { userId: v.string(), runId: v.id('simRuns') },
+	handler: async (ctx, args) => _getRunSummary(ctx, args.userId, args.runId)
+});
+
+export const getStateAtTickForUser = internalQuery({
+	args: { userId: v.string(), runId: v.id('simRuns'), tick: v.number() },
+	handler: async (ctx, args) => _getStateAtTick(ctx, args.userId, args.runId, args.tick)
+});
+
+export const getComponentTimeseriesForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runId: v.id('simRuns'),
+		componentId,
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_getComponentTimeseries(
+			ctx,
+			args.userId,
+			args.runId,
+			args.componentId,
+			args.fromTick,
+			args.toTick
+		)
+});
+
+export const listEventsForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runId: v.id('simRuns'),
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number()),
+		limit: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_listEvents(ctx, args.userId, args.runId, args.fromTick, args.toTick, args.limit)
+});
+
+export const inspectSensorTrustForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runId: v.id('simRuns'),
+		componentId,
+		fromTick: v.optional(v.number()),
+		toTick: v.optional(v.number())
+	},
+	handler: async (ctx, args) =>
+		_inspectSensorTrust(ctx, args.userId, args.runId, args.componentId, args.fromTick, args.toTick)
+});
+
+export const compareRunsForUser = internalQuery({
+	args: {
+		userId: v.string(),
+		runIdA: v.id('simRuns'),
+		runIdB: v.id('simRuns'),
+		componentId
+	},
+	handler: async (ctx, args) =>
+		_compareRuns(ctx, args.userId, args.runIdA, args.runIdB, args.componentId)
 });

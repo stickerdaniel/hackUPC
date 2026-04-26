@@ -4,17 +4,33 @@
  * Use `createTool` from `@convex-dev/agent` (NOT plain `tool()` from `ai`)
  * because handlers need Convex action `ctx` (`ctx.runQuery`, `ctx.runAction`).
  *
- * Read tools wrap `sim/queries.ts`; the single mutation tool wraps
- * `sim/actions.ts:runScenario`. Every read result includes `runId`/`tick`/
- * `componentId` so the agent can cite specific data points back to the user
- * (Phase 3 grounding protocol — never answer printer state from training).
+ * Auth identity does NOT propagate across `ctx.runQuery` / `ctx.runAction`
+ * boundaries. The agent runtime populates `ctx.userId` on the ToolCtx from the
+ * thread's userId (see `aiChatAgent.createThread({ userId: ctx.user._id })` in
+ * `aiChat/threads.ts`), and tools MUST pass that to the `*ForUser` internal
+ * versions of queries/actions. Calling the public `authedQuery` versions from
+ * here would throw `Unauthenticated` because they re-derive auth from ctx.
+ *
+ * Every read result includes `runId`/`tick`/`componentId` so the agent can
+ * cite specific data points (Phase 3 grounding protocol — never answer
+ * printer state from training).
  */
 import { createTool } from '@convex-dev/agent';
+import { ConvexError } from 'convex/values';
 import { z } from 'zod';
-import { api } from '../_generated/api';
+import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 
 const componentSchema = z.enum(['blade', 'rail', 'nozzle', 'cleaning', 'heater', 'sensor']);
+
+function requireUserId(ctx: { userId?: string }): string {
+	if (!ctx.userId) {
+		throw new ConvexError(
+			'Tool ctx is missing userId. Make sure the thread was created with userId.'
+		);
+	}
+	return ctx.userId;
+}
 
 export const getRunSummary = createTool({
 	description:
@@ -24,7 +40,9 @@ export const getRunSummary = createTool({
 		runId: z.string().describe('Convex run ID (an Id<"simRuns">)')
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runQuery(api.sim.queries.getRunSummary, {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.getRunSummaryForUser, {
+			userId,
 			runId: args.runId as Id<'simRuns'>
 		});
 	}
@@ -40,7 +58,9 @@ export const getStateAtTick = createTool({
 		tick: z.number().int().nonnegative()
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runQuery(api.sim.queries.getStateAtTick, {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.getStateAtTickForUser, {
+			userId,
 			runId: args.runId as Id<'simRuns'>,
 			tick: args.tick
 		});
@@ -59,7 +79,9 @@ export const getComponentTimeseries = createTool({
 		toTick: z.number().int().nonnegative().optional()
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runQuery(api.sim.queries.getComponentTimeseries, {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.getComponentTimeseriesForUser, {
+			userId,
 			runId: args.runId as Id<'simRuns'>,
 			componentId: args.componentId,
 			fromTick: args.fromTick,
@@ -79,7 +101,9 @@ export const listEvents = createTool({
 		limit: z.number().int().positive().max(500).optional()
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runQuery(api.sim.queries.listEvents, {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.listEventsForUser, {
+			userId,
 			runId: args.runId as Id<'simRuns'>,
 			fromTick: args.fromTick,
 			toTick: args.toTick,
@@ -101,7 +125,9 @@ export const inspectSensorTrust = createTool({
 		toTick: z.number().int().nonnegative().optional()
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runQuery(api.sim.queries.inspectSensorTrust, {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.inspectSensorTrustForUser, {
+			userId,
 			runId: args.runId as Id<'simRuns'>,
 			componentId: args.componentId,
 			fromTick: args.fromTick,
@@ -120,7 +146,9 @@ export const compareRuns = createTool({
 		componentId: componentSchema
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runQuery(api.sim.queries.compareRuns, {
+		const userId = requireUserId(ctx);
+		return await ctx.runQuery(internal.sim.queries.compareRunsForUser, {
+			userId,
 			runIdA: args.runIdA as Id<'simRuns'>,
 			runIdB: args.runIdB as Id<'simRuns'>,
 			componentId: args.componentId
@@ -128,8 +156,6 @@ export const compareRuns = createTool({
 	}
 });
 
-// Mutation tool registered in step 10. Defining here keeps tool registration
-// in one place; the agent's instructions decide whether/when to invoke it.
 export const runScenario = createTool({
 	description:
 		'Spawn a new simulation run for what-if analysis. ALWAYS show the user the proposed ' +
@@ -145,6 +171,10 @@ export const runScenario = createTool({
 		dtSeconds: z.number().int().positive().optional()
 	}),
 	handler: async (ctx, args): Promise<unknown> => {
-		return await ctx.runAction(api.sim.actions.runScenario, args);
+		const userId = requireUserId(ctx);
+		return await ctx.runAction(internal.sim.actions.runScenarioForUser, {
+			userId,
+			...args
+		});
 	}
 });
