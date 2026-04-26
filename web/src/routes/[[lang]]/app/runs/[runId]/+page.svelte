@@ -99,6 +99,66 @@
 		return $t(`sim_ui.components.${cid}`);
 	}
 
+	// ------------ Resolved scenario config (Setup card) ------------
+
+	type Driver = { kind?: string; [k: string]: unknown };
+	type ResolvedConfig = {
+		run?: { seed?: number; horizon_ticks?: number; dt_seconds?: number };
+		environment?: {
+			base_ambient_C?: number;
+			amplitude_C?: number;
+			weekly_runtime_hours?: number;
+			vibration_level?: number;
+		};
+		drivers?: {
+			temperature_stress?: Driver;
+			humidity_contamination?: Driver;
+			operational_load?: Driver;
+			maintenance_level?: Driver & { schedule?: Array<{ tick: number; value: number }> };
+		};
+		[k: string]: unknown;
+	};
+
+	function isResolvedConfig(x: unknown): x is ResolvedConfig {
+		if (!x || typeof x !== 'object') return false;
+		const o = x as Record<string, unknown>;
+		return (
+			typeof o.environment === 'object' &&
+			o.environment !== null &&
+			typeof o.drivers === 'object' &&
+			o.drivers !== null
+		);
+	}
+
+	const setup = $derived.by<ResolvedConfig | null>(() => {
+		if (!summary?.scenarioConfig) return null;
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(summary.scenarioConfig);
+		} catch {
+			return null;
+		}
+		return isResolvedConfig(parsed) ? parsed : null;
+	});
+
+	const DRIVER_PARAM_KEYS = [
+		'base',
+		'amplitude',
+		'mean',
+		'theta',
+		'sigma',
+		'period_weeks'
+	] as const;
+	function driverSummary(d: Driver | undefined): string {
+		if (!d) return '—';
+		const params = DRIVER_PARAM_KEYS.filter((k) => typeof d[k] === 'number')
+			.slice(0, 3)
+			.map((k) => `${k} ${(d[k] as number).toFixed(2)}`)
+			.join(', ');
+		const kind = d.kind ?? 'unknown';
+		return params ? `${kind} (${params})` : kind;
+	}
+
 	type SeriesRow = { tick: number; healthIndex: number; status: string };
 
 	function snapshotAt(rows: SeriesRow[] | undefined, tick: number): SeriesRow | null {
@@ -181,6 +241,78 @@
 				{statusLabel(summary.status)}
 			</span>
 		</header>
+
+		<!-- Setup (resolved scenario config) -->
+		{#if setup}
+			<section class="space-y-4 rounded-lg border bg-card p-4">
+				<h2 class="text-sm font-semibold">Setup</h2>
+
+				<!-- Climate -->
+				<div>
+					<h3 class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Climate</h3>
+					<dl class="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-3">
+						<div class="flex items-baseline justify-between sm:block">
+							<dt class="text-xs text-muted-foreground">Ambient</dt>
+							<dd class="font-mono">
+								{setup.environment?.base_ambient_C ?? '—'} °C
+								{#if setup.environment?.amplitude_C != null}
+									± {setup.environment.amplitude_C}
+								{/if}
+							</dd>
+						</div>
+						<div class="flex items-baseline justify-between sm:block">
+							<dt class="text-xs text-muted-foreground">Runtime</dt>
+							<dd class="font-mono">{setup.environment?.weekly_runtime_hours ?? '—'} h/week</dd>
+						</div>
+						<div class="flex items-baseline justify-between sm:block">
+							<dt class="text-xs text-muted-foreground">Vibration</dt>
+							<dd class="font-mono">{setup.environment?.vibration_level ?? '—'}</dd>
+						</div>
+					</dl>
+				</div>
+
+				<!-- Drivers -->
+				{#if setup.drivers}
+					<div>
+						<h3 class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+							Drivers
+						</h3>
+						<dl class="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm md:grid-cols-2">
+							<div class="flex flex-col">
+								<dt class="text-xs text-muted-foreground">temperature_stress</dt>
+								<dd class="font-mono">{driverSummary(setup.drivers.temperature_stress)}</dd>
+							</div>
+							<div class="flex flex-col">
+								<dt class="text-xs text-muted-foreground">humidity_contamination</dt>
+								<dd class="font-mono">{driverSummary(setup.drivers.humidity_contamination)}</dd>
+							</div>
+							<div class="flex flex-col">
+								<dt class="text-xs text-muted-foreground">operational_load</dt>
+								<dd class="font-mono">{driverSummary(setup.drivers.operational_load)}</dd>
+							</div>
+							<div class="flex flex-col">
+								<dt class="text-xs text-muted-foreground">maintenance_level</dt>
+								<dd class="font-mono">{driverSummary(setup.drivers.maintenance_level)}</dd>
+							</div>
+						</dl>
+					</div>
+				{/if}
+
+				<!-- Maintenance schedule -->
+				{#if setup.drivers?.maintenance_level?.schedule?.length}
+					<div>
+						<h3 class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+							Maintenance schedule
+						</h3>
+						<ul class="mt-2 space-y-0.5 font-mono text-sm">
+							{#each setup.drivers.maintenance_level.schedule as step (step.tick)}
+								<li>tick {step.tick} → {step.value}</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+			</section>
+		{/if}
 
 		<!-- Playback controls -->
 		<section class="space-y-3 rounded-lg border bg-card p-4">
