@@ -50,7 +50,10 @@
 
 	const HORIZON = 260;
 	const EVENT_TICK = 140;
-	const EVENT_LABEL = 'human-disruption';
+
+	const componentLabel = (id: ComponentId): string => $t(`sim_ui.components.${id}`);
+	const statusLabel = (status: ReturnType<typeof statusOf>): string =>
+		$t(`sim_ui.status.${status.toLowerCase()}`);
 
 	type Point = { tick: number; health: number };
 
@@ -272,8 +275,8 @@
 <section class="health-timeline">
 	<header class="ht-head ht-head-with-control">
 		<div>
-			<div class="ht-eyebrow">Phase 1 / Coupled engine</div>
-			<h2 class="ht-title">Component health over time</h2>
+			<div class="ht-eyebrow">{$t('sim_ui.health_timeline.eyebrow')}</div>
+			<h2 class="ht-title">{$t('sim_ui.health_timeline.title')}</h2>
 		</div>
 
 		<div class="ht-window" role="group">
@@ -314,7 +317,7 @@
 		{#each COMPONENTS as comp (comp.id)}
 			<span class="ht-legend-item">
 				<span class="ht-legend-dot" style:--c={comp.color}></span>
-				<span class="ht-legend-label">{comp.label}</span>
+				<span class="ht-legend-label">{componentLabel(comp.id)}</span>
 			</span>
 		{/each}
 	</div>
@@ -356,7 +359,9 @@
 				<!-- Event marker (only when within the visible window) -->
 				{#if eventInWindow}
 					<line class="ht-event-line" x1={eventX} x2={eventX} y1="0" y2={innerH} />
-					<text class="ht-event-label" x={eventX + 6} y="14">{EVENT_LABEL}</text>
+					<text class="ht-event-label" x={eventX + 6} y="14"
+						>{$t('sim_ui.health_timeline.event_label')}</text
+					>
 				{/if}
 
 				<!-- Series — windowed -->
@@ -377,7 +382,7 @@
 
 				<!-- X axis tick text label -->
 				<text class="ht-axis-title" x={innerW / 2} y={innerH + 32} text-anchor="middle">
-					tick
+					{$t('sim_ui.health_timeline.tick_label')}
 				</text>
 
 				<!-- Transparent capture rect — covers the inner chart area for mouse tracking -->
@@ -401,28 +406,27 @@
 				style:top="{Math.max(hover.clientY - 10, 0)}px"
 			>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">component_id</span>
-					<span class="ht-tip-val">{hover.comp.id}</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.component_id')}</span>
+					<span class="ht-tip-val">{componentLabel(hover.comp.id)}</span>
 				</div>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">tick</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.tick')}</span>
 					<span class="ht-tip-val">{hover.tick}</span>
 				</div>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">health</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.health')}</span>
 					<span class="ht-tip-val">{hover.health.toFixed(3)}</span>
 				</div>
 				<div class="ht-tip-row">
-					<span class="ht-tip-key">status</span>
-					<span class="ht-tip-val">{hover.status}</span>
+					<span class="ht-tip-key">{$t('sim_ui.health_timeline.tooltip.status')}</span>
+					<span class="ht-tip-val">{statusLabel(hover.status)}</span>
 				</div>
 			</div>
 		{/if}
 	</div>
 
 	<p class="ht-foot">
-		Grey dashed rules mark environmental events from the scenario (chaos overlays — earthquake, HVAC
-		failure, holiday, …).
+		{$t('sim_ui.health_timeline.footnote')}
 	</p>
 </section>
 

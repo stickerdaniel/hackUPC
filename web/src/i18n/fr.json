@@ -5,6 +5,182 @@
 		"copilot_voice": "Voix",
 		"skip_to_content": "Aller au contenu"
 	},
+	"sim_ui": {
+		"common": {
+			"clear": "Effacer",
+			"loading": "Chargement...",
+			"optional": "(optionnel)"
+		},
+		"drivers": {
+			"humidity_contamination": "Humidité / contamination",
+			"maintenance_level": "Niveau de maintenance",
+			"operational_load": "Charge opérationnelle",
+			"temperature_stress": "Stress thermique"
+		},
+		"driver_coupled_decay": {
+			"bottom": {
+				"component_degradation": "DÉGRADATION DES COMPOSANTS",
+				"delta_rul": "Delta RUL",
+				"eyebrow": "Phase 2 / Modèle de dégradation",
+				"footer_meta": {
+					"last_calibration": "DERNIÈRE CALIBRATION",
+					"model": "MODÈLE",
+					"trained_on": "ENTRAÎNÉ SUR"
+				},
+				"health": "Santé",
+				"health_buckets_sub": "Niveaux de santé - 6 composants",
+				"legend_health_bucket": "NIVEAU DE SANTÉ",
+				"meta": {
+					"engine": "MOTEUR",
+					"engine_value": "déterministe + stochastique",
+					"horizon": "HORIZON",
+					"resolution": "RÉSOLUTION",
+					"run": "RUN",
+					"scenario": "SCÉNARIO"
+				},
+				"status_snapshot": "INSTANTANÉ DU STATUT",
+				"title": "Dégradation des composants couplée aux drivers"
+			},
+			"now": "MAINTENANT",
+			"tooltip": {
+				"bucket": "bucket",
+				"code": "code",
+				"component_id": "component_id",
+				"status": "statut",
+				"tick": "tick"
+			},
+			"top": {
+				"alerts_foot": "Chaque ligne montre ce que l'agent proactif aurait déclenché au moment où un composant a franchi un seuil de statut.",
+				"alerts_in_window": "alertes dans la fenêtre",
+				"description": "Quatre entrées du moteur et les alertes que l'agent autonome aurait levées, limitées à la même fenêtre temporelle choisie ci-dessus.",
+				"driver_streams": "FLUX DES DRIVERS",
+				"eyebrow": "Phase 2 / Entrées · Aperçu autonomie",
+				"latest_value_foot": "La valeur à droite est la plus récente dans la fenêtre visible.",
+				"no_alerts": "Aucune alerte dans cette fenêtre.",
+				"of": "sur",
+				"proactive_alerts": "ALERTES PROACTIVES",
+				"showing_tick": "Affichage tick",
+				"tick": "TICK",
+				"title": "Flux des drivers et alertes proactives",
+				"top_driver": "driver principal",
+				"window": "fenêtre"
+			}
+		},
+		"components": {
+			"blade": "Lame",
+			"cleaning": "Interface de nettoyage",
+			"heater": "Éléments chauffants",
+			"nozzle": "Plaque de buses",
+			"rail": "Rail linéaire",
+			"sensor": "Capteurs de température"
+		},
+		"dashboard": {
+			"completed": "Terminé",
+			"description": "Tableau opérateur pour le moteur de simulation couplé : drivers, dégradation d'état, attribution de cascade, confiance capteur et réponse opérateur depuis l'historique du run sélectionné.",
+			"horizon": "Horizon",
+			"last_tick": "Dernier tick",
+			"loaded": "Chargé",
+			"loading_run_summary": "Chargement du résumé du run...",
+			"no_run_selected": "Aucun run sélectionné",
+			"operator": "Opérateur",
+			"pick_run": "- Choisissez un run pour charger les données réelles -",
+			"run": "Run",
+			"scenario": "Scénario",
+			"seed": "Seed",
+			"started": "Démarré",
+			"status": "Statut",
+			"synthetic_hint": "Les graphiques ci-dessous affichent actuellement des données synthétiques. Choisissez un run pour afficher les données réelles de l'historien."
+		},
+		"health_timeline": {
+			"eyebrow": "Phase 1 / Moteur couplé",
+			"event_label": "perturbation humaine",
+			"footnote": "Les marqueurs gris en pointillés indiquent des événements environnementaux du scénario (surcouches chaos comme séisme, panne HVAC, jour férié, etc.).",
+			"tick_label": "tick",
+			"title": "Santé des composants au fil du temps",
+			"tooltip": {
+				"component_id": "composant",
+				"health": "santé",
+				"status": "statut",
+				"tick": "tick"
+			}
+		},
+		"recommendation_cards": {
+			"actions": {
+				"replace_now": "REMPLACER MAINTENANT",
+				"schedule_fix": "PLANIFIER LA RÉPARATION",
+				"watch": "SURVEILLER"
+			},
+			"chain_unavailable": "La chaîne de cascade n'a pas pu être reconstruite à partir des facteurs enregistrés.",
+			"empty": "Aucune transition DEGRADED/CRITICAL/FAILED dans ce run.",
+			"eyebrow": "Phase 3 / Aperçu heuristique",
+			"eyebrow_top": "Aperçu Phase 3 · Fiabilité · Intelligence · Autonomie",
+			"meta": {
+				"health": "SANTÉ",
+				"status": "STATUT"
+			},
+			"sub": "Cartes d'insight en lecture seule - aujourd'hui basées sur des règles (statut vers action suggérée).",
+			"suggested_next_step": "PROCHAINE ÉTAPE SUGGÉRÉE",
+			"tips": {
+				"critical": "Planifiez une réparation dans la prochaine fenêtre de maintenance.",
+				"degraded": "Surveillez de près et planifiez une maintenance préventive à la prochaine fenêtre.",
+				"failed": "Remplacez immédiatement - la qualité d'impression se dégrade déjà."
+			},
+			"title": "Cartes de recommandation",
+			"top_driver_was": "le driver principal était",
+			"why": "Pourquoi :"
+		},
+		"run_detail": {
+			"chart_time_series": "Série temporelle de santé des composants",
+			"end": "Fin",
+			"global": "Global",
+			"health": "santé",
+			"horizon": "horizon",
+			"loading_run": "Chargement du run...",
+			"maintenance_events": "Événements de maintenance (jusqu'au tick courant)",
+			"no_events": "Aucun événement enregistré pour l'instant.",
+			"not_found": "Run introuvable ou accès refusé.",
+			"page_title": "Run de simulation",
+			"pause": "Pause",
+			"play": "Lecture",
+			"reset": "Réinitialiser",
+			"run_id": "Run",
+			"run_prefix": "Run",
+			"seed": "seed",
+			"speed": "Vitesse",
+			"tick": "tick",
+			"ticks": "ticks"
+		},
+		"runs": {
+			"field": {
+				"horizon_ticks": "Ticks d'horizon",
+				"scenario": "Scénario",
+				"scenario_default": "(valeur par défaut du scénario)",
+				"seed": "Seed"
+			},
+			"no_runs": "Aucun run pour l'instant. Démarrez-en un ci-dessus.",
+			"page_description": "Lancez de nouveaux runs what-if du jumeau numérique HP Metal Jet S100. Cliquez sur un run pour inspecter la lecture.",
+			"page_title": "Runs de simulation",
+			"relative": {
+				"days_ago": "il y a {count} j",
+				"hours_ago": "il y a {count} h",
+				"minutes_ago": "il y a {count} min",
+				"seconds_ago": "il y a {count} s"
+			},
+			"run_scenario": "Exécuter le scénario",
+			"running": "Exécution...",
+			"start_title": "Démarrer un nouveau run",
+			"tick_progress": "tick {current}/{horizon}",
+			"your_runs": "Vos runs"
+		},
+		"status": {
+			"completed": "Terminé",
+			"critical": "Critique",
+			"degraded": "Dégradé",
+			"failed": "En panne",
+			"functional": "Fonctionnel",
+			"running": "En cours"
+		}
+	},
 	"admin": {
 		"actions": {
 			"ban": "Bannir l'Utilisateur",
@@ -1684,13 +1860,26 @@
 		"terms": "Conditions d'utilisation"
 	},
 	"hero": {
+		"ask_why": "Demandez-lui pourquoi.",
 		"companies_text": "Propulsant les meilleures équipes",
 		"cta": "Commencer maintenant",
 		"cta_demo": "Demander une démo",
 		"description": "Chaque réponse fondée sur la télémétrie de simulation en direct — jamais une supposition.",
+		"prompt_placeholder": "Posez n'importe quelle question à votre imprimante...",
+		"prompt_suggestion_1": "Pourquoi le chauffage R1 a-t-il dérivé à 14:00 ?",
+		"prompt_suggestion_2": "La lame du recoater tiendra-t-elle pendant le job de 8 heures de ce soir ?",
+		"prompt_suggestion_3": "Compare Barcelona et Phoenix avec le même cycle de charge.",
+		"prompt_suggestion_4": "Quel composant risque de tomber en panne en prochain ?",
+		"printer_is_prefix": "Votre imprimante est",
 		"section_label": "Accueil",
 		"tagline": "Votre imprimante est critique.\nDemandez-lui pourquoi.",
 		"title": "Co-Pilot pour HP Metal Jet S100"
+	},
+	"printer_status": {
+		"critical": "critique",
+		"degraded": "dégradée",
+		"failed": "en panne",
+		"functional": "fonctionnelle"
 	},
 	"impersonation": {
 		"banner_text": "Vous visualisez en tant qu'un autre utilisateur",

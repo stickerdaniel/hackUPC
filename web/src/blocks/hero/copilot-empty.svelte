@@ -50,12 +50,12 @@
 		}
 	];
 
-	const suggestedPrompts = [
-		'Why did heater R1 drift at 14:00?',
-		"Will the recoater blade survive tonight's 8-hour job?",
-		'Compare Barcelona vs Phoenix at the same duty cycle.',
-		"What's the next component most likely to fail?"
-	];
+	const suggestedPromptKeys = [
+		'hero.prompt_suggestion_1',
+		'hero.prompt_suggestion_2',
+		'hero.prompt_suggestion_3',
+		'hero.prompt_suggestion_4'
+	] as const;
 
 	let prompt = $state('');
 	let voice = $state(false);
@@ -89,6 +89,10 @@
 	}
 
 	const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+	function printerStatusLabel(status: keyof typeof STATUS_LABELS): string {
+		return $t(`printer_status.${STATUS_LABELS[status]}`);
+	}
 </script>
 
 <section class="copilot">
@@ -102,21 +106,22 @@
 
 				<h1 class="hero-title-clean">
 					<span class="hero-title-line"
-						>Your printer is <span class="hero-title-status" data-sev={scenario.overall}
-							>{STATUS_LABELS[scenario.overall]}</span
+						>{$t('hero.printer_is_prefix')}
+						<span class="hero-title-status" data-sev={scenario.overall}
+							>{printerStatusLabel(scenario.overall)}</span
 						>.</span
 					>
-					<span class="hero-title-line hero-title-soft">Ask it why.</span>
+					<span class="hero-title-line hero-title-soft">{$t('hero.ask_why')}</span>
 				</h1>
 
 				<p class="hero-sub-clean">
-					Every answer grounded in live simulation telemetry — never a guess.
+					{$t('hero.description')}
 				</p>
 
 				<form class="prompt-clean" onsubmit={handleSubmit}>
 					<input
 						class="prompt-input-clean"
-						placeholder="Ask your printer anything…"
+						placeholder={$t('hero.prompt_placeholder')}
 						bind:value={prompt}
 					/>
 					<div class="prompt-actions-clean">
@@ -166,9 +171,9 @@
 				</form>
 
 				<div class="chips-row">
-					{#each suggestedPrompts as text (text)}
-						<button type="button" class="chip-clean" onclick={() => pickPrompt(text)}>
-							{text}
+					{#each suggestedPromptKeys as key (key)}
+						<button type="button" class="chip-clean" onclick={() => pickPrompt($t(key))}>
+							{$t(key)}
 						</button>
 					{/each}
 				</div>

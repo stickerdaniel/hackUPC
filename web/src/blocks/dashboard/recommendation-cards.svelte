@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { getTranslate } from '@tolgee/svelte';
 	import { useQuery } from 'convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
 	import type { Id } from '$lib/convex/_generated/dataModel';
+
+	const { t } = getTranslate();
 
 	const { runId = null }: { runId?: Id<'simRuns'> | null } = $props();
 
@@ -42,15 +45,18 @@
 		}
 	};
 
-	const ACTION_RULES: Record<AlertStatus, { verb: string; tip: string }> = {
-		DEGRADED: { verb: 'WATCH', tip: 'Watch closely — schedule preventive in next window' },
+	const ACTION_RULES: Record<AlertStatus, { verbKey: string; tipKey: string }> = {
+		DEGRADED: {
+			verbKey: 'sim_ui.recommendation_cards.actions.watch',
+			tipKey: 'sim_ui.recommendation_cards.tips.degraded'
+		},
 		CRITICAL: {
-			verb: 'SCHEDULE FIX',
-			tip: 'Schedule a FIX in the next maintenance window'
+			verbKey: 'sim_ui.recommendation_cards.actions.schedule_fix',
+			tipKey: 'sim_ui.recommendation_cards.tips.critical'
 		},
 		FAILED: {
-			verb: 'REPLACE NOW',
-			tip: 'Replace immediately — print outcomes are degrading'
+			verbKey: 'sim_ui.recommendation_cards.actions.replace_now',
+			tipKey: 'sim_ui.recommendation_cards.tips.failed'
 		}
 	};
 
@@ -227,20 +233,28 @@
 	function fmtHealth(h: number | null): string {
 		return h === null ? '—' : h.toFixed(2);
 	}
+
+	function componentLabel(component: ComponentId): string {
+		return $t(`sim_ui.components.${component}`);
+	}
+
+	function statusLabel(status: AlertStatus): string {
+		return $t(`sim_ui.status.${status.toLowerCase()}`);
+	}
 </script>
 
 <section class="rec">
 	<header class="rec-head">
-		<div class="rec-eyebrow-top">Phase 3 preview · Reliability · Intelligence · Autonomy</div>
-		<div class="rec-eyebrow">Phase 3 / Heuristic preview</div>
-		<h2 class="rec-title">Recommendation cards</h2>
+		<div class="rec-eyebrow-top">{$t('sim_ui.recommendation_cards.eyebrow_top')}</div>
+		<div class="rec-eyebrow">{$t('sim_ui.recommendation_cards.eyebrow')}</div>
+		<h2 class="rec-title">{$t('sim_ui.recommendation_cards.title')}</h2>
 		<p class="rec-sub">
-			Read-only insight cards — rule-based today (status → suggested action lookup).
+			{$t('sim_ui.recommendation_cards.sub')}
 		</p>
 	</header>
 
 	{#if cards.length === 0}
-		<div class="rec-empty">No DEGRADED/CRITICAL/FAILED transitions in this run.</div>
+		<div class="rec-empty">{$t('sim_ui.recommendation_cards.empty')}</div>
 	{/if}
 
 	<div class="rec-stack">
@@ -249,22 +263,22 @@
 			<article class="rec-card">
 				<header class="rec-card-head">
 					<span class="rec-dot" style:background={ACCENT}></span>
-					<span class="rec-component">{card.component.toUpperCase()}</span>
+					<span class="rec-component">{componentLabel(card.component).toUpperCase()}</span>
 					<span class="rec-meta">
 						<span class="rec-meta-key">@</span>
 						<span class="mono">T={card.firstTick}</span>
 						<span class="rec-meta-sep">·</span>
-						<span class="rec-meta-key">HEALTH</span>
+						<span class="rec-meta-key">{$t('sim_ui.recommendation_cards.meta.health')}</span>
 						<span class="mono">{fmtHealth(card.health)}</span>
 						<span class="rec-meta-sep">·</span>
-						<span class="rec-meta-key">STATUS</span>
-						<span class="mono">{card.status}</span>
+						<span class="rec-meta-key">{$t('sim_ui.recommendation_cards.meta.status')}</span>
+						<span class="mono">{statusLabel(card.status)}</span>
 					</span>
 				</header>
 
 				<div class="rec-why">
-					<span class="rec-why-key">Why:</span>
-					top driver was
+					<span class="rec-why-key">{$t('sim_ui.recommendation_cards.why')}</span>
+					{$t('sim_ui.recommendation_cards.top_driver_was')}
 					<code class="rec-codepill mono">
 						{card.topDriverKey} = {fmtFactor(card.topDriverValue)}
 					</code>
@@ -272,18 +286,18 @@
 						. <span class="rec-chain">{card.chain}</span>
 					{:else}
 						. <span class="rec-chain rec-chain-faded">
-							Cascade chain not recoverable from the recorded factors.
+							{$t('sim_ui.recommendation_cards.chain_unavailable')}
 						</span>
 					{/if}
 				</div>
 
 				<footer class="rec-foot">
-					<span class="rec-foot-key">SUGGESTED NEXT STEP</span>
+					<span class="rec-foot-key">{$t('sim_ui.recommendation_cards.suggested_next_step')}</span>
 					<span class="rec-action">
 						<span class="rec-action-dot" style:background={ACCENT}></span>
-						{action.verb}
+						{$t(action.verbKey)}
 					</span>
-					<span class="rec-foot-tip">· {action.tip}</span>
+					<span class="rec-foot-tip">· {$t(action.tipKey)}</span>
 				</footer>
 			</article>
 		{/each}

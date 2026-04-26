@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { getTranslate } from '@tolgee/svelte';
 	import { useQuery } from 'convex-svelte';
 	import { api } from '$lib/convex/_generated/api';
 	import type { Id } from '$lib/convex/_generated/dataModel';
@@ -7,6 +8,8 @@
 	import SEOHead from '$lib/components/SEOHead.svelte';
 	import { scaleLinear } from 'd3-scale';
 	import { line as d3Line } from 'd3-shape';
+
+	const { t } = getTranslate();
 
 	const COMPONENT_IDS = ['blade', 'rail', 'nozzle', 'cleaning', 'heater', 'sensor'] as const;
 	type ComponentId = (typeof COMPONENT_IDS)[number];
@@ -87,6 +90,15 @@
 		}
 	}
 
+	function statusLabel(status: string | null | undefined): string {
+		if (!status) return '—';
+		return $t(`sim_ui.status.${status.toLowerCase()}`);
+	}
+
+	function componentLabel(cid: ComponentId): string {
+		return $t(`sim_ui.components.${cid}`);
+	}
+
 	type SeriesRow = { tick: number; healthIndex: number; status: string };
 
 	function snapshotAt(rows: SeriesRow[] | undefined, tick: number): SeriesRow | null {
@@ -134,14 +146,18 @@
 	});
 </script>
 
-<SEOHead title={summary ? `Run ${summary.scenarioName}` : 'Simulation run'} />
+<SEOHead
+	title={summary
+		? `${$t('sim_ui.run_detail.run_prefix')} ${summary.scenarioName}`
+		: $t('sim_ui.run_detail.page_title')}
+/>
 
 <div class="mx-auto max-w-5xl space-y-6 p-6">
 	{#if summaryQuery.isLoading}
-		<div class="text-sm text-muted-foreground">Loading run…</div>
+		<div class="text-sm text-muted-foreground">{$t('sim_ui.run_detail.loading_run')}</div>
 	{:else if !summary}
 		<div class="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm">
-			Run not found or you do not have access.
+			{$t('sim_ui.run_detail.not_found')}
 		</div>
 	{:else}
 		<!-- Header -->
@@ -149,15 +165,20 @@
 			<div>
 				<h1 class="text-2xl font-semibold">{summary.scenarioName}</h1>
 				<p class="text-sm text-muted-foreground">
-					Run <code class="font-mono text-xs">{runId}</code>
-					· seed {summary.seed} · horizon {summary.horizonTicks} ticks
+					{$t('sim_ui.run_detail.run_id')}
+					<code class="font-mono text-xs">{runId}</code>
+					· {$t('sim_ui.run_detail.seed')}
+					{summary.seed}
+					· {$t('sim_ui.run_detail.horizon')}
+					{summary.horizonTicks}
+					{$t('sim_ui.run_detail.ticks')}
 				</p>
 			</div>
 			<span
 				class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wide"
 			>
 				<span class={`h-2 w-2 rounded-full ${statusColor(summary.status)}`}></span>
-				{summary.status}
+				{statusLabel(summary.status)}
 			</span>
 		</header>
 
@@ -170,7 +191,7 @@
 					onclick={() => (isPlaying = !isPlaying)}
 					disabled={lastTick === 0}
 				>
-					{isPlaying ? 'Pause' : 'Play'}
+					{isPlaying ? $t('sim_ui.run_detail.pause') : $t('sim_ui.run_detail.play')}
 				</button>
 
 				<button
@@ -181,7 +202,7 @@
 						currentTick = 0;
 					}}
 				>
-					Reset
+					{$t('sim_ui.run_detail.reset')}
 				</button>
 
 				<button
@@ -189,11 +210,11 @@
 					class="rounded-md border px-3 py-1 text-sm hover:bg-accent"
 					onclick={() => (currentTick = lastTick)}
 				>
-					End
+					{$t('sim_ui.run_detail.end')}
 				</button>
 
 				<label class="ml-auto flex items-center gap-2 text-sm">
-					Speed
+					{$t('sim_ui.run_detail.speed')}
 					<select
 						class="rounded-md border bg-background px-2 py-1 text-sm"
 						bind:value={playbackSpeedMs}
@@ -208,7 +229,7 @@
 			</div>
 
 			<div class="flex items-center gap-3 text-sm">
-				<span class="font-mono tabular-nums">tick {currentTick}</span>
+				<span class="font-mono tabular-nums">{$t('sim_ui.run_detail.tick')} {currentTick}</span>
 				<input
 					type="range"
 					class="flex-1"
@@ -230,12 +251,12 @@
 				{@const snap = snapshotAt(series, currentTick)}
 				<div class="rounded-lg border bg-card p-3">
 					<div class="flex items-center justify-between">
-						<h3 class="text-sm font-semibold capitalize">{cid}</h3>
+						<h3 class="text-sm font-semibold">{componentLabel(cid)}</h3>
 						<span
 							class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase"
 						>
 							<span class={`h-1.5 w-1.5 rounded-full ${statusColor(snap?.status)}`}></span>
-							{snap?.status ?? '—'}
+							{statusLabel(snap?.status)}
 						</span>
 					</div>
 					<div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
@@ -246,7 +267,8 @@
 						></div>
 					</div>
 					<p class="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-						health {snap ? snap.healthIndex.toFixed(3) : '—'}
+						{$t('sim_ui.run_detail.health')}
+						{snap ? snap.healthIndex.toFixed(3) : '—'}
 					</p>
 				</div>
 			{/each}
@@ -254,14 +276,14 @@
 
 		<!-- Health timeseries -->
 		<section class="rounded-lg border bg-card p-4">
-			<h2 class="mb-3 text-sm font-semibold">Component health over time</h2>
+			<h2 class="mb-3 text-sm font-semibold">{$t('sim_ui.health_timeline.title')}</h2>
 			<svg
 				viewBox={`0 0 ${chartWidth} ${chartHeight}`}
 				class="h-auto w-full"
 				role="img"
 				aria-labelledby="component-health-chart-title"
 			>
-				<title id="component-health-chart-title">Component health time series</title>
+				<title id="component-health-chart-title">{$t('sim_ui.run_detail.chart_time_series')}</title>
 				<g transform={`translate(${margin.left},${margin.top})`}>
 					<!-- Y gridlines -->
 					{#each [0, 0.2, 0.45, 0.75, 1] as y (y)}
@@ -336,7 +358,7 @@
 				{#each COMPONENT_IDS as cid (cid)}
 					<span class="inline-flex items-center gap-1.5">
 						<span class="h-2 w-3 rounded-sm" style:background-color={componentColor[cid]}></span>
-						<span class="capitalize">{cid}</span>
+						<span>{componentLabel(cid)}</span>
 					</span>
 				{/each}
 			</div>
@@ -344,15 +366,15 @@
 
 		<!-- Recent events -->
 		<section class="rounded-lg border bg-card p-4">
-			<h2 class="mb-3 text-sm font-semibold">Maintenance events (up to current tick)</h2>
+			<h2 class="mb-3 text-sm font-semibold">{$t('sim_ui.run_detail.maintenance_events')}</h2>
 			{#if eventsQuery.isLoading}
-				<div class="text-sm text-muted-foreground">Loading…</div>
+				<div class="text-sm text-muted-foreground">{$t('sim_ui.common.loading')}</div>
 			{:else}
 				{@const events = (eventsQuery.data ?? []).filter(
 					(e: { tick: number }) => e.tick <= currentTick
 				)}
 				{#if events.length === 0}
-					<div class="text-sm text-muted-foreground">No events recorded yet.</div>
+					<div class="text-sm text-muted-foreground">{$t('sim_ui.run_detail.no_events')}</div>
 				{:else}
 					<ul class="space-y-1 text-sm">
 						{#each events
@@ -361,7 +383,11 @@
 							<li class="flex items-baseline gap-3 font-mono text-xs">
 								<span class="tabular-nums text-muted-foreground">t={ev.tick}</span>
 								<span class="rounded-sm border px-1.5 py-0.5 text-[10px] uppercase">{ev.kind}</span>
-								<span class="capitalize">{ev.componentId ?? 'global'}</span>
+								<span
+									>{ev.componentId
+										? componentLabel(ev.componentId as ComponentId)
+										: $t('sim_ui.run_detail.global')}</span
+								>
 							</li>
 						{/each}
 					</ul>

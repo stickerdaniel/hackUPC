@@ -58,6 +58,10 @@
 		const d = new Date(ms);
 		return d.toLocaleDateString(undefined, { year: '2-digit', month: '2-digit', day: '2-digit' });
 	}
+
+	function statusLabel(status: string): string {
+		return $t(`sim_ui.status.${status.toLowerCase()}`);
+	}
 </script>
 
 <SEOHead
@@ -80,19 +84,17 @@
 			</h1>
 			<span class="dash-intro-role">
 				<span class="dash-intro-role-dot"></span>
-				OPERATOR
+				{$t('sim_ui.dashboard.operator')}
 			</span>
 		</div>
 
 		<p class="dash-intro-desc">
-			Operator dashboard for the coupled simulation engine — drivers, status decay, cascade
-			attribution, sensor trust, and operator response, sourced from the SQLite historian for the
-			selected run.
+			{$t('sim_ui.dashboard.description')}
 		</p>
 
 		<!-- Run picker — drives every chart on the page. -->
 		<div class="dash-runpicker">
-			<label class="dash-runpicker-label" for="dash-run-select">RUN</label>
+			<label class="dash-runpicker-label" for="dash-run-select">{$t('sim_ui.dashboard.run')}</label>
 			<div class="dash-runpicker-control">
 				<select
 					id="dash-run-select"
@@ -100,28 +102,33 @@
 					value={selectedRunId ?? ''}
 					onchange={pickRun}
 				>
-					<option value="">— Pick a run to load real data —</option>
+					<option value="">{$t('sim_ui.dashboard.pick_run')}</option>
 					{#each runs as r (r._id)}
 						<option value={r._id}>
-							{r.scenarioName} · seed {r.seed} · {r.horizonTicks ?? '?'} ticks · {r.status}
+							{r.scenarioName} · {$t('sim_ui.run_detail.seed')}
+							{r.seed} · {r.horizonTicks ?? '?'}
+							{$t('sim_ui.run_detail.ticks')} · {statusLabel(r.status)}
 						</option>
 					{/each}
 				</select>
 				{#if selectedRunId}
-					<button type="button" class="dash-runpicker-clear" onclick={clearRun}> Clear </button>
+					<button type="button" class="dash-runpicker-clear" onclick={clearRun}>
+						{$t('sim_ui.common.clear')}
+					</button>
 				{/if}
 			</div>
 			<div class="dash-runpicker-hint">
 				{#if !selectedRunId}
-					Charts below show synthetic placeholder data. Pick a run to render the real historian
-					data.
+					{$t('sim_ui.dashboard.synthetic_hint')}
 				{:else if !summary}
-					Loading run summary…
+					{$t('sim_ui.dashboard.loading_run_summary')}
 				{:else}
-					Loaded <span class="mono">{summary.scenarioName}</span> · status
-					<span class="mono">{summary.status}</span>
-					{#if summary.lastTick !== null}· last tick <span class="mono">{summary.lastTick}</span
-						>{/if}
+					{$t('sim_ui.dashboard.loaded')} <span class="mono">{summary.scenarioName}</span> · {$t(
+						'sim_ui.dashboard.status'
+					)}
+					<span class="mono">{statusLabel(summary.status)}</span>
+					{#if summary.lastTick !== null}· {$t('sim_ui.dashboard.last_tick')}
+						<span class="mono">{summary.lastTick}</span>{/if}
 				{/if}
 			</div>
 		</div>
@@ -129,43 +136,43 @@
 		<div class="dash-intro-pills">
 			{#if !selectedRunId}
 				<span class="dash-pill dash-pill-empty">
-					<span class="dash-pill-label">RUN</span>
-					<span class="dash-pill-val mono">— no run selected —</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.run')}</span>
+					<span class="dash-pill-val mono">{$t('sim_ui.dashboard.no_run_selected')}</span>
 				</span>
 			{:else if summary}
 				<span class="dash-pill">
-					<span class="dash-pill-label">RUN</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.run')}</span>
 					<span class="dash-pill-val mono">{summary.runId}</span>
 				</span>
 				<span class="dash-pill">
-					<span class="dash-pill-label">SCENARIO</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.scenario')}</span>
 					<span class="dash-pill-val">{summary.scenarioName}</span>
 				</span>
 				<span class="dash-pill">
-					<span class="dash-pill-label">SEED</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.seed')}</span>
 					<span class="dash-pill-val mono">{summary.seed}</span>
 				</span>
 				<span class="dash-pill">
-					<span class="dash-pill-label">HORIZON</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.horizon')}</span>
 					<span class="dash-pill-val mono">{summary.horizonTicks ?? '—'}</span>
 				</span>
 				<span class="dash-pill">
-					<span class="dash-pill-label">STATUS</span>
-					<span class="dash-pill-val mono">{summary.status}</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.status')}</span>
+					<span class="dash-pill-val mono">{statusLabel(summary.status)}</span>
 				</span>
 				<span class="dash-pill">
-					<span class="dash-pill-label">STARTED</span>
+					<span class="dash-pill-label">{$t('sim_ui.dashboard.started')}</span>
 					<span class="dash-pill-val mono">{fmtDate(summary.startedAt)}</span>
 				</span>
 				{#if summary.completedAt !== null}
 					<span class="dash-pill">
-						<span class="dash-pill-label">COMPLETED</span>
+						<span class="dash-pill-label">{$t('sim_ui.dashboard.completed')}</span>
 						<span class="dash-pill-val mono">{fmtDate(summary.completedAt)}</span>
 					</span>
 				{/if}
 				{#if summary.lastTick !== null}
 					<span class="dash-pill">
-						<span class="dash-pill-label">LAST TICK</span>
+						<span class="dash-pill-label">{$t('sim_ui.dashboard.last_tick')}</span>
 						<span class="dash-pill-val mono">{summary.lastTick}</span>
 					</span>
 				{/if}
