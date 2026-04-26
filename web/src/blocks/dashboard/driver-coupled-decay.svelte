@@ -74,11 +74,11 @@
 
 	const driverData = DRIVERS.map((d) => ({ ...d, data: genDriver(d) }));
 
-	// Sparkline geometry (per strip)
-	const sparkW = 1280;
-	const sparkH = 70;
-	const sparkPadX = 12;
-	const sparkPadY = 10;
+	// Sparkline geometry (per strip) — compact so two columns fit side-by-side
+	const sparkW = 600;
+	const sparkH = 40;
+	const sparkPadX = 8;
+	const sparkPadY = 6;
 	const sparkInnerW = sparkW - sparkPadX * 2;
 	const sparkInnerH = sparkH - sparkPadY * 2;
 
@@ -127,6 +127,95 @@
 
 	function fmtPct(v: number): string {
 		return `${Math.round(v * 100)}%`;
+	}
+
+	// ──────────────────────────────────────────────────────────────────────
+	// SIDE PANEL — Proactive alerts feed (Phase 3 / Autonomy preview)
+	// Placeholder data; will be derived from the active simulation run.
+	// ──────────────────────────────────────────────────────────────────────
+	type AlertSeverity = 'CRITICAL' | 'FAILED' | 'DEGRADED';
+	type ProactiveAlert = {
+		tick: number;
+		component: string;
+		status: AlertSeverity;
+		topDriverKey: string;
+		topDriverValue: number;
+	};
+
+	const PROACTIVE_ALERTS: ProactiveAlert[] = [
+		{
+			tick: 31,
+			component: 'HEATER',
+			status: 'CRITICAL',
+			topDriverKey: 'cleaning_efficiency',
+			topDriverValue: 0.834
+		},
+		{
+			tick: 38,
+			component: 'RAIL',
+			status: 'CRITICAL',
+			topDriverKey: 'powder_spread_quality',
+			topDriverValue: 0.705
+		},
+		{
+			tick: 39,
+			component: 'BLADE',
+			status: 'CRITICAL',
+			topDriverKey: 'powder_spread_quality',
+			topDriverValue: 0.689
+		},
+		{
+			tick: 43,
+			component: 'CLEANING',
+			status: 'CRITICAL',
+			topDriverKey: 'powder_spread_quality',
+			topDriverValue: 0.848
+		},
+		{
+			tick: 58,
+			component: 'BLADE',
+			status: 'FAILED',
+			topDriverKey: 'cleaning_efficiency',
+			topDriverValue: 0.853
+		},
+		{
+			tick: 58,
+			component: 'RAIL',
+			status: 'FAILED',
+			topDriverKey: 'cleaning_efficiency',
+			topDriverValue: 0.853
+		},
+		{
+			tick: 62,
+			component: 'HEATER',
+			status: 'FAILED',
+			topDriverKey: 'powder_spread_quality',
+			topDriverValue: 0.948
+		},
+		{
+			tick: 109,
+			component: 'CLEANING',
+			status: 'FAILED',
+			topDriverKey: 'powder_spread_quality',
+			topDriverValue: 0.782
+		},
+		{
+			tick: 224,
+			component: 'SENSOR',
+			status: 'DEGRADED',
+			topDriverKey: 'blade_loss_frac',
+			topDriverValue: 1.0
+		}
+	];
+
+	const SEVERITY_COLOR: Record<AlertSeverity, string> = {
+		CRITICAL: '#024AD8',
+		FAILED: '#024AD8',
+		DEGRADED: '#E0A93B'
+	};
+
+	function fmtDriverValue(v: number): string {
+		return v.toFixed(3);
 	}
 
 	// ──────────────────────────────────────────────────────────────────────
@@ -267,81 +356,124 @@
 </script>
 
 <section class="dcd">
-	<!-- ────────── TOP: Driver streams ────────── -->
-	<div class="dcd-block">
-		<header class="dcd-head">
-			<div class="dcd-eyebrow">Phase 2 / Brief inputs</div>
-			<h2 class="dcd-title">Driver streams</h2>
-		</header>
+	<!-- ────────── TOP: Driver streams (left) + Proactive alerts feed (right) ────────── -->
+	<div class="dcd-block dcd-block-split">
+		<div class="dcd-split-col">
+			<header class="dcd-head">
+				<div class="dcd-eyebrow">Phase 2 / Brief inputs</div>
+				<h2 class="dcd-title">Driver streams</h2>
+			</header>
 
-		<div class="dcd-sparks">
-			{#each driverData as d (d.id)}
-				<div class="dcd-spark-strip">
-					<div class="dcd-spark-label">{d.label}</div>
-					<div class="dcd-spark-chart-wrap">
-						<svg
-							bind:this={sparkRefs[d.id]}
-							class="dcd-spark-svg"
-							viewBox={`0 0 ${sparkW} ${sparkH}`}
-							preserveAspectRatio="none"
-							role="img"
-							aria-label={d.label}
-							onmousemove={(e) => handleSparkMove(e, d)}
-							onmouseleave={handleSparkLeave}
-						>
-							<g transform={`translate(${sparkPadX}, ${sparkPadY})`}>
-								<path class="dcd-spark-line" d={sparkLine(d.data) ?? ''} />
-								{#if sparkHover && sparkHover.driverId === d.id}
-									<line
-										class="dcd-spark-guide"
-										x1={xSpark(sparkHover.tick)}
-										x2={xSpark(sparkHover.tick)}
-										y1="0"
-										y2={sparkInnerH}
-									/>
-									<circle
-										class="dcd-spark-dot"
-										cx={xSpark(sparkHover.tick)}
-										cy={ySpark(sparkHover.v)}
-										r="3"
-									/>
-								{/if}
-								<rect
-									class="dcd-spark-capture"
-									x="0"
-									y="0"
-									width={sparkInnerW}
-									height={sparkInnerH}
-								/>
-							</g>
-						</svg>
-						<span class="dcd-spark-value">{fmtPct(d.data[d.data.length - 1]?.v ?? 0)}</span>
-
-						{#if sparkHover && sparkHover.driverId === d.id}
-							<div
-								class="dcd-spark-tip"
-								style:left="{Math.min(sparkHover.clientX + 12, 760)}px"
-								style:top="{Math.max(sparkHover.clientY - 44, -28)}px"
+			<div class="dcd-sparks">
+				{#each driverData as d (d.id)}
+					<div class="dcd-spark-strip">
+						<div class="dcd-spark-label">{d.label}</div>
+						<div class="dcd-spark-chart-wrap">
+							<svg
+								bind:this={sparkRefs[d.id]}
+								class="dcd-spark-svg"
+								viewBox={`0 0 ${sparkW} ${sparkH}`}
+								preserveAspectRatio="none"
+								role="img"
+								aria-label={d.label}
+								onmousemove={(e) => handleSparkMove(e, d)}
+								onmouseleave={handleSparkLeave}
 							>
-								<div class="dcd-tip-row">
-									<span class="dcd-tip-key">tick</span>
-									<span class="dcd-tip-val">{sparkHover.tick}</span>
+								<g transform={`translate(${sparkPadX}, ${sparkPadY})`}>
+									<path class="dcd-spark-line" d={sparkLine(d.data) ?? ''} />
+									{#if sparkHover && sparkHover.driverId === d.id}
+										<line
+											class="dcd-spark-guide"
+											x1={xSpark(sparkHover.tick)}
+											x2={xSpark(sparkHover.tick)}
+											y1="0"
+											y2={sparkInnerH}
+										/>
+										<circle
+											class="dcd-spark-dot"
+											cx={xSpark(sparkHover.tick)}
+											cy={ySpark(sparkHover.v)}
+											r="3"
+										/>
+									{/if}
+									<rect
+										class="dcd-spark-capture"
+										x="0"
+										y="0"
+										width={sparkInnerW}
+										height={sparkInnerH}
+									/>
+								</g>
+							</svg>
+							<span class="dcd-spark-value">{fmtPct(d.data[d.data.length - 1]?.v ?? 0)}</span>
+
+							{#if sparkHover && sparkHover.driverId === d.id}
+								<div
+									class="dcd-spark-tip"
+									style:left="{Math.min(sparkHover.clientX + 12, 420)}px"
+									style:top="{Math.max(sparkHover.clientY - 44, -28)}px"
+								>
+									<div class="dcd-tip-row">
+										<span class="dcd-tip-key">tick</span>
+										<span class="dcd-tip-val">{sparkHover.tick}</span>
+									</div>
+									<div class="dcd-tip-row">
+										<span class="dcd-tip-key">{d.id}</span>
+										<span class="dcd-tip-val">{sparkHover.v.toFixed(3)}</span>
+									</div>
 								</div>
-								<div class="dcd-tip-row">
-									<span class="dcd-tip-key">{d.id}</span>
-									<span class="dcd-tip-val">{sparkHover.v.toFixed(3)}</span>
-								</div>
-							</div>
-						{/if}
+							{/if}
+						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+			</div>
+
+			<p class="dcd-foot">
+				Four engine inputs every tick. Right-edge value is the latest reading; all four are wired
+				into the coupled engine on every step.
+			</p>
 		</div>
 
-		<p class="dcd-foot">
-			Four engine inputs every tick. Right-edge value is the latest reading; all four are wired into
-			the coupled engine on every step.
-		</p>
+		<div class="dcd-split-col">
+			<header class="dcd-head">
+				<div class="dcd-eyebrow">Phase 3 / Autonomy preview</div>
+				<h2 class="dcd-title">Proactive alerts feed</h2>
+				<p class="dcd-alerts-sub">
+					Notification-style log of every status crossing the engine produced — what the autonomous
+					agent would have raised in real time.
+				</p>
+			</header>
+
+			<ul class="dcd-alerts">
+				{#each PROACTIVE_ALERTS as a, i (i)}
+					<li class="dcd-alert-row">
+						<span
+							class="dcd-alert-icon"
+							class:is-failed={a.status === 'FAILED'}
+							class:is-critical={a.status === 'CRITICAL'}
+							class:is-degraded={a.status === 'DEGRADED'}
+							style:--icon-color={SEVERITY_COLOR[a.status]}
+							aria-hidden="true"
+						></span>
+						<span class="dcd-alert-tick">TICK {a.tick}</span>
+						<span class="dcd-alert-component">{a.component}</span>
+						<span class="dcd-alert-arrow">→</span>
+						<span class="dcd-alert-status" style:color={SEVERITY_COLOR[a.status]}>
+							{a.status}
+						</span>
+						<span class="dcd-alert-driver-label">· top driver</span>
+						<code class="dcd-alert-driver-pill"
+							>{a.topDriverKey} = {fmtDriverValue(a.topDriverValue)}</code
+						>
+					</li>
+				{/each}
+			</ul>
+
+			<p class="dcd-foot">
+				{PROACTIVE_ALERTS.length} alerts. Each row is what the proactive agent would have raised the moment
+				a component crossed a status threshold.
+			</p>
+		</div>
 	</div>
 
 	<!-- ────────── BOTTOM: Driver-coupled component decay ────────── -->
@@ -549,16 +681,33 @@
 		color: var(--fg-4);
 	}
 
+	/* ─── Top split: Driver streams (left) + Alerts feed (right) ─── */
+	.dcd-block-split {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 40px;
+		align-items: start;
+	}
+	.dcd-split-col {
+		min-width: 0;
+	}
+	@media (max-width: 900px) {
+		.dcd-block-split {
+			grid-template-columns: 1fr;
+			gap: 32px;
+		}
+	}
+
 	/* ─── Sparklines ─── */
 	.dcd-sparks {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 2px;
 	}
 	.dcd-spark-strip {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 2px;
 	}
 	.dcd-spark-label {
 		font-size: 10px;
@@ -575,7 +724,7 @@
 	.dcd-spark-svg {
 		flex: 1;
 		width: 100%;
-		height: 70px;
+		height: 40px;
 		display: block;
 	}
 	.dcd-spark-line {
@@ -643,6 +792,95 @@
 		font-size: 13px;
 		color: var(--fg-3);
 		line-height: 1.5;
+	}
+
+	/* ─── Proactive alerts feed ─── */
+	.dcd-alerts-sub {
+		margin: 8px 0 0;
+		font-size: 13px;
+		color: var(--fg-3);
+		line-height: 1.5;
+	}
+	.dcd-alerts {
+		list-style: none;
+		margin: 16px 0 0;
+		padding: 0;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--surface);
+		overflow: hidden;
+	}
+	.dcd-alert-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 14px;
+		border-top: 1px solid var(--line);
+		font-size: 12px;
+		flex-wrap: wrap;
+	}
+	.dcd-alert-row:first-child {
+		border-top: none;
+	}
+	.dcd-alert-icon {
+		flex-shrink: 0;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--icon-color, var(--accent));
+	}
+	.dcd-alert-icon.is-critical {
+		background: linear-gradient(
+			to right,
+			var(--icon-color) 0 50%,
+			color-mix(in srgb, var(--icon-color) 25%, #ffffff) 50% 100%
+		);
+		border: 1px solid var(--icon-color);
+	}
+	.dcd-alert-icon.is-degraded {
+		background: linear-gradient(
+			to right,
+			var(--icon-color) 0 50%,
+			color-mix(in srgb, var(--icon-color) 25%, #ffffff) 50% 100%
+		);
+		border: 1px solid var(--icon-color);
+	}
+	.dcd-alert-tick {
+		min-width: 64px;
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--fg-3);
+		text-transform: uppercase;
+	}
+	.dcd-alert-component {
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--fg);
+		letter-spacing: 0.04em;
+	}
+	.dcd-alert-arrow {
+		color: var(--fg-4);
+	}
+	.dcd-alert-status {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+	}
+	.dcd-alert-driver-label {
+		color: var(--fg-3);
+		font-size: 12px;
+	}
+	.dcd-alert-driver-pill {
+		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 11px;
+		color: var(--fg);
+		background: #f4f4f5;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		padding: 2px 6px;
+		font-feature-settings: 'tnum' 1;
+		white-space: nowrap;
 	}
 
 	/* ─── Component degradation grid ─── */
