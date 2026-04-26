@@ -51,6 +51,10 @@ export const simRuns = defineTable({
 	dtSeconds: v.number(),
 	horizonTicks: v.number(),
 	configJson: v.string(), // serialized RunRequest payload sent to Python
+	// Resolved scenario config from Python's /runs response (post-override
+	// model_dump). Stringified JSON; parsed at the consumer to keep the schema
+	// free of Pydantic's evolving driver shapes.
+	scenarioConfig: v.optional(v.string()),
 	startedAt: v.number(),
 	completedAt: v.optional(v.number()),
 	lastTick: v.optional(v.number()),

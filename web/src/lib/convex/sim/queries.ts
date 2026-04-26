@@ -65,7 +65,11 @@ async function _getRunSummary(ctx: QueryCtx, userId: string, runId: Id<'simRuns'
 		startedAt: run.startedAt,
 		completedAt: run.completedAt ?? null,
 		lastTick: run.lastTick ?? null,
-		errorMessage: run.errorMessage ?? null
+		errorMessage: run.errorMessage ?? null,
+		// Resolved scenario YAML (climate / drivers / maintenance) — JSON
+		// string so consumers parse it themselves. Null on runs predating the
+		// recordRunConfig wiring.
+		scenarioConfig: run.scenarioConfig ?? null
 	};
 }
 
@@ -529,3 +533,4 @@ export const compareRunsForUser = internalQuery({
 	handler: async (ctx, args) =>
 		_compareRuns(ctx, args.userId, args.runIdA, args.runIdB, args.componentId)
 });
+// TEST 1777174776

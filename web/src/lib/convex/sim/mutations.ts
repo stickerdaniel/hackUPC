@@ -124,6 +124,36 @@ export const recordRunStarted = internalMutation({
 	}
 });
 
+/**
+ * Persist the resolved scenario config + the YAML's actual run defaults.
+ *
+ * Called from `_runScenarioForUser` after Python /runs returns. Patches three
+ * fields whose pre-Python values in `recordRunStarted` are guesses (`?? 0`
+ * etc.) and must be overwritten with what actually ran. Without this the
+ * dashboard header would show seed=0 while `scenarioConfig.run.seed` says 7.
+ */
+export const recordRunConfig = internalMutation({
+	args: {
+		runId: v.id('simRuns'),
+		scenarioConfig: v.string(),
+		resolvedSeed: v.number(),
+		resolvedHorizonTicks: v.number(),
+		resolvedDtSeconds: v.number()
+	},
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		const run = await ctx.db.get(args.runId);
+		if (!run) throw new ConvexError(`run not found: ${args.runId}`);
+		await ctx.db.patch(args.runId, {
+			scenarioConfig: args.scenarioConfig,
+			seed: args.resolvedSeed,
+			horizonTicks: args.resolvedHorizonTicks,
+			dtSeconds: args.resolvedDtSeconds
+		});
+		return null;
+	}
+});
+
 export const recordRunCompleted = internalMutation({
 	args: {
 		runId: v.id('simRuns'),
