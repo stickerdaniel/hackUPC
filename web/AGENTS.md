@@ -1,6 +1,4 @@
-# CLAUDE/AGENTS.md
-
-> `CLAUDE.md` is a symlink to this file. Edit `AGENTS.md`, not the symlink.
+# AGENTS.md
 
 This project is a saas template built with SvelteKit, Convex, Typescript and modern web technologies.
 
